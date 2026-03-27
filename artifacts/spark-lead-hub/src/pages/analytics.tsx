@@ -1,6 +1,25 @@
-import { useGetAnalyticsStats, useGetLeadTrend, useGetKillReasons, useGetWeeklyConversion } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui";
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import {
+  useGetAnalyticsStats, useGetLeadTrend, useGetKillReasons, useGetWeeklyConversion
+} from "@workspace/api-client-react";
+import {
+  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
+  ResponsiveContainer, Cell
+} from "recharts";
+import { BarChart3, Target, Clock, Layers, XCircle } from "lucide-react";
+
+const KILL_REASON_LABELS: Record<string, string> = {
+  feature_gap: "Feature Gap",
+  price:       "Price",
+  ghosted:     "Ghosted",
+};
+
+const tooltipStyle = {
+  backgroundColor: "var(--bg-overlay)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  color: "var(--text-primary)",
+  fontSize: "var(--text-xs)",
+};
 
 export function Analytics() {
   const { data: stats } = useGetAnalyticsStats();
@@ -8,78 +27,121 @@ export function Analytics() {
   const { data: killReasons = [] } = useGetKillReasons();
   const { data: weeklyConversion = [] } = useGetWeeklyConversion();
 
-  return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-slide-in">
-      <h1 className="text-3xl font-display font-bold">Analytics & Reporting</h1>
+  const avgDays = stats?.avgConversionDays;
+  const avgDisplay = (avgDays != null && avgDays > 0) ? Math.round(avgDays) : "N/A";
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Win Rate" value={`${Math.round(stats?.winRate || 0)}%`} subtitle="Closed / Total" />
-        <StatCard title="Avg Conversion" value={`${Math.round(stats?.avgConversionDays || 0)}`} subtitle="Days to close" />
-        <StatCard title="Active Pipeline" value={stats?.activePipelineCount || 0} subtitle="Leads in progress" />
-        <StatCard title="Lost Deals" value={stats?.lostCount || 0} subtitle="Missed opportunities" className="border-destructive/30" />
+  const formattedKillReasons = killReasons.map(r => ({
+    ...r,
+    label: KILL_REASON_LABELS[r.reason] || r.reason,
+  }));
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+            <BarChart3 size={28} style={{ color: "var(--teal)" }} />
+            Analytics & Reporting
+          </h1>
+          <p className="page-subtitle">Pipeline performance and conversion insights</p>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="p-6 glass h-96 flex flex-col relative overflow-hidden">
-          <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-primary/10 blur-[100px] rounded-full" />
-          <h3 className="font-display font-semibold mb-6 text-foreground">Lead Volume Trend (30 Days)</h3>
+      {/* Stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
+        <AnalyticStatCard label="Win Rate" value={`${Math.round(stats?.winRate || 0)}%`} sub="Closed / Total leads" icon={<Target size={16} />} iconClass="stat-icon-success" />
+        <AnalyticStatCard label="Avg Conversion" value={typeof avgDisplay === "number" ? `${avgDisplay}d` : avgDisplay} sub="Days to close" icon={<Clock size={16} />} iconClass="stat-icon-teal" />
+        <AnalyticStatCard label="Active Pipeline" value={stats?.activePipelineCount ?? 0} sub="Leads in progress" icon={<Layers size={16} />} iconClass="stat-icon-purple" />
+        <AnalyticStatCard label="Lost Deals" value={stats?.lostCount ?? 0} sub="Missed opportunities" icon={<XCircle size={16} />} iconClass="stat-icon-danger" />
+      </div>
+
+      {/* Charts grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
+        <div className="chart-card" style={{ height: 320, display: "flex", flexDirection: "column" }}>
+          <div className="chart-title">Lead Volume Trend (30 Days)</div>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData}>
               <defs>
-                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor="hsl(var(--background))" stopOpacity={0}/>
+                <linearGradient id="tealFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="hsl(172 75% 48%)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(172 75% 48%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px'}} />
-              <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+              <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)} />
+              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "var(--border-default)" }} />
+              <Area type="monotone" dataKey="count" stroke="hsl(172 75% 48%)" strokeWidth={2.5} fillOpacity={1} fill="url(#tealFill)" />
             </AreaChart>
           </ResponsiveContainer>
-        </Card>
+        </div>
 
-        <Card className="p-6 glass h-96 flex flex-col relative overflow-hidden">
-          <div className="absolute -top-20 -left-20 w-64 h-64 bg-accent/10 blur-[100px] rounded-full" />
-          <h3 className="font-display font-semibold mb-6 text-foreground">Weekly Conversion Rate (8 Weeks)</h3>
+        <div className="chart-card" style={{ height: 320, display: "flex", flexDirection: "column" }}>
+          <div className="chart-title">Weekly Conversion Rate (8 Weeks)</div>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={weeklyConversion}>
               <defs>
-                <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor="hsl(var(--background))" stopOpacity={0}/>
+                <linearGradient id="purpleFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="hsl(262 65% 62%)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(262 65% 62%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(tick) => `${tick}%`} />
-              <Tooltip contentStyle={{backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px'}} />
-              <Area type="monotone" dataKey="rate" stroke="hsl(var(--accent))" strokeWidth={3} fillOpacity={1} fill="url(#colorRate)" />
+              <XAxis dataKey="week" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} width={38} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [`${v}%`, "Conversion Rate"]} cursor={{ stroke: "var(--border-default)" }} />
+              <Area type="monotone" dataKey="rate" stroke="hsl(262 65% 62%)" strokeWidth={2.5} fillOpacity={1} fill="url(#purpleFill)" />
             </AreaChart>
           </ResponsiveContainer>
-        </Card>
+        </div>
+      </div>
 
-        <Card className="p-6 glass h-96 flex flex-col relative overflow-hidden lg:col-span-2">
-          <h3 className="font-display font-semibold mb-6 text-foreground">Deal Kill Reasons</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={killReasons} layout="vertical" margin={{ left: 50 }}>
-              <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-              <YAxis type="category" dataKey="reason" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} className="capitalize" />
-              <Tooltip cursor={{fill: 'hsl(var(--muted)/0.5)'}} contentStyle={{backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px'}} />
-              <Bar dataKey="count" fill="hsl(var(--destructive)/0.8)" radius={[0, 4, 4, 0]} barSize={40} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+      <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
+        <div className="chart-title">Deal Kill Reasons</div>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={formattedKillReasons} layout="vertical" margin={{ left: 16, right: 16 }}>
+            <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+            <YAxis
+              type="category"
+              dataKey="label"
+              stroke="var(--text-muted)"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              width={90}
+            />
+            <Tooltip
+              contentStyle={tooltipStyle}
+              cursor={{ fill: "hsl(0 70% 58% / 0.06)" }}
+              formatter={(v: any) => [v, "Deals lost"]}
+            />
+            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={28}>
+              {formattedKillReasons.map((_, i) => (
+                <Cell key={i} fill="hsl(0 70% 58%)" />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
 }
 
-function StatCard({ title, value, subtitle, className }: { title: string, value: string | number, subtitle: string, className?: string }) {
+function AnalyticStatCard({
+  label, value, sub, icon, iconClass
+}: {
+  label: string;
+  value: string | number;
+  sub: string;
+  icon: React.ReactNode;
+  iconClass: string;
+}) {
   return (
-    <Card className={`p-5 glass relative overflow-hidden group transition-transform hover:-translate-y-1 ${className}`}>
-      <p className="text-sm font-medium text-muted-foreground tracking-wide mb-1">{title}</p>
-      <h3 className="text-3xl font-display font-bold tracking-tight text-foreground">{value}</h3>
-      <p className="text-xs text-muted-foreground mt-2 opacity-70">{subtitle}</p>
-    </Card>
+    <div className="stat-card">
+      <div className="stat-card-header">
+        <span className="stat-card-label">{label}</span>
+        <div className={`stat-card-icon ${iconClass}`}>{icon}</div>
+      </div>
+      <div className="stat-card-value">{value}</div>
+      <div className="stat-card-sub">{sub}</div>
+    </div>
   );
 }

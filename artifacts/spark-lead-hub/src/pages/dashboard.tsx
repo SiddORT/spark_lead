@@ -1,13 +1,47 @@
 import { useState } from "react";
 import { useGetLeads, useGetAnalyticsStats, useGetLeadTrend, useGetStageDistribution } from "@workspace/api-client-react";
 import { useUserMap } from "@/hooks/use-user-map";
-import { Card, CardContent, Badge, Table, TableHeader, TableBody, TableRow, TableHead, TableCell, Input, Select, Button } from "@/components/ui";
 import { LeadDetailSheet } from "@/components/lead-detail-sheet";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { formatValue, cn } from "@/lib/utils";
+import {
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell
+} from "recharts";
+import { formatValue } from "@/lib/utils";
 import { format } from "date-fns";
-import { Download, Search } from "lucide-react";
+import {
+  Download, Search, Users, Flame, CheckCircle2, Activity,
+  TrendingUp, LayoutDashboard
+} from "lucide-react";
 import { PermissionCheck } from "@/components/auth-provider";
+
+const STAGE_COLORS: Record<string, string> = {
+  discovery:     "hsl(210 15% 45%)",
+  qualification: "var(--warning)",
+  strategy:      "var(--purple)",
+  resolution:    "var(--success)",
+};
+
+const TYPE_CONFIG: Record<string, { emoji: string; label: string; cls: string }> = {
+  hot:     { emoji: "🔥", label: "Hot",     cls: "badge-hot" },
+  warm:    { emoji: "☀️", label: "Warm",    cls: "badge-warm" },
+  cold:    { emoji: "🧊", label: "Cold",    cls: "badge-cold" },
+  ghosted: { emoji: "👻", label: "Ghosted", cls: "badge-ghosted" },
+};
+
+const STAGE_BADGE: Record<string, string> = {
+  discovery:     "badge-discovery",
+  qualification: "badge-qualification",
+  strategy:      "badge-strategy",
+  resolution:    "badge-resolution",
+};
+
+const tooltipStyle = {
+  backgroundColor: "var(--bg-overlay)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  color: "var(--text-primary)",
+  fontSize: "var(--text-xs)",
+};
 
 export function Dashboard() {
   const { data: leads = [] } = useGetLeads();
@@ -17,153 +51,217 @@ export function Dashboard() {
   const { resolveName } = useUserMap();
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
-  
-  const [search, setSearch] = useState('');
-  const [serviceFilter, setServiceFilter] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
 
   const filteredLeads = leads.filter(l => {
-    const matchSearch = l.leadName.toLowerCase().includes(search.toLowerCase()) || l.company?.toLowerCase().includes(search.toLowerCase());
-    const matchService = !serviceFilter || l.serviceId === serviceFilter;
+    const q = search.toLowerCase();
+    const matchSearch = l.leadName.toLowerCase().includes(q) || (l.company || "").toLowerCase().includes(q);
     const matchType = !typeFilter || l.leadType === typeFilter;
-    return matchSearch && matchService && matchType;
+    return matchSearch && matchType;
   });
 
-  const getLeadTypeBadge = (type?: string | null) => {
-    const config: any = {
-      hot: { icon: '🔥', text: 'Hot', className: 'text-destructive border-destructive/30 bg-destructive/10' },
-      warm: { icon: '☀️', text: 'Warm', className: 'text-warning border-warning/30 bg-warning/10' },
-      cold: { icon: '🧊', text: 'Cold', className: 'text-primary border-primary/30 bg-primary/10' },
-      ghosted: { icon: '👻', text: 'Ghosted', className: 'text-muted-foreground border-border bg-muted' },
-    };
-    const c = type ? config[type] : config.cold;
-    return <Badge variant="outline" className={`gap-1 px-2 ${c.className}`}>{c.icon} {c.text}</Badge>;
-  };
-
-  const handleExport = () => {
-    window.open('/api/leads/export/csv', '_blank');
-  };
+  const hotCount = leads.filter(l => l.leadType === "hot").length;
+  const closedCount = leads.filter(l => l.outcome === "closed").length;
+  const pipelineValue = leads.reduce(
+    (s, l) => s + (l.outcome !== "closed" && l.outcome !== "lost" ? Number(l.dealValue || 0) : 0),
+    0
+  );
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 animate-slide-in">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-display font-bold">Dashboard</h1>
-        <PermissionCheck resource="leads" action="export">
-          <Button variant="outline" onClick={handleExport} className="gap-2 border-primary/50 text-primary hover:bg-primary/10">
-            <Download size={16} /> Export CSV
-          </Button>
-        </PermissionCheck>
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+            <LayoutDashboard size={28} style={{ color: "var(--teal)" }} />
+            Dashboard
+          </h1>
+          <p className="page-subtitle">Overview of your sales pipeline</p>
+        </div>
+        <div className="page-actions">
+          <PermissionCheck resource="leads" action="export">
+            <button className="btn btn-secondary" onClick={() => window.open("/api/leads/export/csv", "_blank")}>
+              <Download size={15} /> Export CSV
+            </button>
+          </PermissionCheck>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        <StatCard title="Total Leads" value={leads.length} />
-        <StatCard title="Hot Leads 🔥" value={leads.filter(l => l.leadType === 'hot').length} className="border-destructive/30 shadow-[0_0_15px_rgba(255,0,0,0.1)]" />
-        <StatCard title="Closed Deals" value={leads.filter(l => l.outcome === 'closed').length} className="border-success/30" />
-        <StatCard title="In Progress" value={stats?.activePipelineCount || 0} />
-        <StatCard title="Pipeline Value" value={formatValue(leads.reduce((s, l) => s + (l.outcome !== 'closed' && l.outcome !== 'lost' ? Number(l.dealValue || 0) : 0), 0))} className="border-accent/30 text-accent col-span-2 lg:col-span-1" />
+      {/* Stats Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
+        <StatCard label="Total Leads" value={leads.length} icon={<Users size={16} />} iconClass="stat-icon-teal" sub={`${filteredLeads.length} shown`} />
+        <StatCard label="Hot Leads" value={hotCount} icon={<Flame size={16} />} iconClass="stat-icon-warning" sub="High priority" />
+        <StatCard label="Closed Deals" value={closedCount} icon={<CheckCircle2 size={16} />} iconClass="stat-icon-success" sub="Won opportunities" />
+        <StatCard label="In Progress" value={stats?.activePipelineCount ?? 0} icon={<Activity size={16} />} iconClass="stat-icon-purple" sub="Active leads" />
+        <StatCard label="Pipeline Value" value={formatValue(pipelineValue)} icon={<TrendingUp size={16} />} iconClass="stat-icon-teal" sub="Active deals" />
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="p-4 flex flex-col h-80 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] rounded-full pointer-events-none" />
-          <h3 className="font-display font-semibold mb-4 text-muted-foreground">Lead Generation (30 Days)</h3>
+      {/* Charts */}
+      <div className="charts-grid">
+        <div className="chart-card" style={{ height: 300, display: "flex", flexDirection: "column" }}>
+          <div className="chart-title">Lead Generation (30 Days)</div>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData}>
               <defs>
-                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                <linearGradient id="tealGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="hsl(172 75% 48%)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(172 75% 48%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <Tooltip contentStyle={{backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)'}} />
-              <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+              <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)} />
+              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "var(--border-default)" }} />
+              <Area type="monotone" dataKey="count" stroke="hsl(172 75% 48%)" strokeWidth={2.5} fillOpacity={1} fill="url(#tealGrad)" />
             </AreaChart>
           </ResponsiveContainer>
-        </Card>
+        </div>
 
-        <Card className="p-4 flex flex-col h-80 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 blur-[80px] rounded-full pointer-events-none" />
-          <h3 className="font-display font-semibold mb-4 text-muted-foreground">Pipeline Stages</h3>
+        <div className="chart-card" style={{ height: 300, display: "flex", flexDirection: "column" }}>
+          <div className="chart-title">Pipeline Stages</div>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stageDist}>
-              <Tooltip cursor={{fill: 'hsl(var(--muted)/0.5)'}} contentStyle={{backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))', borderRadius: '8px'}} />
-              <Bar dataKey="count" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+              <XAxis dataKey="stage" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(222 16% 14% / 0.6)" }} />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40}>
+                {stageDist.map((entry, i) => (
+                  <Cell key={i} fill={STAGE_COLORS[entry.stage] || "var(--border-strong)"} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </Card>
+        </div>
       </div>
 
-      <Card className="overflow-hidden glass-strong border-border/50 shadow-2xl">
-        <div className="p-4 border-b border-border/50 flex flex-col sm:flex-row gap-4 justify-between items-center bg-card/50">
-          <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
-            <Input placeholder="Search leads or companies..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-background/50 border-border/50" />
+      {/* Leads Table */}
+      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="table-toolbar">
+          <div className="search-input-wrapper">
+            <Search size={15} />
+            <input
+              className="input"
+              placeholder="Search leads or companies…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="w-full sm:w-36 bg-background/50">
-              <option value="">All Types</option>
-              <option value="hot">Hot</option>
-              <option value="warm">Warm</option>
-              <option value="cold">Cold</option>
-            </Select>
-            <Button variant="ghost" onClick={() => { setSearch(''); setTypeFilter(''); setServiceFilter(''); }} className="text-muted-foreground hover:text-foreground">Clear</Button>
-          </div>
+          <select
+            className="input"
+            style={{ width: 140 }}
+            value={typeFilter}
+            onChange={e => setTypeFilter(e.target.value)}
+          >
+            <option value="">All Types</option>
+            <option value="hot">Hot 🔥</option>
+            <option value="warm">Warm ☀️</option>
+            <option value="cold">Cold 🧊</option>
+            <option value="ghosted">Ghosted 👻</option>
+          </select>
+          {(search || typeFilter) && (
+            <button className="btn btn-ghost btn-sm" onClick={() => { setSearch(""); setTypeFilter(""); }}>
+              Clear
+            </button>
+          )}
         </div>
-        
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead>Lead</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Service</TableHead>
-              <TableHead>Owner</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead>Stage</TableHead>
-              <TableHead>Created</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredLeads.slice(0, 10).map(lead => (
-              <TableRow key={lead.id} onClick={() => setSelectedLeadId(lead.id)} className="cursor-pointer group">
-                <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <span className="text-foreground group-hover:text-primary transition-colors">{lead.leadName}</span>
-                    <span className="text-xs text-muted-foreground">{lead.company || 'No Company'}</span>
-                  </div>
-                </TableCell>
-                <TableCell>{getLeadTypeBadge(lead.leadType)}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">{lead.serviceName || '-'}</TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-bold">{resolveName(lead.leadOwner)[0]}</div>
-                    <span className="text-sm">{resolveName(lead.leadOwner)}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="font-mono text-xs">{lead.dealValue ? `₹${lead.dealValue}` : '-'}</TableCell>
-                <TableCell><Badge variant="secondary" className="capitalize bg-muted border-none">{lead.stage}</Badge></TableCell>
-                <TableCell className="text-muted-foreground text-xs">{format(new Date(lead.createdAt), 'MMM d, yyyy')}</TableCell>
-              </TableRow>
-            ))}
-            {filteredLeads.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">No leads found matching your criteria.</TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Card>
 
-      <LeadDetailSheet leadId={selectedLeadId} open={!!selectedLeadId} onOpenChange={(open) => !open && setSelectedLeadId(null)} />
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Lead Name</th>
+              <th>Type</th>
+              <th>Service</th>
+              <th>Company</th>
+              <th>Value</th>
+              <th>Owner</th>
+              <th>Handler</th>
+              <th>Stage</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredLeads.slice(0, 12).map(lead => {
+              const tc = TYPE_CONFIG[lead.leadType || "cold"] || TYPE_CONFIG.cold;
+              return (
+                <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)}>
+                  <td>
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>{lead.leadName}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`badge ${tc.cls}`}>{tc.emoji} {tc.label}</span>
+                  </td>
+                  <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.serviceName || "—"}</td>
+                  <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.company || "—"}</td>
+                  <td style={{ fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--teal)", fontWeight: 600 }}>
+                    {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                      <div className="avatar avatar-sm">{resolveName(lead.leadOwner)[0]}</div>
+                      <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>{resolveName(lead.leadOwner)}</span>
+                    </div>
+                  </td>
+                  <td>
+                    {lead.dealHandler ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                        <div className="avatar avatar-sm avatar-purple">{resolveName(lead.dealHandler)[0]}</div>
+                        <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>{resolveName(lead.dealHandler)}</span>
+                      </div>
+                    ) : <span style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>—</span>}
+                  </td>
+                  <td>
+                    <span className={`badge ${STAGE_BADGE[lead.stage || "discovery"] || "badge-muted"}`}>
+                      {lead.stage}
+                    </span>
+                  </td>
+                  <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)", whiteSpace: "nowrap" }}>
+                    {format(new Date(lead.createdAt), "MMM d, yyyy")}
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredLeads.length === 0 && (
+              <tr>
+                <td colSpan={9}>
+                  <div className="empty-state">
+                    <div className="empty-state-icon"><Search size={20} /></div>
+                    <div className="empty-state-title">No leads found</div>
+                    <div className="empty-state-desc">Try adjusting your search or filter criteria</div>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <LeadDetailSheet
+        leadId={selectedLeadId}
+        open={!!selectedLeadId}
+        onOpenChange={open => !open && setSelectedLeadId(null)}
+      />
     </div>
   );
 }
 
-function StatCard({ title, value, className }: { title: string, value: string | number, className?: string }) {
+function StatCard({
+  label, value, icon, iconClass, sub
+}: {
+  label: string;
+  value: string | number;
+  icon: React.ReactNode;
+  iconClass: string;
+  sub?: string;
+}) {
   return (
-    <Card className={cn("p-5 glass relative overflow-hidden group hover:-translate-y-1 transition-transform duration-300", className)}>
-      <div className="absolute -inset-1 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[slide-in_1s_ease-in-out] pointer-events-none" />
-      <p className="text-sm font-medium text-muted-foreground tracking-wide mb-2">{title}</p>
-      <h3 className="text-3xl font-display font-bold tracking-tight text-foreground">{value}</h3>
-    </Card>
+    <div className="stat-card">
+      <div className="stat-card-header">
+        <span className="stat-card-label">{label}</span>
+        <div className={`stat-card-icon ${iconClass}`}>{icon}</div>
+      </div>
+      <div className="stat-card-value">{value}</div>
+      {sub && <div className="stat-card-sub">{sub}</div>}
+    </div>
   );
 }

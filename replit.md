@@ -12,12 +12,24 @@ Production-grade closed-circuit CRM system built as a pnpm monorepo. Features a 
 ## Tech Stack
 
 - **Monorepo**: pnpm workspaces
-- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui (custom dark cyberpunk theme)
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS v4 + custom CSS design system
+  - Fonts: **Syne** (display/headings) + **DM Sans** (body)
+  - Theme: dark cyberpunk, teal primary (`hsl(172 75% 48%)`), purple accent
+  - Design system: semantic CSS variables + utility classes (stat-card, badge-*, nav-item, kanban-*, sheet-tab, data-table, etc.)
 - **Backend**: Express 5 + Drizzle ORM + PostgreSQL
 - **Auth**: JWT (HS256) with whitelist-gating + 15-min inactivity timeout
 - **API Layer**: OpenAPI spec → Orval codegen → React Query hooks (Zod schemas)
 - **Database**: PostgreSQL (Drizzle Kit schema push)
 - **Email**: Nodemailer (SMTP, non-blocking)
+
+## Design System (index.css)
+
+Custom CSS design tokens — NOT relying on shadcn defaults for layout:
+- `--teal` / `--teal-dim` / `--teal-glow` — primary brand color
+- `--purple` / `--purple-dim` — accent
+- `--bg-base`, `--bg-elevated`, `--bg-overlay`, `--bg-subtle`, `--bg-muted` — background hierarchy
+- `--text-primary`, `--text-secondary`, `--text-muted` — text hierarchy
+- Utility classes: `.page`, `.page-header`, `.page-title`, `.stat-card`, `.chart-card`, `.badge-*`, `.nav-item.active`, `.kanban-column`, `.kanban-card`, `.sheet-tab`, `.data-table`, `.table-toolbar`, `.btn`, `.btn-primary`, `.btn-secondary`
 
 ## Features
 

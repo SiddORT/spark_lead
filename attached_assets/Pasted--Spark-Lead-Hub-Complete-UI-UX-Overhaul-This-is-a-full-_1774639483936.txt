@@ -1,0 +1,1203 @@
+🎨 Spark Lead Hub — Complete UI/UX Overhaul
+This is a full design system rebuild. Do NOT patch individual components. Rip out all existing styles and rebuild from a single unified design token system. Every screen, every component, every spacing value must come from this spec. Nothing is exempt.
+
+🔴 What's Broken (Audit of Current State)
+Before building, understand exactly what's wrong:
+
+No design token system — border-radius, spacing, shadows, and colors are hardcoded inconsistently across files. Some cards have rounded-lg, others rounded-xl, others rounded-md. This must be unified.
+Particle/star background — the animated starfield background is distracting, unprofessional, and visually noisy. It competes with content and makes text harder to read. Remove it entirely.
+Chart colors are wrong — Pipeline Stages bar chart uses a flat, solid purple/lilac that looks like a placeholder. Charts must use the proper neon color palette with gradients.
+Avg Conversion shows "-11" — negative days is a calculation bug. Fix: if resolved_at < created_at or no valid data, show "N/A" not a negative number.
+Analytics "Kill Reasons" labels — showing raw enum values (Feature_gap, Price) instead of formatted labels (Feature Gap, Price, Ghosted).
+Missing icons everywhere — stat cards on Dashboard, Analytics, and Team pages have no icons. Every stat card needs a contextual icon.
+Sidebar missing "Audit Log" nav item — it's visible in the document spec but missing from the rendered sidebar.
+Inconsistent page header typography — some pages use bold white, some use regular weight. Must be uniform.
+Leads table is missing columns — "Companies" and "Handler" columns are absent from the visible table.
+Lead type emojis not showing on Kanban cards — type emoji (🔥☀️🧊👻) must appear on each card.
+Card hover states missing — Kanban cards and table rows have no hover feedback.
+No page transition animations — pages snap in with no animation.
+Button inconsistency — "Export CSV", "Add Company", "Add Service", "Invite User" buttons look different across pages (different radius, padding, font weight).
+Form inputs look flat — no visible focus ring using the neon primary color.
+Sidebar active state is too heavy — current teal background on active item is too saturated and bleed-y. Needs refinement.
+Modal/dialog styling — "Invite User" dialog lacks the glass morphism treatment. It looks like a default browser dialog.
+Permission toggles have no label alignment — role column headers and toggle columns are misaligned on smaller viewports.
+No empty states — pages with no data show blank white space. Every list/table needs a designed empty state.
+Spacing is inconsistent — some sections have 24px gaps, others 48px, others 8px, with no system behind it.
+Deal Kill Reasons bar chart Y-axis labels are raw enum strings, not title-cased readable labels.
+
+
+🏗️ Step 1 — Rebuild the Design Token System
+Create a single source of truth. All tokens in index.css (or a dedicated tokens.css imported globally). Every styled element in the app must reference these variables — no hardcoded values anywhere.
+css/* ============================================
+   SPARK LEAD HUB — DESIGN TOKENS
+   ============================================ */
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  /* --- Backgrounds --- */
+  --bg-base:        hsl(222, 22%, 6%);      /* deepest background — page canvas */
+  --bg-elevated:    hsl(222, 20%, 9%);      /* cards, panels */
+  --bg-overlay:     hsl(222, 18%, 12%);     /* dropdowns, tooltips, modals */
+  --bg-subtle:      hsl(222, 16%, 14%);     /* table row hover, input bg */
+  --bg-muted:       hsl(222, 14%, 18%);     /* disabled states, dividers */
+
+  /* --- Borders --- */
+  --border-subtle:  hsl(222, 15%, 20%);     /* card edges, table lines */
+  --border-default: hsl(222, 15%, 25%);     /* input borders */
+  --border-strong:  hsl(222, 15%, 35%);     /* focus rings base */
+
+  /* --- Brand / Accent Colors --- */
+  --teal:           hsl(172, 75%, 48%);     /* primary CTA, active nav, links */
+  --teal-dim:       hsl(172, 75%, 48%, 0.15); /* teal tinted backgrounds */
+  --teal-glow:      0 0 12px hsl(172, 75%, 48%, 0.4), 0 0 40px hsl(172, 75%, 48%, 0.15);
+  --purple:         hsl(262, 65%, 62%);     /* accent, charts secondary */
+  --purple-dim:     hsl(262, 65%, 62%, 0.15);
+
+  /* --- Semantic Colors --- */
+  --success:        hsl(152, 60%, 44%);
+  --success-dim:    hsl(152, 60%, 44%, 0.12);
+  --warning:        hsl(38, 90%, 54%);
+  --warning-dim:    hsl(38, 90%, 54%, 0.12);
+  --danger:         hsl(0, 70%, 58%);
+  --danger-dim:     hsl(0, 70%, 58%, 0.12);
+  --info:           hsl(210, 80%, 58%);
+  --info-dim:       hsl(210, 80%, 58%, 0.12);
+
+  /* --- Text --- */
+  --text-primary:   hsl(210, 30%, 94%);     /* headings, important values */
+  --text-secondary: hsl(210, 20%, 65%);     /* labels, secondary info */
+  --text-muted:     hsl(210, 15%, 45%);     /* placeholders, disabled */
+  --text-inverse:   hsl(222, 22%, 6%);      /* text on colored backgrounds */
+
+  /* --- Spacing Scale (4px base) --- */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* --- Border Radius (UNIFORM — use only these values) --- */
+  --radius-sm:   6px;    /* badges, tags, small elements */
+  --radius-md:   10px;   /* inputs, buttons, small cards */
+  --radius-lg:   14px;   /* cards, panels, modals */
+  --radius-xl:   20px;   /* large feature cards */
+  --radius-full: 9999px; /* pills, avatars */
+
+  /* --- Typography --- */
+  --font-display: 'Syne', sans-serif;      /* headings, brand, stats */
+  --font-body:    'DM Sans', sans-serif;   /* everything else */
+
+  /* --- Font Sizes --- */
+  --text-xs:   11px;
+  --text-sm:   13px;
+  --text-base: 15px;
+  --text-lg:   17px;
+  --text-xl:   20px;
+  --text-2xl:  24px;
+  --text-3xl:  30px;
+  --text-4xl:  38px;
+
+  /* --- Shadows --- */
+  --shadow-sm:  0 1px 3px hsl(222, 22%, 3%, 0.4);
+  --shadow-md:  0 4px 16px hsl(222, 22%, 3%, 0.5);
+  --shadow-lg:  0 8px 32px hsl(222, 22%, 3%, 0.6);
+  --shadow-card: 0 2px 8px hsl(222, 22%, 3%, 0.5), inset 0 1px 0 hsl(210, 30%, 94%, 0.04);
+
+  /* --- Transitions --- */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+Apply base styles globally:
+css* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Remove ALL particle / star / animated background effects */
+/* Remove any canvas elements, ::before/::after starfield pseudos, animation keyframes for particles */
+
+h1, h2, h3, h4, h5, h6, .stat-value, .brand-text {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+a { color: var(--teal); text-decoration: none; }
+a:hover { opacity: 0.85; }
+
+::selection { background: hsl(172, 75%, 48%, 0.25); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+🏗️ Step 2 — Rebuild Every Reusable Component
+Card
+css.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-6);
+}
+
+.card:hover {
+  border-color: var(--border-default);
+  transition: border-color var(--transition-base);
+}
+
+/* Glass variant — for modals, overlays */
+.card-glass {
+  background: hsl(222, 20%, 9%, 0.75);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid hsl(210, 30%, 94%, 0.06);
+}
+Stat Card (used on Dashboard, Team, Analytics)
+Every stat card must follow this exact structure:
+tsx<div className="stat-card">
+  <div className="stat-card-header">
+    <span className="stat-card-label">Total Leads</span>
+    <div className="stat-card-icon stat-icon-teal">
+      <UsersIcon size={16} />
+    </div>
+  </div>
+  <div className="stat-card-value">6</div>
+  <div className="stat-card-sub">+2 this week</div>
+</div>
+css.stat-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-base), border-color var(--transition-base);
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-default);
+}
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+.stat-card-label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.stat-card-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+}
+.stat-icon-teal    { background: var(--teal-dim);    color: var(--teal); }
+.stat-icon-warning { background: var(--warning-dim); color: var(--warning); }
+.stat-icon-success { background: var(--success-dim); color: var(--success); }
+.stat-icon-danger  { background: var(--danger-dim);  color: var(--danger); }
+.stat-icon-purple  { background: var(--purple-dim);  color: var(--purple); }
+
+.stat-card-value {
+  font-family: var(--font-display);
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.stat-card-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+Stat Card Icons — Assign specifically:
+CardIconColor ClassTotal Leads<Users />stat-icon-tealHot Leads 🔥<Flame />stat-icon-warningClosed Deals<CheckCircle2 />stat-icon-successIn Progress<Activity />stat-icon-purplePipeline Value ₹<TrendingUp />stat-icon-tealWin Rate<Target />stat-icon-successAvg Conversion<Clock />stat-icon-tealActive Pipeline<Layers />stat-icon-purpleLost Deals<XCircle />stat-icon-dangerTotal Members<Users />stat-icon-tealAdmins<ShieldCheck />stat-icon-purpleLead Owners<UserCheck />stat-icon-successPending Requests<Bell />stat-icon-warning
+Button
+css/* Base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-4);
+  height: 38px;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* Primary — teal fill */
+.btn-primary {
+  background: var(--teal);
+  color: var(--text-inverse);
+  border-color: var(--teal);
+}
+.btn-primary:hover {
+  background: hsl(172, 75%, 44%);
+  box-shadow: var(--teal-glow);
+  transform: translateY(-1px);
+}
+
+/* Secondary — outlined */
+.btn-secondary {
+  background: transparent;
+  color: var(--teal);
+  border-color: var(--teal);
+}
+.btn-secondary:hover {
+  background: var(--teal-dim);
+}
+
+/* Ghost — no border */
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+/* Danger */
+.btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-danger:hover {
+  background: var(--danger-dim);
+}
+
+/* Sizes */
+.btn-sm { height: 32px; padding: 0 var(--space-3); font-size: var(--text-xs); border-radius: var(--radius-sm); }
+.btn-lg { height: 44px; padding: 0 var(--space-6); font-size: var(--text-base); }
+
+/* Icon-only */
+.btn-icon { width: 34px; height: 34px; padding: 0; border-radius: var(--radius-sm); }
+Input / Select
+css.input, .select, textarea {
+  width: 100%;
+  height: 40px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  padding: 0 var(--space-3);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+}
+.input::placeholder, textarea::placeholder { color: var(--text-muted); }
+.input:focus, .select:focus, textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px hsl(172, 75%, 48%, 0.15);
+}
+textarea { height: auto; padding: var(--space-3); resize: vertical; line-height: 1.6; }
+
+.input-label {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-2);
+}
+Badge
+css.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.03em;
+  text-transform: capitalize;
+}
+.badge-teal    { background: var(--teal-dim);    color: var(--teal); }
+.badge-purple  { background: var(--purple-dim);  color: var(--purple); }
+.badge-success { background: var(--success-dim); color: var(--success); }
+.badge-warning { background: var(--warning-dim); color: var(--warning); }
+.badge-danger  { background: var(--danger-dim);  color: var(--danger); }
+.badge-muted   { background: var(--bg-muted);    color: var(--text-muted); }
+
+/* Lead type badges */
+.badge-hot     { background: var(--danger-dim);  color: var(--danger); }
+.badge-warm    { background: var(--warning-dim); color: var(--warning); }
+.badge-cold    { background: var(--info-dim);    color: var(--info); }
+.badge-ghosted { background: var(--bg-muted);    color: var(--text-muted); }
+
+/* Role badges */
+.badge-admin        { background: var(--purple-dim); color: var(--purple); }
+.badge-lead-owner   { background: var(--teal-dim);   color: var(--teal); }
+.badge-deal-handler { background: var(--info-dim);   color: var(--info); }
+
+/* Stage badges */
+.badge-discovery     { background: var(--bg-muted);    color: var(--text-muted); }
+.badge-qualification { background: var(--warning-dim); color: var(--warning); }
+.badge-strategy      { background: var(--purple-dim);  color: var(--purple); }
+.badge-resolution    { background: var(--success-dim); color: var(--success); }
+Table
+css.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+.data-table thead th {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+.data-table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background var(--transition-fast);
+  cursor: pointer;
+}
+.data-table tbody tr:hover {
+  background: var(--bg-subtle);
+}
+.data-table tbody td {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+.data-table tbody td:first-child {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.data-table tbody tr:last-child { border-bottom: none; }
+Avatar
+css.avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--radius-full);
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+.avatar-sm { width: 24px; height: 24px; font-size: 10px; }
+.avatar-lg { width: 40px; height: 40px; font-size: var(--text-base); }
+Divider
+css.divider { border: none; border-top: 1px solid var(--border-subtle); margin: var(--space-6) 0; }
+Empty State
+css.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+  gap: var(--space-3);
+}
+.empty-state-icon {
+  width: 48px; height: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+.empty-state-title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 600; color: var(--text-primary); }
+.empty-state-desc  { font-size: var(--text-sm); color: var(--text-muted); max-width: 320px; line-height: 1.6; }
+
+🏗️ Step 3 — Rebuild the Sidebar
+css.sidebar {
+  width: 240px; /* expanded */
+  min-width: 240px;
+  height: 100vh;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width var(--transition-slow), min-width var(--transition-slow);
+  z-index: 50;
+}
+.sidebar.collapsed { width: 60px; min-width: 60px; }
+
+/* Brand */
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-3);
+}
+.sidebar-brand-icon {
+  width: 32px; height: 32px;
+  background: var(--teal-dim);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+.sidebar-brand-text {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Nav sections */
+.sidebar-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: var(--space-3) var(--space-4) var(--space-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar.collapsed .sidebar-section-label { opacity: 0; height: 0; padding: 0; margin: 0; }
+
+/* Nav items */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  margin: 1px var(--space-2);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  overflow: hidden;
+  text-decoration: none;
+  position: relative;
+}
+.nav-item:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.nav-item.active {
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-weight: 600;
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 2px;
+  background: var(--teal);
+  border-radius: 0 2px 2px 0;
+}
+.nav-item-icon {
+  width: 18px; height: 18px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: var(--space-2);
+  margin: 1px var(--space-2);
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border-subtle);
+  padding: var(--space-4);
+}
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  overflow: hidden;
+}
+.sidebar-user-info { overflow: hidden; }
+.sidebar-user-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-user-email {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+Sidebar Nav Items with Icons (use Lucide React icons):
+tsx// Main
+{ label: 'Dashboard',    icon: <LayoutDashboard size={16} />, path: '/' }
+{ label: 'Kanban Board', icon: <Kanban size={16} />,          path: '/kanban' }
+{ label: 'New Lead',     icon: <PlusCircle size={16} />,      path: '/leads/new' }
+
+// Master Data
+{ label: 'Companies',   icon: <Building2 size={16} />,  path: '/master/companies' }
+{ label: 'Services',    icon: <Briefcase size={16} />,  path: '/master/services' }
+
+// Administration
+{ label: 'Analytics',   icon: <BarChart3 size={16} />,  path: '/analytics' }
+{ label: 'Team',        icon: <Users size={16} />,      path: '/team' }
+{ label: 'Permissions', icon: <ShieldCheck size={16} />, path: '/settings/permissions' }
+{ label: 'Audit Log',   icon: <ScrollText size={16} />, path: '/audit' }  // ← ADD THIS, currently missing
+
+🏗️ Step 4 — Page Layout Shell
+css.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-base);
+}
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.page {
+  padding: var(--space-8) var(--space-10);
+  max-width: 1400px;
+  animation: page-enter var(--transition-slow) both;
+}
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Page Header — uniform across ALL pages */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--space-8);
+  gap: var(--space-4);
+}
+.page-title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.page-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  margin-top: var(--space-1);
+}
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+
+🏗️ Step 5 — Fix Every Page
+Dashboard (/)
+Stats grid:
+tsx<div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-4)', marginBottom: 'var(--space-6)' }}>
+  <StatCard label="Total Leads"     value={6}         icon={<Users />}       colorClass="stat-icon-teal" />
+  <StatCard label="Hot Leads"       value={2}         icon={<Flame />}       colorClass="stat-icon-warning" suffix="🔥" />
+  <StatCard label="Closed Deals"    value={1}         icon={<CheckCircle2 />} colorClass="stat-icon-success" />
+  <StatCard label="In Progress"     value={4}         icon={<Activity />}    colorClass="stat-icon-purple" />
+  <StatCard label="Pipeline Value"  value="₹12.2L"   icon={<TrendingUp />}  colorClass="stat-icon-teal" />
+</div>
+Charts section:
+css.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.chart-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+.chart-title {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-5);
+}
+Chart color fixes:
+
+Area chart (Lead Generation): stroke var(--teal), fill gradient from hsl(172,75%,48%,0.2) to transparent
+Bar chart (Pipeline Stages): use per-stage colors:
+
+Discovery: hsl(210, 15%, 45%) (muted)
+Qualification: var(--warning)
+Strategy: var(--purple)
+Resolution: var(--success)
+
+
+
+Leads table — add ALL columns:
+Lead Name | Type (badge+emoji) | Service | Companies | Deal Value | Owner | Handler | Stage (badge) | Outcome | Created
+Search + Filter bar:
+css.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+.search-input-wrapper svg {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%; transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.search-input-wrapper .input {
+  padding-left: 36px;
+}
+
+Kanban Board (/kanban)
+Column headers — 4 distinct colored top borders:
+css.kanban-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(280px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+  padding-bottom: var(--space-8);
+}
+.kanban-column {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.kanban-column-header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.kanban-column-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.kanban-column-count {
+  background: var(--bg-subtle);
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+}
+/* Column accent borders and colors */
+.col-discovery    { border-top: 2px solid hsl(210, 15%, 45%); }
+.col-qualification { border-top: 2px solid var(--warning); }
+.col-strategy     { border-top: 2px solid var(--purple); }
+.col-resolution   { border-top: 2px solid var(--success); }
+.col-discovery    .kanban-column-title { color: var(--text-muted); }
+.col-qualification .kanban-column-title { color: var(--warning); }
+.col-strategy     .kanban-column-title { color: var(--purple); }
+.col-resolution   .kanban-column-title { color: var(--success); }
+
+.kanban-cards { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); min-height: 200px; }
+Kanban Card:
+css.kanban-card {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+.kanban-card:hover {
+  border-color: var(--border-default);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.kanban-card.dragging {
+  box-shadow: var(--teal-glow);
+  border-color: var(--teal);
+  transform: rotate(1deg) scale(1.02);
+}
+.kanban-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.kanban-card-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+.kanban-card-company {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-bottom: var(--space-3);
+}
+.kanban-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.kanban-card-value {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--teal);
+}
+.kanban-card-avatars {
+  display: flex;
+  gap: -var(--space-1);
+}
+
+Lead Detail Sheet
+css.lead-sheet-overlay {
+  position: fixed; inset: 0;
+  background: hsl(222, 22%, 3%, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+}
+.lead-sheet {
+  position: fixed;
+  right: 0; top: 0; bottom: 0;
+  width: min(600px, 100vw);
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: sheet-enter var(--transition-slow) both;
+  z-index: 101;
+}
+@keyframes sheet-enter {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+.lead-sheet-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.lead-sheet-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+.lead-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-6);
+}
+Milestone progress bar:
+css.milestone-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-overlay);
+}
+.milestone {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+}
+.milestone-dot {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  border: 2px solid var(--border-default);
+  background: var(--bg-overlay);
+  color: var(--text-muted);
+  transition: all var(--transition-base);
+}
+.milestone-dot.complete { background: var(--success-dim); border-color: var(--success); color: var(--success); }
+.milestone-dot.locked   { background: var(--bg-muted); border-color: var(--border-subtle); color: var(--text-muted); }
+.milestone-dot.active   { background: var(--teal-dim); border-color: var(--teal); color: var(--teal); }
+.milestone-label { font-size: var(--text-xs); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.milestone-connector {
+  height: 1px; flex: 1;
+  background: var(--border-subtle);
+  margin: 0 var(--space-2);
+}
+.milestone-connector.complete { background: var(--success); }
+Tabs:
+css.sheet-tabs { display: flex; border-bottom: 1px solid var(--border-subtle); padding: 0 var(--space-6); gap: var(--space-1); }
+.sheet-tab {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.sheet-tab:hover { color: var(--text-primary); }
+.sheet-tab.active { color: var(--teal); border-bottom-color: var(--teal); font-weight: 600; }
+
+/* Locked tab state */
+.sheet-tab-locked { opacity: 0.4; cursor: not-allowed; }
+.tab-content-locked {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: var(--space-16) var(--space-8); gap: var(--space-3); text-align: center;
+}
+.lock-icon-wrap {
+  width: 48px; height: 48px; border-radius: var(--radius-lg);
+  background: var(--bg-subtle); display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+}
+
+Analytics Page (/analytics)
+Fix "Avg Conversion" negative value:
+ts// In computation:
+const avgConversionDays = resolvedLeads.length > 0
+  ? Math.round(
+      resolvedLeads
+        .filter(l => l.resolved_at && new Date(l.resolved_at) > new Date(l.created_at))
+        .reduce((sum, l) => sum + differenceInDays(new Date(l.resolved_at!), new Date(l.created_at)), 0)
+      / Math.max(resolvedLeads.filter(l => l.resolved_at && new Date(l.resolved_at) > new Date(l.created_at)).length, 1)
+    )
+  : null;
+
+// Display: avgConversionDays ?? 'N/A'
+Fix Kill Reason labels — format enum to readable:
+tsconst killReasonLabels: Record<string, string> = {
+  feature_gap: 'Feature Gap',
+  price:       'Price',
+  ghosted:     'Ghosted',
+};
+// Use killReasonLabels[reason] when rendering chart Y-axis and tooltips
+Chart colors for Analytics:
+
+Lead Volume Trend area: stroke var(--teal), gradient fill
+Weekly Conversion Rate area: stroke var(--purple), gradient fill
+Kill Reasons horizontal bar: var(--danger) bars with var(--danger-dim) background
+
+
+Team Management (/team)
+Tab styling:
+css.page-tabs {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+  width: fit-content;
+  margin-bottom: var(--space-6);
+}
+.page-tab {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  border-radius: calc(var(--radius-md) - 2px);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.page-tab:hover { color: var(--text-primary); }
+.page-tab.active {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+Status badge for active/disabled:
+tsx// active  → <span className="badge badge-success">active</span>
+// disabled → <span className="badge badge-danger">disabled</span>
+
+Permissions Page (/settings/permissions)
+css.permissions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.permission-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.permission-section-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-overlay);
+}
+.permission-section-dot {
+  width: 8px; height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--teal);
+}
+.permission-section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.permission-table { width: 100%; border-collapse: collapse; }
+.permission-table th {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  text-align: center;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.permission-table th:first-child { text-align: left; }
+.permission-table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+.permission-table td:first-child { text-align: left; }
+.permission-table tr:last-child td { border-bottom: none; }
+
+/* System Diagnostics */
+.diagnostics-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  margin-top: var(--space-6);
+}
+.diagnostics-header {
+  display: flex; align-items: center; gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+.diagnostics-title {
+  font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; color: var(--text-primary);
+}
+.diagnostics-desc { font-size: var(--text-sm); color: var(--text-muted); margin-bottom: var(--space-5); }
+.diagnostics-actions { display: flex; gap: var(--space-3); }
+
+Modal / Dialog (used in Invite User, Add Company, Add Service, etc.)
+css.modal-backdrop {
+  position: fixed; inset: 0;
+  background: hsl(222, 22%, 3%, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-4);
+  animation: fade-in 150ms ease both;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  animation: modal-enter var(--transition-slow) both;
+}
+@keyframes modal-enter {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+.modal-title { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; color: var(--text-primary); }
+.modal-desc  { font-size: var(--text-sm); color: var(--text-muted); margin-top: var(--space-1); }
+.modal-close {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--text-muted); transition: all var(--transition-fast);
+}
+.modal-close:hover { background: var(--bg-subtle); color: var(--text-primary); }
+
+.modal-body { display: flex; flex-direction: column; gap: var(--space-5); }
+.modal-footer {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: var(--space-3); margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Form field */
+.field { display: flex; flex-direction: column; gap: var(--space-2); }
+
+🏗️ Step 6 — Remove All of These
+Find and delete every instance of:
+
+Any CSS class or inline style creating an animated particle/star/dot background (canvas elements, particleCanvas, background animation keyframes for floating dots/stars)
+Any background-image using radial gradients for star effects
+Any ::before or ::after pseudo-elements rendering background patterns
+All hardcoded pixel values for spacing (replace with var(--space-X))
+All hardcoded hex/rgb color values (replace with design token variables)
+All mixed rounded- Tailwind classes — standardize to var(--radius-X) or use consistent Tailwind classes rounded-[10px], rounded-[14px], rounded-[6px] only
+The weird teal border on sidebar active item that spans full width — replace with the subtle left-border indicator in the nav-item spec above
+
+
+🏗️ Step 7 — Audit Log Page (/audit)
+Add this page to sidebar (it's missing from current nav). It's already built in backend.
+css.audit-table-action-delete      { color: var(--danger); }
+.audit-table-action-permission  { color: var(--warning); }
+.audit-table-action-status      { color: var(--teal); }
+.audit-details-json {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+🏗️ Step 8 — Toggle Switch Component
+Used in Permissions page. Must be custom-styled, not browser default:
+css.toggle {
+  position: relative;
+  width: 40px; height: 22px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--bg-muted);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-default);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+.toggle-thumb {
+  position: absolute;
+  width: 16px; height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--text-muted);
+  top: 2px; left: 2px;
+  transition: all var(--transition-base);
+}
+.toggle input:checked + .toggle-track { background: var(--teal-dim); border-color: var(--teal); }
+.toggle input:checked + .toggle-track .toggle-thumb { background: var(--teal); transform: translateX(18px); }
+.toggle input:disabled + .toggle-track { opacity: 0.4; cursor: not-allowed; }
+
+🏗️ Step 9 — Pagination Component
+css.pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+}
+.pagination-info { font-size: var(--text-xs); color: var(--text-muted); }
+.pagination-controls { display: flex; align-items: center; gap: var(--space-1); }
+.page-btn {
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--text-xs); font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.page-btn:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.page-btn.active { background: var(--teal-dim); color: var(--teal); border-color: var(--teal); }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+✅ Final Checklist — Do Not Ship Until All Pass
+
+ Zero hardcoded color values outside of tokens.css
+ Zero hardcoded spacing values — all use var(--space-X)
+ Zero inconsistent border-radius — only --radius-sm/md/lg/xl/full
+ Zero particle/star backgrounds anywhere
+ All 5 Dashboard stat cards have icons
+ All 4 Analytics stat cards have icons
+ All 4 Team stat cards have icons
+ Sidebar has all 9 nav items including "Audit Log"
+ Kanban cards show lead type emoji
+ Kanban drag produces neon glow on dragging card
+ Pipeline Stages bar chart uses 4 distinct colors (not all purple)
+ Analytics avg conversion shows N/A not negative number
+ Kill reason labels are title-cased (Feature Gap, Price, Ghosted)
+ Empty states exist for: leads table, kanban columns, companies list, services list, team members, access requests, audit log
+ All modals use var(--bg-elevated) with border-radius: var(--radius-xl)
+ All buttons uniform — same height (38px default), same border-radius (var(--radius-md))
+ All inputs uniform — same height (40px), same focus ring (teal, 3px)
+ Page transitions animate on every route change
+ Active sidebar item uses left-border indicator, NOT full-width fill
+ Audit Log page is linked in sidebar and renders correctly
+ No layout shifts or overflow issues at 1280px, 1440px, 1920px viewports
+ Syne font loads and applies to all headings and stat values
+ DM Sans font loads and applies to all body text
+ShareContentpdf(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.nonce='qK1oC+0mUmwwl3dQV9QDdA==';d.innerHTML="window.__CF$cv$params={r:'9e304d626be884da',t:'MTc3NDYzNDUwNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='qK1oC+0mUmwwl3dQV9QDdA==';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
