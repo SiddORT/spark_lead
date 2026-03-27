@@ -5,10 +5,19 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "seed": "tsx ./src/seed.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "@workspace/db": "workspace:*",
+    "bcryptjs": "^3.0.2",
+    "drizzle-orm": "catalog:",
+    "uuid": "^11.1.0"
+  },
   "devDependencies": {
+    "@types/bcryptjs": "*",
     "@types/node": "catalog:",
+    "@types/uuid": "*",
     "tsx": "catalog:"
   }
 }

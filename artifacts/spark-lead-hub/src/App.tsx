@@ -1,0 +1,103 @@
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider, ProtectedRoute } from "@/components/auth-provider";
+import { Layout } from "@/components/layout";
+import { Dashboard } from "@/pages/dashboard";
+import { KanbanBoard } from "@/pages/kanban";
+import { NewLead } from "@/pages/leads-new";
+import { Analytics } from "@/pages/analytics";
+import { Team } from "@/pages/team";
+import { Companies, Services } from "@/pages/master-data";
+import { Permissions, AuditLog } from "@/pages/admin";
+import NotFound from "@/pages/not-found";
+import { AuthPage } from "@/pages/auth";
+import { RequestAccess } from "@/pages/request-access";
+import { AccessDenied } from "@/pages/access-denied";
+import { SetPassword } from "@/pages/set-password";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30000,
+    },
+  },
+});
+
+function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ProtectedRoute>
+      <Layout>{children}</Layout>
+    </ProtectedRoute>
+  );
+}
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/auth" component={AuthPage} />
+      <Route path="/request-access" component={RequestAccess} />
+      <Route path="/access-denied" component={AccessDenied} />
+      <Route path="/set-password" component={SetPassword} />
+
+      <Route path="/">
+        <ProtectedLayout><Dashboard /></ProtectedLayout>
+      </Route>
+      <Route path="/kanban">
+        <ProtectedLayout><KanbanBoard /></ProtectedLayout>
+      </Route>
+      <Route path="/leads/new">
+        <ProtectedLayout><NewLead /></ProtectedLayout>
+      </Route>
+      <Route path="/analytics">
+        <ProtectedLayout><Analytics /></ProtectedLayout>
+      </Route>
+      <Route path="/team">
+        <ProtectedLayout><Team /></ProtectedLayout>
+      </Route>
+      <Route path="/master/companies">
+        <ProtectedLayout><Companies /></ProtectedLayout>
+      </Route>
+      <Route path="/master/services">
+        <ProtectedLayout><Services /></ProtectedLayout>
+      </Route>
+      <Route path="/settings/permissions">
+        <ProtectedLayout><Permissions /></ProtectedLayout>
+      </Route>
+      <Route path="/audit">
+        <ProtectedLayout><AuditLog /></ProtectedLayout>
+      </Route>
+
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <AuthProvider>
+            <Router />
+          </AuthProvider>
+        </WouterRouter>
+        <Toaster
+          theme="dark"
+          position="bottom-right"
+          toastOptions={{
+            style: {
+              background: "hsl(220 18% 10%)",
+              border: "1px solid hsl(220 15% 18%)",
+              color: "hsl(210 40% 92%)",
+            },
+          }}
+        />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

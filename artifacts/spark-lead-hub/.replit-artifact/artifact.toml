@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Spark Lead Hub"
+version = "1.0.0"
+id = "artifacts/spark-lead-hub"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23779
+
+[services.development]
+run = "pnpm --filter @workspace/spark-lead-hub run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/spark-lead-hub", "run", "build" ]
+publicDir = "artifacts/spark-lead-hub/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23779"
+BASE_PATH = "/"

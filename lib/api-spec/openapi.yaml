@@ -1,22 +1,39 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Spark Lead Hub API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: leads
+    description: Lead management
+  - name: companies
+    description: Company master data
+  - name: services
+    description: Service master data
+  - name: team
+    description: Team management
+  - name: analytics
+    description: Analytics and reporting
+  - name: audit
+    description: Audit log
+  - name: permissions
+    description: Permission management
+  - name: access
+    description: Access requests
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +41,908 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /auth/set-password:
+    post:
+      operationId: setPassword
+      tags: [auth]
+      summary: Set password via token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetPasswordRequest"
+      responses:
+        "200":
+          description: Password set successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /access-requests:
+    post:
+      operationId: submitAccessRequest
+      tags: [access]
+      summary: Submit public access request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AccessRequestInput"
+      responses:
+        "201":
+          description: Request submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "409":
+          description: Already submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      operationId: getAccessRequests
+      tags: [access]
+      summary: List access requests (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+      responses:
+        "200":
+          description: Access requests list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AccessRequest"
+
+  /access-requests/{id}/approve:
+    post:
+      operationId: approveAccessRequest
+      tags: [access]
+      summary: Approve access request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /access-requests/{id}/reject:
+    post:
+      operationId: rejectAccessRequest
+      tags: [access]
+      summary: Reject access request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /leads:
+    get:
+      operationId: getLeads
+      tags: [leads]
+      summary: Get leads
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Leads list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Create lead
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLeadInput"
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}:
+    get:
+      operationId: getLead
+      tags: [leads]
+      summary: Get lead by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      summary: Update lead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLeadInput"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+    delete:
+      operationId: deleteLead
+      tags: [leads]
+      summary: Delete lead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /leads/{id}/notes:
+    get:
+      operationId: getLeadNotes
+      tags: [leads]
+      summary: Get lead notes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeadNote"
+
+    post:
+      operationId: addLeadNote
+      tags: [leads]
+      summary: Add note to lead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddNoteInput"
+      responses:
+        "201":
+          description: Note added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadNote"
+
+  /leads/{id}/notes/{noteId}:
+    patch:
+      operationId: updateLeadNote
+      tags: [leads]
+      summary: Update a note
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateNoteInput"
+      responses:
+        "200":
+          description: Note updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeadNote"
+
+    delete:
+      operationId: deleteLeadNote
+      tags: [leads]
+      summary: Delete a note
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: noteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Note deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /leads/{id}/activities:
+    get:
+      operationId: getLeadActivities
+      tags: [leads]
+      summary: Get lead activity log
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeadActivity"
+
+  /leads/export/csv:
+    get:
+      operationId: exportLeadsCsv
+      tags: [leads]
+      summary: Export leads as CSV
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /companies:
+    get:
+      operationId: getCompanies
+      tags: [companies]
+      summary: Get companies
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Companies list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Company"
+
+    post:
+      operationId: createCompany
+      tags: [companies]
+      summary: Create company
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCompanyInput"
+      responses:
+        "201":
+          description: Company created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+  /companies/{id}:
+    patch:
+      operationId: updateCompany
+      tags: [companies]
+      summary: Update company
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCompanyInput"
+      responses:
+        "200":
+          description: Updated company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+    delete:
+      operationId: deleteCompany
+      tags: [companies]
+      summary: Delete company
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /services:
+    get:
+      operationId: getServices
+      tags: [services]
+      summary: Get services
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Services list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Service"
+
+    post:
+      operationId: createService
+      tags: [services]
+      summary: Create service
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServiceInput"
+      responses:
+        "201":
+          description: Service created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+  /services/{id}:
+    patch:
+      operationId: updateService
+      tags: [services]
+      summary: Update service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateServiceInput"
+      responses:
+        "200":
+          description: Updated service
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+
+    delete:
+      operationId: deleteService
+      tags: [services]
+      summary: Delete service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /services/{id}/companies:
+    get:
+      operationId: getServiceCompanies
+      tags: [services]
+      summary: Get companies linked to a service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Company"
+
+    put:
+      operationId: linkServiceCompanies
+      tags: [services]
+      summary: Update company links for a service
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkCompaniesInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /team/members:
+    get:
+      operationId: getTeamMembers
+      tags: [team]
+      summary: Get team members
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TeamMember"
+
+  /team/members/{id}:
+    patch:
+      operationId: updateTeamMember
+      tags: [team]
+      summary: Update team member (role/status)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTeamMemberInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+    delete:
+      operationId: deleteTeamMember
+      tags: [team]
+      summary: Delete team member (full cascade)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /team/invite:
+    post:
+      operationId: inviteUser
+      tags: [team]
+      summary: Invite a new user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteUserInput"
+      responses:
+        "201":
+          description: Invited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /team/users:
+    get:
+      operationId: getUsersMap
+      tags: [team]
+      summary: Get user map (id to display name)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserMapEntry"
+
+  /permissions:
+    get:
+      operationId: getPermissions
+      tags: [permissions]
+      summary: Get all role permissions
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Permissions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RolePermission"
+
+    put:
+      operationId: updatePermission
+      tags: [permissions]
+      summary: Update a permission
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePermissionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /permissions/test-email/activity:
+    post:
+      operationId: sendTestActivityEmail
+      tags: [permissions]
+      summary: Send test activity email
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /permissions/test-email/password:
+    post:
+      operationId: sendTestPasswordEmail
+      tags: [permissions]
+      summary: Send test password email
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /audit:
+    get:
+      operationId: getAuditLog
+      tags: [audit]
+      summary: Get audit log
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditEntry"
+
+  /analytics/stats:
+    get:
+      operationId: getAnalyticsStats
+      tags: [analytics]
+      summary: Get analytics stats
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsStats"
+
+  /analytics/lead-trend:
+    get:
+      operationId: getLeadTrend
+      tags: [analytics]
+      summary: Lead creation trend last 30 days
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendPoint"
+
+  /analytics/stage-distribution:
+    get:
+      operationId: getStageDistribution
+      tags: [analytics]
+      summary: Lead count per stage
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Distribution
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StageCount"
+
+  /analytics/kill-reasons:
+    get:
+      operationId: getKillReasons
+      tags: [analytics]
+      summary: Kill reason counts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Kill reasons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/KillReasonCount"
+
+  /analytics/weekly-conversion:
+    get:
+      operationId: getWeeklyConversion
+      tags: [analytics]
+      summary: Weekly conversion rate last 8 weeks
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Weekly conversion
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeeklyConversion"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +952,790 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+      required:
+        - message
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        permissions:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: boolean
+      required:
+        - token
+        - user
+        - permissions
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+        isWhitelisted:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - email
+        - displayName
+        - role
+        - isWhitelisted
+        - createdAt
+
+    SetPasswordRequest:
+      type: object
+      properties:
+        token:
+          type: string
+        password:
+          type: string
+      required:
+        - token
+        - password
+
+    AccessRequestInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        reason:
+          type: string
+      required:
+        - name
+        - email
+
+    AccessRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        reason:
+          type: string
+        status:
+          type: string
+        reviewedBy:
+          type: string
+          nullable: true
+        reviewedAt:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - status
+        - createdAt
+
+    Lead:
+      type: object
+      properties:
+        id:
+          type: string
+        leadName:
+          type: string
+        createdBy:
+          type: string
+        stage:
+          type: string
+          enum: [discovery, qualification, strategy, resolution]
+        leadType:
+          type: string
+          enum: [hot, warm, cold, ghosted]
+          nullable: true
+        contactEmail:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        serviceId:
+          type: string
+          nullable: true
+        serviceName:
+          type: string
+          nullable: true
+        company:
+          type: string
+          nullable: true
+        leadOwner:
+          type: string
+          nullable: true
+        dealHandler:
+          type: string
+          nullable: true
+        dealValue:
+          type: string
+          nullable: true
+        value:
+          type: string
+          nullable: true
+        followUpDate:
+          type: string
+          nullable: true
+        nextAction:
+          type: string
+          nullable: true
+        sourceContext:
+          type: string
+          nullable: true
+        emotionalState:
+          type: string
+          enum: [skeptical, enthusiastic, frustrated]
+          nullable: true
+        decisionRole:
+          type: string
+          enum: [champion, gatekeeper, economic_buyer]
+          nullable: true
+        strategicTier:
+          type: string
+          enum: [high, med, low]
+          nullable: true
+        customHook:
+          type: string
+          nullable: true
+        objection:
+          type: string
+          nullable: true
+        outcome:
+          type: string
+          enum: [closed, lost, wip, delayed]
+          nullable: true
+        killReason:
+          type: string
+          enum: [feature_gap, price, ghosted]
+          nullable: true
+        internalRating:
+          type: integer
+          nullable: true
+        frictionPoint:
+          type: string
+          enum: [scaling, tech_debt, budget]
+          nullable: true
+        resolvedAt:
+          type: string
+          nullable: true
+        companies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Company"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - leadName
+        - createdBy
+        - stage
+        - createdAt
+        - updatedAt
+
+    CreateLeadInput:
+      type: object
+      properties:
+        leadName:
+          type: string
+        leadType:
+          type: string
+          enum: [hot, warm, cold, ghosted]
+          nullable: true
+        contactEmail:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        serviceId:
+          type: string
+          nullable: true
+        company:
+          type: string
+          nullable: true
+        leadOwner:
+          type: string
+          nullable: true
+        dealHandler:
+          type: string
+          nullable: true
+        dealValue:
+          type: string
+          nullable: true
+        followUpDate:
+          type: string
+          nullable: true
+        nextAction:
+          type: string
+          nullable: true
+        sourceContext:
+          type: string
+          nullable: true
+        companyIds:
+          type: array
+          items:
+            type: string
+          nullable: true
+      required:
+        - leadName
+
+    UpdateLeadInput:
+      type: object
+      properties:
+        leadName:
+          type: string
+          nullable: true
+        stage:
+          type: string
+          enum: [discovery, qualification, strategy, resolution]
+          nullable: true
+        leadType:
+          type: string
+          enum: [hot, warm, cold, ghosted]
+          nullable: true
+        contactEmail:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        serviceId:
+          type: string
+          nullable: true
+        company:
+          type: string
+          nullable: true
+        leadOwner:
+          type: string
+          nullable: true
+        dealHandler:
+          type: string
+          nullable: true
+        dealValue:
+          type: string
+          nullable: true
+        value:
+          type: string
+          nullable: true
+        followUpDate:
+          type: string
+          nullable: true
+        nextAction:
+          type: string
+          nullable: true
+        sourceContext:
+          type: string
+          nullable: true
+        emotionalState:
+          type: string
+          enum: [skeptical, enthusiastic, frustrated]
+          nullable: true
+        decisionRole:
+          type: string
+          enum: [champion, gatekeeper, economic_buyer]
+          nullable: true
+        strategicTier:
+          type: string
+          enum: [high, med, low]
+          nullable: true
+        customHook:
+          type: string
+          nullable: true
+        objection:
+          type: string
+          nullable: true
+        outcome:
+          type: string
+          enum: [closed, lost, wip, delayed]
+          nullable: true
+        killReason:
+          type: string
+          enum: [feature_gap, price, ghosted]
+          nullable: true
+        internalRating:
+          type: integer
+          nullable: true
+        frictionPoint:
+          type: string
+          enum: [scaling, tech_debt, budget]
+          nullable: true
+        companyIds:
+          type: array
+          items:
+            type: string
+          nullable: true
+
+    LeadNote:
+      type: object
+      properties:
+        id:
+          type: string
+        leadId:
+          type: string
+        userId:
+          type: string
+        content:
+          type: string
+        stageContext:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        authorName:
+          type: string
+      required:
+        - id
+        - leadId
+        - userId
+        - content
+        - createdAt
+        - authorName
+
+    AddNoteInput:
+      type: object
+      properties:
+        content:
+          type: string
+        stageContext:
+          type: string
+          nullable: true
+      required:
+        - content
+
+    UpdateNoteInput:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+
+    LeadActivity:
+      type: object
+      properties:
+        id:
+          type: string
+        leadId:
+          type: string
+        userId:
+          type: string
+        action:
+          type: string
+        fieldName:
+          type: string
+          nullable: true
+        oldValue:
+          type: string
+          nullable: true
+        newValue:
+          type: string
+          nullable: true
+        noteContent:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        actorName:
+          type: string
+      required:
+        - id
+        - leadId
+        - userId
+        - action
+        - createdAt
+        - actorName
+
+    Company:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        industry:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdBy:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        services:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceBrief"
+      required:
+        - id
+        - name
+        - createdAt
+
+    CreateCompanyInput:
+      type: object
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - name
+
+    UpdateCompanyInput:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        industry:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        createdBy:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+        companies:
+          type: array
+          items:
+            $ref: "#/components/schemas/CompanyBrief"
+      required:
+        - id
+        - name
+        - createdAt
+
+    ServiceBrief:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    CompanyBrief:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    CreateServiceInput:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+      required:
+        - name
+
+    UpdateServiceInput:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+
+    LinkCompaniesInput:
+      type: object
+      properties:
+        companyIds:
+          type: array
+          items:
+            type: string
+      required:
+        - companyIds
+
+    TeamMember:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        role:
+          type: string
+        whitelistStatus:
+          type: string
+        joinedAt:
+          type: string
+      required:
+        - id
+        - email
+        - displayName
+        - role
+        - whitelistStatus
+        - joinedAt
+
+    UpdateTeamMemberInput:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [admin, manager, member, lead_owner, deal_handler]
+          nullable: true
+        status:
+          type: string
+          enum: [active, disabled]
+          nullable: true
+
+    InviteUserInput:
+      type: object
+      properties:
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, lead_owner, deal_handler]
+      required:
+        - email
+        - role
+
+    UserMapEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+      required:
+        - id
+        - displayName
+        - email
+        - role
+
+    RolePermission:
+      type: object
+      properties:
+        id:
+          type: string
+        roleName:
+          type: string
+        resource:
+          type: string
+        action:
+          type: string
+        allowed:
+          type: boolean
+      required:
+        - id
+        - roleName
+        - resource
+        - action
+        - allowed
+
+    UpdatePermissionInput:
+      type: object
+      properties:
+        roleName:
+          type: string
+        resource:
+          type: string
+        action:
+          type: string
+        allowed:
+          type: boolean
+      required:
+        - roleName
+        - resource
+        - action
+        - allowed
+
+    AuditEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        action:
+          type: string
+        resource:
+          type: string
+        resourceId:
+          type: string
+          nullable: true
+        details:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+        actorName:
+          type: string
+      required:
+        - id
+        - userId
+        - action
+        - resource
+        - createdAt
+        - actorName
+
+    AnalyticsStats:
+      type: object
+      properties:
+        avgConversionDays:
+          type: number
+          nullable: true
+        winRate:
+          type: number
+        lostCount:
+          type: integer
+        activePipelineCount:
+          type: integer
+      required:
+        - winRate
+        - lostCount
+        - activePipelineCount
+
+    TrendPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        count:
+          type: integer
+      required:
+        - date
+        - count
+
+    StageCount:
+      type: object
+      properties:
+        stage:
+          type: string
+        count:
+          type: integer
+      required:
+        - stage
+        - count
+
+    KillReasonCount:
+      type: object
+      properties:
+        reason:
+          type: string
+        count:
+          type: integer
+      required:
+        - reason
+        - count
+
+    WeeklyConversion:
+      type: object
+      properties:
+        week:
+          type: string
+        rate:
+          type: number
+        closed:
+          type: integer
+        total:
+          type: integer
+      required:
+        - week
+        - rate
+        - closed
+        - total

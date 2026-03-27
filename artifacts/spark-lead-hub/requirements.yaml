@@ -1,0 +1,16 @@
+packages:
+  "@hello-pangea/dnd": "Kanban drag and drop"
+  "recharts": "Analytics charts"
+  "date-fns": "Date formatting"
+  "framer-motion": "Animations and page transitions"
+  "clsx": "Class merging"
+  "tailwind-merge": "Class merging"
+  "sonner": "Toast notifications"
+
+images:
+  - path: "artifacts/spark-lead-hub/public/images/auth-bg.png"
+    description: "Dark cyberpunk neon city background with glowing teal and purple lights, abstract and atmospheric, perfect for a login page"
+    aspect_ratio: "16:9"
+
+notes:
+  - using interceptor in src/lib/api.ts to inject slh_token from localStorage
