@@ -1,14 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useGetCompanies, useCreateCompany, useUpdateCompany, useDeleteCompany,
   useGetServices, useCreateService, useUpdateService, useDeleteService, useLinkServiceCompanies,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Dialog } from "@/components/ui";
+import { TablePagination } from "@/components/table-pagination";
+import { useDebounce } from "@/hooks/use-debounce";
 import { format } from "date-fns";
-import { PlusCircle, Pencil, Trash2, Link as LinkIcon, Building2, Briefcase, Search } from "lucide-react";
+import { PlusCircle, Pencil, Trash2, Link as LinkIcon, Building2, Briefcase, Search, X } from "lucide-react";
 import { PermissionCheck } from "@/components/auth-provider";
 import { toast } from "sonner";
+
+const PAGE_SIZE = 10;
 
 export function Companies() {
   const { data: companies = [] } = useGetCompanies();
@@ -17,12 +21,23 @@ export function Companies() {
   const deleteMutation = useDeleteCompany();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState("");
+  const [searchRaw, setSearchRaw] = useState("");
+  const search = useDebounce(searchRaw, 300);
+  const [page, setPage] = useState(1);
+
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: "", industry: "", notes: "" });
 
-  const filtered = companies.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
+  useEffect(() => { setPage(1); }, [search]);
+
+  const filtered = useMemo(() =>
+    companies.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase())),
+    [companies, search]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleOpen = (company?: any) => {
     if (company) {
@@ -64,7 +79,7 @@ export function Companies() {
             <Building2 size={28} style={{ color: "var(--teal)" }} />
             Companies
           </h1>
-          <p className="page-subtitle">Manage your company master data</p>
+          <p className="page-subtitle">{companies.length} companies in your database</p>
         </div>
         <div className="page-actions">
           <button className="btn btn-primary" onClick={() => handleOpen()}>
@@ -75,28 +90,34 @@ export function Companies() {
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="table-toolbar">
-          <div className="search-input-wrapper">
+          <div className="search-input-wrapper" style={{ flex: "1 1 220px" }}>
             <Search size={15} />
             <input
               className="input"
               placeholder="Search companies…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+              value={searchRaw}
+              onChange={e => setSearchRaw(e.target.value)}
             />
           </div>
+          {searchRaw && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setSearchRaw("")} style={{ color: "var(--danger)", border: "1px solid var(--danger-dim)" }}>
+              <X size={13} /> Clear
+            </button>
+          )}
         </div>
+
         <table className="data-table">
           <thead>
             <tr>
               <th>Company Name</th>
               <th>Industry</th>
-              <th>Services</th>
+              <th>Linked Services</th>
               <th>Created</th>
               <th style={{ width: 100 }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map(c => (
+            {paginated.map(c => (
               <tr key={c.id} style={{ cursor: "default" }}>
                 <td style={{ fontWeight: 600, color: "var(--text-primary)" }}>{c.name}</td>
                 <td style={{ color: "var(--text-muted)" }}>{c.industry || "—"}</td>
@@ -121,19 +142,34 @@ export function Companies() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr style={{ cursor: "default" }}>
                 <td colSpan={5}>
                   <div className="empty-state">
                     <div className="empty-state-icon"><Building2 size={20} /></div>
-                    <div className="empty-state-title">No companies</div>
-                    <div className="empty-state-desc">Add your first company to get started</div>
+                    <div className="empty-state-title">{search ? "No companies found" : "No companies yet"}</div>
+                    <div className="empty-state-desc">
+                      {search ? "Try a different search term." : "Add your first company to get started."}
+                    </div>
+                    {search && (
+                      <button className="btn btn-secondary btn-sm" style={{ marginTop: "var(--space-3)" }} onClick={() => setSearchRaw("")}>
+                        <X size={13} /> Clear Search
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          total={filtered.length}
+          pageSize={PAGE_SIZE}
+          onChange={setPage}
+        />
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -170,7 +206,10 @@ export function Services() {
   const linkMutation = useLinkServiceCompanies();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState("");
+  const [searchRaw, setSearchRaw] = useState("");
+  const search = useDebounce(searchRaw, 300);
+  const [page, setPage] = useState(1);
+
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: "", category: "", description: "" });
@@ -178,7 +217,15 @@ export function Services() {
   const [linkingService, setLinkingService] = useState<any>(null);
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
-  const filtered = services.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
+  useEffect(() => { setPage(1); }, [search]);
+
+  const filtered = useMemo(() =>
+    services.filter(s => !search || s.name.toLowerCase().includes(search.toLowerCase())),
+    [services, search]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleOpen = (service?: any) => {
     if (service) {
@@ -233,7 +280,7 @@ export function Services() {
             <Briefcase size={28} style={{ color: "var(--teal)" }} />
             Services
           </h1>
-          <p className="page-subtitle">Manage your service catalog</p>
+          <p className="page-subtitle">{services.length} services in your catalog</p>
         </div>
         <div className="page-actions">
           <button className="btn btn-primary" onClick={() => handleOpen()}>
@@ -244,11 +291,17 @@ export function Services() {
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="table-toolbar">
-          <div className="search-input-wrapper">
+          <div className="search-input-wrapper" style={{ flex: "1 1 220px" }}>
             <Search size={15} />
-            <input className="input" placeholder="Search services…" value={search} onChange={e => setSearch(e.target.value)} />
+            <input className="input" placeholder="Search services…" value={searchRaw} onChange={e => setSearchRaw(e.target.value)} />
           </div>
+          {searchRaw && (
+            <button className="btn btn-ghost btn-sm" onClick={() => setSearchRaw("")} style={{ color: "var(--danger)", border: "1px solid var(--danger-dim)" }}>
+              <X size={13} /> Clear
+            </button>
+          )}
         </div>
+
         <table className="data-table">
           <thead>
             <tr>
@@ -259,7 +312,7 @@ export function Services() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(s => (
+            {paginated.map(s => (
               <tr key={s.id} style={{ cursor: "default" }}>
                 <td style={{ fontWeight: 600, color: "var(--text-primary)" }}>{s.name}</td>
                 <td style={{ color: "var(--text-muted)" }}>{s.category || "—"}</td>
@@ -282,21 +335,37 @@ export function Services() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {paginated.length === 0 && (
               <tr style={{ cursor: "default" }}>
                 <td colSpan={4}>
                   <div className="empty-state">
                     <div className="empty-state-icon"><Briefcase size={20} /></div>
-                    <div className="empty-state-title">No services</div>
-                    <div className="empty-state-desc">Add your first service to the catalog</div>
+                    <div className="empty-state-title">{search ? "No services found" : "No services yet"}</div>
+                    <div className="empty-state-desc">
+                      {search ? "Try a different search term." : "Add your first service to the catalog."}
+                    </div>
+                    {search && (
+                      <button className="btn btn-secondary btn-sm" style={{ marginTop: "var(--space-3)" }} onClick={() => setSearchRaw("")}>
+                        <X size={13} /> Clear Search
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          total={filtered.length}
+          pageSize={PAGE_SIZE}
+          onChange={setPage}
+        />
       </div>
 
+      {/* Service Form Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <div className="modal-title">{editingId ? "Edit Service" : "Add Service"}</div>
         <form onSubmit={handleSubmit}>
@@ -319,11 +388,14 @@ export function Services() {
         </form>
       </Dialog>
 
+      {/* Link Companies Dialog */}
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
         <div className="modal-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
           <LinkIcon size={18} style={{ color: "var(--teal)" }} /> Link Companies
         </div>
-        <div className="modal-desc">Select companies to link to <strong>{linkingService?.name}</strong></div>
+        <div className="modal-desc">
+          Select companies to link to <strong>{linkingService?.name}</strong>
+        </div>
         <form onSubmit={handleLinkSubmit}>
           <div style={{
             maxHeight: 240, overflowY: "auto",
@@ -337,11 +409,8 @@ export function Services() {
               <label key={c.id} style={{
                 display: "flex", alignItems: "center", gap: "var(--space-3)",
                 padding: "var(--space-2) var(--space-3)", borderRadius: "var(--radius-sm)",
-                cursor: "pointer", transition: "background var(--transition-fast)",
-              }}
-                onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-muted)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
+                cursor: "pointer",
+              }}>
                 <input
                   type="checkbox"
                   checked={selectedCompanies.includes(c.id)}

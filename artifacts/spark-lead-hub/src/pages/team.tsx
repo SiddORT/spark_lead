@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   useGetTeamMembers, useUpdateTeamMember, useDeleteTeamMember,
   useInviteUser, useGetAccessRequests, useApproveAccessRequest, useRejectAccessRequest,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch, Dialog } from "@/components/ui";
+import { TablePagination } from "@/components/table-pagination";
+import { useDebounce } from "@/hooks/use-debounce";
 import { format } from "date-fns";
 import {
   PlusCircle, Search, Mail, CheckCircle, XCircle, Trash2,
-  Users, ShieldCheck, UserCheck, Bell,
+  Users, ShieldCheck, UserCheck, Bell, X,
 } from "lucide-react";
 import { useAuth, PermissionCheck } from "@/components/auth-provider";
 import { toast } from "sonner";
+
+const PAGE_SIZE = 10;
 
 const ROLE_BADGE: Record<string, string> = {
   admin:        "badge-admin",
@@ -36,15 +40,31 @@ export function Team() {
   const rejectRequest = useRejectAccessRequest();
 
   const [activeTab, setActiveTab] = useState<"members" | "requests">("members");
-  const [search, setSearch] = useState("");
+  const [searchRaw, setSearchRaw] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteData, setInviteData] = useState({ email: "", role: "deal_handler" });
 
-  const filteredMembers = members.filter(m =>
-    (m.displayName.toLowerCase().includes(search.toLowerCase()) || m.email.toLowerCase().includes(search.toLowerCase())) &&
-    (!roleFilter || m.role === roleFilter)
+  const search = useDebounce(searchRaw, 300);
+  const hasFilters = !!(searchRaw || roleFilter);
+
+  useEffect(() => { setPage(1); }, [search, roleFilter, activeTab]);
+
+  const filteredMembers = useMemo(() =>
+    members.filter(m => {
+      const q = search.toLowerCase();
+      const matchSearch = !q
+        || m.displayName.toLowerCase().includes(q)
+        || m.email.toLowerCase().includes(q);
+      const matchRole = !roleFilter || m.role === roleFilter;
+      return matchSearch && matchRole;
+    }),
+    [members, search, roleFilter]
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE));
+  const paginatedMembers = filteredMembers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,18 +159,18 @@ export function Team() {
       {activeTab === "members" && (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
           <div className="table-toolbar">
-            <div className="search-input-wrapper">
+            <div className="search-input-wrapper" style={{ flex: "1 1 200px" }}>
               <Search size={15} />
               <input
                 className="input"
                 placeholder="Search members…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+                value={searchRaw}
+                onChange={e => setSearchRaw(e.target.value)}
               />
             </div>
             <select
-              className="input"
-              style={{ width: 160 }}
+              className="input select-field"
+              style={{ width: 170 }}
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
             >
@@ -160,6 +180,15 @@ export function Team() {
               <option value="deal_handler">Deal Handler</option>
               <option value="member">Member</option>
             </select>
+            {hasFilters && (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => { setSearchRaw(""); setRoleFilter(""); }}
+                style={{ color: "var(--danger)", border: "1px solid var(--danger-dim)" }}
+              >
+                <X size={13} /> Clear
+              </button>
+            )}
           </div>
 
           <table className="data-table">
@@ -173,7 +202,7 @@ export function Team() {
               </tr>
             </thead>
             <tbody>
-              {filteredMembers.map(m => (
+              {paginatedMembers.map(m => (
                 <tr key={m.id} style={{ cursor: "default" }}>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
@@ -228,7 +257,6 @@ export function Team() {
                           className="btn btn-ghost btn-icon"
                           onClick={() => handleDelete(m.id)}
                           style={{ color: "var(--danger)" }}
-                          title="Delete user"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -237,19 +265,34 @@ export function Team() {
                   )}
                 </tr>
               ))}
-              {filteredMembers.length === 0 && (
+              {paginatedMembers.length === 0 && (
                 <tr style={{ cursor: "default" }}>
                   <td colSpan={isAdmin ? 5 : 4}>
                     <div className="empty-state">
                       <div className="empty-state-icon"><Users size={20} /></div>
                       <div className="empty-state-title">No members found</div>
-                      <div className="empty-state-desc">Adjust your search or invite team members</div>
+                      <div className="empty-state-desc">
+                        {hasFilters ? "No members match your filters." : "Invite team members to get started."}
+                      </div>
+                      {hasFilters && (
+                        <button className="btn btn-secondary btn-sm" style={{ marginTop: "var(--space-3)" }} onClick={() => { setSearchRaw(""); setRoleFilter(""); }}>
+                          <X size={13} /> Clear Filters
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
+
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={filteredMembers.length}
+            pageSize={PAGE_SIZE}
+            onChange={setPage}
+          />
         </div>
       )}
 
@@ -263,7 +306,7 @@ export function Team() {
                 <th>Department</th>
                 <th>Reason</th>
                 <th>Requested</th>
-                <th style={{ width: 180 }}>Actions</th>
+                <th style={{ width: 200 }}>Actions</th>
               </tr>
             </thead>
             <tbody>

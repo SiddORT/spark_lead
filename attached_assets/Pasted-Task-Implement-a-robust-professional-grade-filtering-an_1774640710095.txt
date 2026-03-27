@@ -1,0 +1,21 @@
+Task: Implement a robust, professional-grade filtering and pagination system for the LeadFlow Dashboard and all related data tables.
+1. Global Pagination Logic
+Refactor the leads table and all other system tables (Companies, Services, Team) to support server-side (or client-side, based on current architecture) pagination.
+Default Limit: Exactly 10 leads per page.
+Reset Rule: Whenever a user types in the search bar or changes any filter dropdown, the current page MUST reset to Page 1 automatically.
+UI Component: Add a minimalist footer to the table with "Showing 1-10 of X", "Previous/Next" buttons, and numbered page indicators using Lucide-React icons.
+2. Dashboard Filter Suite (Professional UX)
+Add a unified Filter Bar above the main Lead Table. It must be clean, aligned, and follow the "World-Class" UI/UX standards (8px border-radius, subtle borders, high-contrast text).
+Implement the following interactive filters:
+Search Bar: Real-time text search that queries both lead_name and the associated company_name.
+Service Dropdown: A Select component populated from the services table.
+Company Dropdown: A Select component that dynamically filters to show only companies linked to the currently selected Service.
+Lead Type Dropdown: A Select component with options: Hot, Warm, Cold, Ghosted.
+"Clear All" Action: A visible "X" or "Clear Filters" button that appears only when filters are active. Clicking it must reset all dropdowns to "All", clear the search text, and return the table to Page 1.
+3. Visual & Technical Requirements
+UI Uniformity: Use shadcn/ui Select and Input components. Ensure all dropdowns have the same height (h-10) and a consistent bg-slate-900/50 with a 1px border.
+Loading States: Show a subtle "skeleton" loader or a "Searching..." overlay on the table while filters are being applied to prevent a "jumpy" UI.
+Performance: Use a Debounce (300ms) on the text search input so it doesn't trigger a database query on every single keystroke.
+Empty State: If filters return zero results, display a clean "No leads found matching your criteria" message with a "Clear Filters" button in the center of the table.
+4. Constraints
+Ensure the Pipeline Value and Stat Cards at the top of the dashboard update dynamically to reflect the filtered data (e.g., if "Hot" is selected, the "Total Leads" card should show the count of Hot leads).
