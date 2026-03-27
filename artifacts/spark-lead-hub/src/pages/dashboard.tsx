@@ -3,6 +3,7 @@ import {
   useGetLeads, useGetAnalyticsStats, useGetLeadTrend,
   useGetStageDistribution, useGetServices, useGetCompanies,
 } from "@workspace/api-client-react";
+import { StatCardSkeleton, TableRowSkeleton } from "@/components/skeleton";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LeadDetailSheet } from "@/components/lead-detail-sheet";
@@ -59,7 +60,7 @@ const tooltipStyle = {
 };
 
 export function Dashboard() {
-  const { data: leads = [] } = useGetLeads();
+  const { data: leads = [], isLoading: leadsLoading } = useGetLeads();
   const { data: trendData = [] } = useGetLeadTrend();
   const { data: stageDist = [] } = useGetStageDistribution();
   const { data: services = [] } = useGetServices();
@@ -139,6 +140,82 @@ export function Dashboard() {
   const totalPages     = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
   const paginatedLeads = filteredLeads.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  // Compute tbody rows outside JSX to avoid nested-ternary parse issues
+  let tbodyRows: React.ReactNode;
+  if (leadsLoading) {
+    tbodyRows = Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} cols={9} />);
+  } else if (paginatedLeads.length > 0) {
+    tbodyRows = paginatedLeads.map((lead: any) => {
+      const tc = TYPE_CONFIG[lead.leadType || "cold"] || TYPE_CONFIG.cold;
+      return (
+        <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)}>
+          <td>
+            <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>
+              {lead.leadName}
+            </span>
+          </td>
+          <td>
+            <span className={`badge ${tc.cls}`}>{tc.emoji} {tc.label}</span>
+          </td>
+          <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.serviceName || "—"}</td>
+          <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.company || "—"}</td>
+          <td style={{ fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--teal)", fontWeight: 600 }}>
+            {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
+          </td>
+          <td>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <div className="avatar avatar-sm">{resolveName(lead.leadOwner)[0]}</div>
+              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+                {resolveName(lead.leadOwner)}
+              </span>
+            </div>
+          </td>
+          <td>
+            {lead.dealHandler ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                <div className="avatar avatar-sm avatar-purple">{resolveName(lead.dealHandler)[0]}</div>
+                <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+                  {resolveName(lead.dealHandler)}
+                </span>
+              </div>
+            ) : <span style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>—</span>}
+          </td>
+          <td>
+            <span className={`badge ${STAGE_BADGE[lead.stage || "discovery"] || "badge-muted"}`}>
+              {lead.stage}
+            </span>
+          </td>
+          <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)", whiteSpace: "nowrap" }}>
+            {format(new Date(lead.createdAt), "MMM d, yyyy")}
+          </td>
+        </tr>
+      );
+    });
+  } else {
+    tbodyRows = (
+      <tr style={{ cursor: "default" }}>
+        <td colSpan={9}>
+          <div className="empty-state">
+            <div className="empty-state-icon"><Search size={22} /></div>
+            <div className="empty-state-title">No leads found</div>
+            <div className="empty-state-desc">
+              No leads match your current filters. Try adjusting your search criteria.
+            </div>
+            {hasFilters && (
+              <button
+                className="btn btn-secondary btn-sm"
+                style={{ marginTop: "var(--space-3)" }}
+                onClick={clearFilters}
+              >
+                <X size={13} /> Clear Filters
+              </button>
+            )}
+          </div>
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <div className="page">
       {/* Page header */}
@@ -166,11 +243,17 @@ export function Dashboard() {
         gap: "var(--space-4)",
         marginBottom: "var(--space-5)",
       }}>
-        <StatCard label="Total Leads" value={filteredLeads.length} icon={<Users size={16} />} iconClass="stat-icon-teal" sub={hasFilters ? "Matching filters" : "All leads"} />
-        <StatCard label="Hot Leads" value={hotCount} icon={<Flame size={16} />} iconClass="stat-icon-warning" sub="High priority" />
-        <StatCard label="Closed Deals" value={closedCount} icon={<CheckCircle2 size={16} />} iconClass="stat-icon-success" sub="Won opportunities" />
-        <StatCard label="Active Pipeline" value={activePipeline} icon={<Activity size={16} />} iconClass="stat-icon-purple" sub="In progress" />
-        <StatCard label="Pipeline Value" value={formatValue(pipelineValue)} icon={<TrendingUp size={16} />} iconClass="stat-icon-teal" sub="Active deals" />
+        {leadsLoading ? (
+          Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
+        ) : (
+          <>
+            <StatCard label="Total Leads" value={filteredLeads.length} icon={<Users size={16} />} iconClass="stat-icon-teal" sub={hasFilters ? "Matching filters" : "All leads"} />
+            <StatCard label="Hot Leads" value={hotCount} icon={<Flame size={16} />} iconClass="stat-icon-warning" sub="High priority" />
+            <StatCard label="Closed Deals" value={closedCount} icon={<CheckCircle2 size={16} />} iconClass="stat-icon-success" sub="Won opportunities" />
+            <StatCard label="Active Pipeline" value={activePipeline} icon={<Activity size={16} />} iconClass="stat-icon-purple" sub="In progress" />
+            <StatCard label="Pipeline Value" value={formatValue(pipelineValue)} icon={<TrendingUp size={16} />} iconClass="stat-icon-teal" sub="Active deals" />
+          </>
+        )}
       </div>
 
       {/* Charts */}
@@ -360,6 +443,7 @@ export function Dashboard() {
             </div>
           )}
 
+          <div className="table-scroll-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -375,76 +459,11 @@ export function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {paginatedLeads.length > 0 ? paginatedLeads.map((lead: any) => {
-                const tc = TYPE_CONFIG[lead.leadType || "cold"] || TYPE_CONFIG.cold;
-                return (
-                  <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)}>
-                    <td>
-                      <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>
-                        {lead.leadName}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge ${tc.cls}`}>{tc.emoji} {tc.label}</span>
-                    </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.serviceName || "—"}</td>
-                    <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.company || "—"}</td>
-                    <td style={{ fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--teal)", fontWeight: 600 }}>
-                      {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                        <div className="avatar avatar-sm">{resolveName(lead.leadOwner)[0]}</div>
-                        <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
-                          {resolveName(lead.leadOwner)}
-                        </span>
-                      </div>
-                    </td>
-                    <td>
-                      {lead.dealHandler ? (
-                        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                          <div className="avatar avatar-sm avatar-purple">{resolveName(lead.dealHandler)[0]}</div>
-                          <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
-                            {resolveName(lead.dealHandler)}
-                          </span>
-                        </div>
-                      ) : <span style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>—</span>}
-                    </td>
-                    <td>
-                      <span className={`badge ${STAGE_BADGE[lead.stage || "discovery"] || "badge-muted"}`}>
-                        {lead.stage}
-                      </span>
-                    </td>
-                    <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)", whiteSpace: "nowrap" }}>
-                      {format(new Date(lead.createdAt), "MMM d, yyyy")}
-                    </td>
-                  </tr>
-                );
-              }) : (
-                <tr style={{ cursor: "default" }}>
-                  <td colSpan={9}>
-                    <div className="empty-state">
-                      <div className="empty-state-icon"><Search size={22} /></div>
-                      <div className="empty-state-title">No leads found</div>
-                      <div className="empty-state-desc">
-                        No leads match your current filters. Try adjusting your search criteria.
-                      </div>
-                      {hasFilters && (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          style={{ marginTop: "var(--space-3)" }}
-                          onClick={clearFilters}
-                        >
-                          <X size={13} /> Clear Filters
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              )}
+              {tbodyRows}
             </tbody>
           </table>
-        </div>
+          </div> {/* table-scroll-wrapper */}
+        </div> {/* relative wrapper */}
 
         {/* Pagination — natural base of the table */}
         <TablePagination

@@ -1,0 +1,24 @@
+1. UI/UX "World-Class" Audit (Visual Fidelity)
+Test every page (Dashboard, Kanban, New Lead, Analytics, Team, Auth) against these strict criteria:
+The "Rule of 8": Verify all margins, paddings, and gaps are multiples of 8px (e.g., p-4, m-8, gap-4). If any component has "weird" spacing (like the squashed New Lead form), fix it to a centered max-width container.
+Token Consistency: Ensure NO hex codes or hardcoded colors exist. Everything MUST point to the CSS variables in the Design Token system (var(--bg-base), var(--teal), etc.).
+Typography: Confirm Syne is used for Headers/Stats and DM Sans for body/labels. Check for uniform font-weight and letter-spacing.
+Interactivity: Hover over every button, table row, and Kanban card. If there is no transition (0.2s ease) or visual feedback (subtle lift/glow), implement it.
+2. Functional & Logic Stress Test (The "Broken Paths")
+Filter & Search Logic:
+Search for a non-existent lead. Does it show a clean "No Results" empty state? (If not, build it).
+Change a filter. Does the pagination reset to Page 1? (Mandatory fix).
+State Gating: Try to move a lead to "Resolution" without filling out "Strategy" details. The system must block this and show a professional toast notification.
+Calculations: Audit the Analytics page. Ensure "Avg Conversion" never shows a negative number. If data is missing, show "0 Days" or "N/A".
+Auth Whitelist: Attempt to log in with an email NOT in the whitelisted_users table. Verify it redirects to a high-end /access-denied page.
+3. Database & API Integrity (The Backend)
+Relational Check: Ensure the "Company" dropdown in the lead form only shows companies linked to the selected "Service."
+Audit Logging: Perform 5 actions (Create Lead, Change Stage, Edit User). Check the audit_log table. Every action must have a timestamp, User ID, and a JSON detail object.
+Pagination Limits: Verify the API only fetches 10 records at a time. Check that "Next Page" correctly calculates the offset.
+4. Responsive & Performance Check
+Viewport Test: Shrink the screen to Tablet and Mobile sizes. If the Sidebar overlaps content or the Table overflows without a scrollbar, refactor the layout to be fully responsive.
+Loading States: Add a 1-second artificial delay to a query. Does a professional Skeleton Loader or Spinner appear? (If not, add one).
+🚨 Execution Instructions:
+Run the Diagnostic: Scan every file for the issues listed above.
+Report & Fix: List every issue found in a summary.
+Deploy Fixes: Automatically rewrite the code for every identified "Naive UI" or "Broken Logic" element. Do not stop until the system matches the "World-Class" professional spec 100%.

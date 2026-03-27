@@ -263,6 +263,15 @@ a:hover { opacity: 0.85; }
 .animate-slide-in  { animation: slide-in 0.2s ease-out forwards; }
 .animate-validate-bar { animation: validateBar 1.5s ease-in-out forwards; }
 
+@keyframes shimmer {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
 /* ============================================
    APP SHELL
    ============================================ */
@@ -329,10 +338,63 @@ a:hover { opacity: 0.85; }
   top: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: width var(--transition-slow), min-width var(--transition-slow);
-  z-index: 50;
+  transition: width var(--transition-slow), min-width var(--transition-slow), transform var(--transition-slow);
+  z-index: 100;
 }
 .sidebar.collapsed { width: 64px; min-width: 64px; }
+
+.sidebar-overlay {
+  display: none;
+}
+
+.mobile-header {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
+  }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: hsl(222 22% 3% / 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 99;
+    animation: fade-in 200ms ease both;
+  }
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3) var(--space-4);
+    background: var(--bg-elevated);
+    border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    flex-shrink: 0;
+  }
+  .page {
+    padding: var(--space-5) var(--space-4);
+  }
+  .charts-grid, .charts-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
 
 .sidebar-brand {
   display: flex;

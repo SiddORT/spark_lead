@@ -325,8 +325,8 @@ export function NewLead() {
             display: "flex",
             justifyContent: "flex-end",
             gap: "var(--space-3)",
-            marginTop: "var(--space-7)",
-            paddingTop: "var(--space-5)",
+            marginTop: "var(--space-8)",
+            paddingTop: "var(--space-6)",
             borderTop: "1px solid var(--border-subtle)",
           }}>
             <button

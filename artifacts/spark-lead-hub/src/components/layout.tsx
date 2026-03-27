@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth, PermissionCheck } from "./auth-provider";
 import {
   LayoutDashboard, Kanban, PlusCircle, Building2,
   Briefcase, BarChart3, Users, ShieldCheck, ScrollText,
-  LogOut, Zap, ChevronLeft, ChevronRight
+  LogOut, Zap, ChevronLeft, ChevronRight, Menu, X
 } from "lucide-react";
-import { Badge } from "./ui";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
   const [location] = useLocation();
+
+  // Close mobile sidebar on route change
+  useEffect(() => { setMobileOpen(false); }, [location]);
 
   const NavItem = ({ href, icon: Icon, label }: { href: string; icon: any; label: string }) => {
     const active = location === href || (href !== "/" && location.startsWith(href));
@@ -93,7 +96,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar${collapsed ? " collapsed" : ""}`} style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="sidebar-overlay" onClick={() => setMobileOpen(false)} />
+      )}
+      <aside className={`sidebar${collapsed ? " collapsed" : ""}${mobileOpen ? " mobile-open" : ""}`} style={{ padding: 0, display: "flex", flexDirection: "column" }}>
         {/* Brand */}
         <div style={{
           display: "flex",
@@ -250,6 +257,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="main-content">
+        {/* Mobile-only sticky header */}
+        <header className="mobile-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+            <button
+              className="btn btn-ghost btn-icon"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Open navigation"
+            >
+              <Menu size={20} />
+            </button>
+            <span style={{
+              fontFamily: "var(--font-display)",
+              fontWeight: 800,
+              fontSize: "var(--text-base)",
+              color: "var(--teal)",
+              letterSpacing: "-0.01em",
+            }}>
+              LeadFlow
+            </span>
+          </div>
+          <div className="avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
+            {user?.displayName?.[0] ?? "?"}
+          </div>
+        </header>
         {children}
       </main>
     </div>
