@@ -1,117 +1,304 @@
 import { useState } from "react";
-import { useCreateLead } from "@workspace/api-client-react";
+import { useCreateLead, useGetServices, useGetServiceCompanies } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle, Input, Select, Button, Textarea } from "@/components/ui";
-import { useGetServices, useGetServiceCompanies } from "@workspace/api-client-react";
 import { useUserMap } from "@/hooks/use-user-map";
 import { toast } from "sonner";
+import { PlusCircle, ArrowLeft } from "lucide-react";
+
+const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
+  <label style={{
+    display: "block",
+    fontFamily: "var(--font-sans)",
+    fontSize: "var(--text-xs)",
+    fontWeight: 600,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: "var(--text-secondary)",
+    marginBottom: 6,
+  }}>
+    {children}
+    {required && <span style={{ color: "var(--danger)", marginLeft: 3 }}>*</span>}
+  </label>
+);
+
+const fieldStyle: React.CSSProperties = {
+  width: "100%",
+  height: 42,
+  padding: "0 12px",
+  background: "var(--bg-subtle)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  color: "var(--text-primary)",
+  fontSize: "var(--text-sm)",
+  outline: "none",
+  transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
+  boxSizing: "border-box",
+  fontFamily: "var(--font-sans)",
+};
+
+const focusStyle: React.CSSProperties = {
+  borderColor: "var(--teal)",
+  boxShadow: "0 0 0 3px hsl(172 75% 48% / 0.12), 0 0 8px hsl(172 75% 48% / 0.1)",
+};
+
+function StyledInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      {...props}
+      style={{ ...fieldStyle, ...(focused ? focusStyle : {}), ...props.style }}
+      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
+      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
+    />
+  );
+}
+
+function StyledSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <select
+      {...props}
+      style={{
+        ...fieldStyle,
+        appearance: "none",
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right 12px center",
+        paddingRight: 32,
+        cursor: "pointer",
+        ...(focused ? focusStyle : {}),
+        ...props.style,
+      }}
+      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
+      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
+    />
+  );
+}
+
+function StyledTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <textarea
+      {...props}
+      style={{
+        ...fieldStyle,
+        height: "auto",
+        padding: "10px 12px",
+        resize: "none",
+        ...(focused ? focusStyle : {}),
+        ...props.style,
+      }}
+      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
+      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
+    />
+  );
+}
 
 export function NewLead() {
   const [, setLocation] = useLocation();
   const createLead = useCreateLead();
   const { users } = useUserMap();
   const { data: services } = useGetServices();
+  const [primaryHover, setPrimaryHover] = useState(false);
 
   const [formData, setFormData] = useState<any>({
-    leadName: '',
-    leadType: 'cold',
-    contactEmail: '',
-    phone: '',
-    serviceId: '',
-    leadOwner: '',
-    dealValue: '',
-    nextAction: ''
+    leadName: "",
+    leadType: "cold",
+    contactEmail: "",
+    phone: "",
+    serviceId: "",
+    leadOwner: "",
+    dealValue: "",
+    nextAction: "",
+    companyIds: [],
   });
 
-  const { data: companies } = useGetServiceCompanies(formData.serviceId, { query: { enabled: !!formData.serviceId } });
+  const { data: companies } = useGetServiceCompanies(formData.serviceId, {
+    query: { enabled: !!formData.serviceId },
+  });
+
+  const set = (key: string, value: any) => setFormData((f: any) => ({ ...f, [key]: value }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.leadName) {
-      toast.error("Lead name is required");
-      return;
-    }
-
+    if (!formData.leadName) { toast.error("Lead name is required"); return; }
     createLead.mutate({ data: formData }, {
-      onSuccess: () => {
-        toast.success("Lead created successfully");
-        setLocation("/");
-      },
-      onError: (err: any) => toast.error(err.message || "Failed to create lead")
+      onSuccess: () => { toast.success("Lead created successfully"); setLocation("/"); },
+      onError: (err: any) => toast.error(err.message || "Failed to create lead"),
     });
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-3xl mx-auto animate-slide-in">
-      <Card className="glass-strong border-primary/20 shadow-2xl shadow-primary/5">
-        <CardHeader className="border-b border-border/50 bg-card/50">
-          <CardTitle className="text-2xl text-primary flex items-center gap-3">
-            <div className="w-2 h-8 bg-primary rounded-full neon-glow" />
-            Create New Lead
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium text-foreground">Lead Name <span className="text-destructive">*</span></label>
-                <Input required value={formData.leadName} onChange={e => setFormData({...formData, leadName: e.target.value})} placeholder="e.g. Acme Corp Expansion" className="h-12 text-lg focus-visible:ring-primary/50" />
-              </div>
+    <div style={{
+      minHeight: "100vh",
+      background: "var(--bg-base)",
+      padding: "var(--space-8) var(--space-6)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+    }}>
+      {/* Back link */}
+      <div style={{ width: "100%", maxWidth: 720, marginBottom: "var(--space-5)" }}>
+        <button
+          onClick={() => setLocation("/")}
+          style={{
+            display: "inline-flex", alignItems: "center", gap: "var(--space-2)",
+            background: "none", border: "none", cursor: "pointer",
+            color: "var(--text-muted)", fontSize: "var(--text-sm)",
+            fontFamily: "var(--font-sans)", transition: "color 150ms ease", padding: 0,
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--text-primary)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+        >
+          <ArrowLeft size={15} /> Back to Dashboard
+        </button>
+      </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Lead Type</label>
-                <Select value={formData.leadType} onChange={e => setFormData({...formData, leadType: e.target.value})}>
+      {/* Card */}
+      <div style={{
+        width: "100%",
+        maxWidth: 720,
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border-subtle)",
+        borderRadius: "var(--radius-xl)",
+        boxShadow: "0 24px 48px hsl(222 22% 3% / 0.4)",
+        overflow: "hidden",
+      }}>
+        {/* Card header */}
+        <div style={{
+          padding: "var(--space-6) var(--space-8)",
+          borderBottom: "1px solid var(--border-subtle)",
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--space-3)",
+        }}>
+          <div style={{
+            width: 4, height: 28,
+            background: "var(--teal)",
+            borderRadius: 2,
+            boxShadow: "0 0 12px hsl(172 75% 48% / 0.5)",
+            flexShrink: 0,
+          }} />
+          <div>
+            <h1 style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "var(--text-xl)",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              margin: 0,
+            }}>
+              Create New Lead
+            </h1>
+            <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--text-muted)", marginTop: 2 }}>
+              Fill in the details below to add a lead to the pipeline
+            </p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ padding: "var(--space-8)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
+            {/* Lead Name — full width */}
+            <div>
+              <FieldLabel required>Lead Name</FieldLabel>
+              <StyledInput
+                required
+                value={formData.leadName}
+                onChange={e => set("leadName", e.target.value)}
+                placeholder="e.g. Acme Corp Expansion"
+                style={{ height: 48, fontSize: "var(--text-base)" }}
+              />
+            </div>
+
+            {/* 2-col: Lead Type + Deal Value */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
+              <div>
+                <FieldLabel>Lead Type</FieldLabel>
+                <StyledSelect value={formData.leadType} onChange={e => set("leadType", e.target.value)}>
                   <option value="hot">🔥 Hot</option>
                   <option value="warm">☀️ Warm</option>
                   <option value="cold">🧊 Cold</option>
                   <option value="ghosted">👻 Ghosted</option>
-                </Select>
+                </StyledSelect>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Deal Value (₹)</label>
-                <Input type="number" value={formData.dealValue} onChange={e => setFormData({...formData, dealValue: e.target.value})} placeholder="0.00" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Contact Email</label>
-                <Input type="email" value={formData.contactEmail} onChange={e => setFormData({...formData, contactEmail: e.target.value})} placeholder="john@acme.com" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Phone</label>
-                <Input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="+1 234 567 890" />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Service</label>
-                <Select value={formData.serviceId} onChange={e => setFormData({...formData, serviceId: e.target.value, companyIds: []})}>
-                  <option value="">Select Service...</option>
-                  {services?.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Lead Owner</label>
-                <Select value={formData.leadOwner} onChange={e => setFormData({...formData, leadOwner: e.target.value})}>
-                  <option value="">Unassigned</option>
-                  {users.filter(u => ['admin', 'lead_owner'].includes(u.role)).map(u => (
-                    <option key={u.id} value={u.id}>{u.displayName}</option>
-                  ))}
-                </Select>
+              <div>
+                <FieldLabel>Deal Value (₹)</FieldLabel>
+                <StyledInput
+                  type="number"
+                  value={formData.dealValue}
+                  onChange={e => set("dealValue", e.target.value)}
+                  placeholder="0.00"
+                />
               </div>
             </div>
 
+            {/* 2-col: Contact Email + Phone */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
+              <div>
+                <FieldLabel>Contact Email</FieldLabel>
+                <StyledInput
+                  type="email"
+                  value={formData.contactEmail}
+                  onChange={e => set("contactEmail", e.target.value)}
+                  placeholder="contact@company.com"
+                />
+              </div>
+              <div>
+                <FieldLabel>Phone</FieldLabel>
+                <StyledInput
+                  type="tel"
+                  value={formData.phone}
+                  onChange={e => set("phone", e.target.value)}
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+            </div>
+
+            {/* 2-col: Service + Lead Owner */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
+              <div>
+                <FieldLabel>Service</FieldLabel>
+                <StyledSelect
+                  value={formData.serviceId}
+                  onChange={e => set("serviceId", e.target.value)}
+                >
+                  <option value="">Select service…</option>
+                  {services?.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </StyledSelect>
+              </div>
+              <div>
+                <FieldLabel>Lead Owner</FieldLabel>
+                <StyledSelect value={formData.leadOwner} onChange={e => set("leadOwner", e.target.value)}>
+                  <option value="">Unassigned</option>
+                  {users.filter(u => ["admin", "lead_owner"].includes(u.role)).map(u => (
+                    <option key={u.id} value={u.id}>{u.displayName}</option>
+                  ))}
+                </StyledSelect>
+              </div>
+            </div>
+
+            {/* Link Companies — conditional */}
             {formData.serviceId && companies && companies.length > 0 && (
-              <div className="space-y-2 border border-border p-4 rounded-lg bg-card/50">
-                <label className="text-sm font-medium text-muted-foreground">Link Companies</label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
+              <div style={{
+                background: "var(--bg-subtle)",
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)",
+                padding: "var(--space-4)",
+              }}>
+                <FieldLabel>Link Companies</FieldLabel>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-2)", marginTop: 4 }}>
                   {companies.map(c => (
-                    <label key={c.id} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <input type="checkbox" className="rounded border-border bg-background text-primary accent-primary" 
-                        onChange={(e) => {
+                    <label key={c.id} style={{
+                      display: "flex", alignItems: "center", gap: "var(--space-2)",
+                      fontSize: "var(--text-sm)", color: "var(--text-secondary)",
+                      cursor: "pointer", padding: "var(--space-1) 0",
+                    }}>
+                      <input
+                        type="checkbox"
+                        style={{ accentColor: "var(--teal)", width: 15, height: 15 }}
+                        onChange={e => {
                           const ids = formData.companyIds || [];
-                          setFormData({...formData, companyIds: e.target.checked ? [...ids, c.id] : ids.filter((id: string) => id !== c.id)});
+                          set("companyIds", e.target.checked ? [...ids, c.id] : ids.filter((id: string) => id !== c.id));
                         }}
                       />
                       {c.name}
@@ -121,20 +308,85 @@ export function NewLead() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Next Action / Notes</label>
-              <Textarea value={formData.nextAction} onChange={e => setFormData({...formData, nextAction: e.target.value})} placeholder="Initial thoughts..." />
+            {/* Notes — full width */}
+            <div>
+              <FieldLabel>Next Action / Notes</FieldLabel>
+              <StyledTextarea
+                value={formData.nextAction}
+                onChange={e => set("nextAction", e.target.value)}
+                placeholder="Describe the next steps or initial context for this lead…"
+                rows={4}
+              />
             </div>
+          </div>
 
-            <div className="flex justify-end gap-4 pt-4 border-t border-border/50">
-              <Button type="button" variant="ghost" onClick={() => setLocation("/")}>Cancel</Button>
-              <Button type="submit" disabled={createLead.isPending} className="min-w-[120px]">
-                {createLead.isPending ? "Creating..." : "Create Lead"}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          {/* Button row — right aligned */}
+          <div style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "var(--space-3)",
+            marginTop: "var(--space-7)",
+            paddingTop: "var(--space-5)",
+            borderTop: "1px solid var(--border-subtle)",
+          }}>
+            <button
+              type="button"
+              onClick={() => setLocation("/")}
+              style={{
+                height: 42, padding: "0 20px",
+                background: "transparent",
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)",
+                color: "var(--text-secondary)",
+                fontSize: "var(--text-sm)",
+                fontWeight: 500,
+                fontFamily: "var(--font-sans)",
+                cursor: "pointer",
+                transition: "color 150ms ease, border-color 150ms ease, background 150ms ease",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.color = "var(--text-primary)";
+                e.currentTarget.style.borderColor = "var(--border-strong)";
+                e.currentTarget.style.background = "var(--bg-subtle)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.borderColor = "var(--border-default)";
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={createLead.isPending}
+              onMouseEnter={() => setPrimaryHover(true)}
+              onMouseLeave={() => setPrimaryHover(false)}
+              style={{
+                height: 42, padding: "0 32px",
+                background: createLead.isPending ? "hsl(172 75% 48% / 0.6)" : "var(--teal)",
+                color: "hsl(222 22% 6%)",
+                border: "none",
+                borderRadius: "var(--radius-md)",
+                fontSize: "var(--text-sm)",
+                fontWeight: 700,
+                fontFamily: "var(--font-sans)",
+                cursor: createLead.isPending ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-2)",
+                filter: primaryHover && !createLead.isPending ? "brightness(1.1)" : "none",
+                boxShadow: primaryHover && !createLead.isPending ? "0 0 20px hsl(172 75% 48% / 0.3)" : "none",
+                transition: "filter 150ms ease, box-shadow 150ms ease",
+              }}
+            >
+              <PlusCircle size={15} />
+              {createLead.isPending ? "Creating…" : "Create Lead"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

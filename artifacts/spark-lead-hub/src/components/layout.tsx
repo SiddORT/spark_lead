@@ -18,16 +18,74 @@ export function Layout({ children }: { children: React.ReactNode }) {
     return (
       <Link
         href={href}
-        className={`nav-item${active ? " active" : ""}`}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: collapsed ? 0 : "var(--space-3)",
+          padding: collapsed ? "var(--space-3)" : "var(--space-2) var(--space-3)",
+          borderRadius: active ? "0 var(--radius-md) var(--radius-md) 0" : "var(--radius-md)",
+          textDecoration: "none",
+          fontSize: "var(--text-sm)",
+          fontWeight: 500,
+          fontFamily: "var(--font-sans)",
+          color: active ? "var(--teal)" : "var(--text-secondary)",
+          background: active ? "hsl(172 75% 48% / 0.08)" : "transparent",
+          borderLeft: active ? "2px solid var(--teal)" : "2px solid transparent",
+          marginLeft: active ? 0 : 0,
+          transition: "background 150ms ease, color 150ms ease",
+          position: "relative",
+          justifyContent: collapsed ? "center" : "flex-start",
+        }}
+        onMouseEnter={e => {
+          if (!active) {
+            e.currentTarget.style.background = "hsl(222 16% 16%)";
+            e.currentTarget.style.color = "var(--text-primary)";
+          }
+        }}
+        onMouseLeave={e => {
+          if (!active) {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "var(--text-secondary)";
+          }
+        }}
       >
-        <span className="nav-item-icon"><Icon size={16} /></span>
-        <span className="nav-item-label">{label}</span>
+        <span style={{
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          color: active ? "var(--teal)" : "var(--text-secondary)",
+        }}>
+          <Icon size={18} />
+        </span>
+        {!collapsed && (
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {label}
+          </span>
+        )}
       </Link>
     );
   };
 
   const SectionLabel = ({ title }: { title: string }) => (
-    <div className="sidebar-section-label">{title}</div>
+    collapsed ? (
+      <div style={{
+        height: 1,
+        background: "var(--border-subtle)",
+        margin: "var(--space-2) var(--space-3)",
+      }} />
+    ) : (
+      <div style={{
+        fontSize: "var(--text-xs)",
+        fontWeight: 600,
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        color: "var(--text-muted)",
+        padding: "var(--space-3) var(--space-3) var(--space-1)",
+        fontFamily: "var(--font-sans)",
+      }}>
+        {title}
+      </div>
+    )
   );
 
   const initials = (name?: string | null) =>
@@ -35,15 +93,50 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar${collapsed ? " collapsed" : ""}`}>
-        <div className="sidebar-brand">
-          <div className="sidebar-brand-icon">
-            <Zap size={18} />
+      <aside className={`sidebar${collapsed ? " collapsed" : ""}`} style={{ padding: 0, display: "flex", flexDirection: "column" }}>
+        {/* Brand */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: collapsed ? 0 : "var(--space-3)",
+          padding: collapsed ? "var(--space-4) var(--space-3)" : "var(--space-4) var(--space-4)",
+          justifyContent: collapsed ? "center" : "flex-start",
+          borderBottom: "1px solid var(--border-subtle)",
+          flexShrink: 0,
+        }}>
+          <div style={{
+            width: 32, height: 32,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "hsl(172 75% 48% / 0.12)",
+            border: "1px solid hsl(172 75% 48% / 0.3)",
+            borderRadius: "var(--radius-md)",
+            flexShrink: 0,
+          }}>
+            <Zap size={16} style={{ color: "var(--teal)" }} />
           </div>
-          {!collapsed && <span className="sidebar-brand-text">LeadFlow</span>}
+          {!collapsed && (
+            <span style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "var(--text-base)",
+              fontWeight: 800,
+              color: "var(--teal)",
+              letterSpacing: "-0.01em",
+              filter: "drop-shadow(0 0 8px hsl(172 75% 48% / 0.35))",
+            }}>
+              LeadFlow
+            </span>
+          )}
         </div>
 
-        <nav className="sidebar-nav">
+        {/* Nav */}
+        <nav style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "var(--space-3) var(--space-2)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}>
           <SectionLabel title="Main" />
           <NavItem href="/" icon={LayoutDashboard} label="Dashboard" />
           <NavItem href="/kanban" icon={Kanban} label="Kanban Board" />
@@ -74,35 +167,62 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </PermissionCheck>
         </nav>
 
-        <div className="sidebar-footer">
+        {/* Footer */}
+        <div style={{
+          flexShrink: 0,
+          borderTop: "1px solid var(--border-subtle)",
+          padding: "var(--space-3) var(--space-3)",
+        }}>
           {!collapsed ? (
             <>
-              <div className="sidebar-user">
-                <div className="avatar">{initials(user?.displayName)}</div>
-                <div className="sidebar-user-info">
-                  <div className="sidebar-user-name">{user?.displayName}</div>
-                  <div className="sidebar-user-email">{user?.email}</div>
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-2)",
+                marginBottom: "var(--space-2)",
+              }}>
+                <div className="avatar" style={{ flexShrink: 0 }}>{initials(user?.displayName)}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontSize: "var(--text-xs)",
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {user?.displayName}
+                  </div>
+                  <div style={{
+                    fontSize: 10,
+                    color: "var(--text-muted)",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {user?.email}
+                  </div>
                 </div>
               </div>
-              <div className="sidebar-actions">
-                <span className="badge badge-admin" style={{ textTransform: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+                <span className={`badge badge-admin`} style={{ textTransform: "none", flex: 1, justifyContent: "center" }}>
                   {user?.role?.replace("_", " ")}
                 </span>
                 <button
                   onClick={() => setCollapsed(true)}
                   className="btn btn-ghost btn-icon"
                   title="Collapse sidebar"
-                  style={{ marginLeft: "auto" }}
+                  style={{ width: 28, height: 28 }}
                 >
-                  <ChevronLeft size={16} />
+                  <ChevronLeft size={15} />
                 </button>
                 <button
                   onClick={signOut}
                   className="btn btn-ghost btn-icon"
                   title="Sign out"
-                  style={{ color: "var(--danger)" }}
+                  style={{ color: "var(--danger)", width: 28, height: 28 }}
                 >
-                  <LogOut size={16} />
+                  <LogOut size={15} />
                 </button>
               </div>
             </>
@@ -114,7 +234,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 className="btn btn-ghost btn-icon"
                 title="Expand sidebar"
               >
-                <ChevronRight size={16} />
+                <ChevronRight size={15} />
+              </button>
+              <button
+                onClick={signOut}
+                className="btn btn-ghost btn-icon"
+                title="Sign out"
+                style={{ color: "var(--danger)" }}
+              >
+                <LogOut size={15} />
               </button>
             </div>
           )}
