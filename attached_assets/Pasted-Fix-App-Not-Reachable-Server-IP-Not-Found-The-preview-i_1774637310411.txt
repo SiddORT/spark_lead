@@ -1,0 +1,135 @@
+Fix: App Not Reachable / Server IP Not Found
+
+The preview is showing "server IP address could not be found." The app is not reachable. Fix all of the following:
+
+1. Server Must Bind to 0.0.0.0, Not localhost
+
+The Express server MUST listen on 0.0.0.0 and use the PORT environment variable. Replit will not route traffic to localhost or 127.0.0.1.
+
+ts
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+2. Check .replit and replit.nix
+
+Make sure .replit has the correct run command pointing to the actual entry file:
+
+toml
+
+run = "npm run dev"   # or whatever starts BOTH frontend and backend
+
+If this is a monorepo or has separate frontend/backend, the run command must start the backend server (which serves the frontend build or proxies to Vite).
+
+3. Vite Dev Server Must Also Bind to 0.0.0.0
+
+In vite.config.ts, set the server host:
+
+ts
+
+export default defineConfig({
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  }
+})
+
+4. If Backend Serves Frontend (Production Mode)
+
+Make sure Express serves the Vite build output:
+
+ts
+
+import path from 'path';
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
+
+And run npm run build on the frontend before starting the server.
+
+5. If Running in Dev Mode (Separate Processes)
+
+Use concurrently to run both Vite and Express at the same time:
+
+json
+
+"scripts": {
+  "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+  "dev:server": "tsx watch src/index.ts",
+  "dev:client": "vite"
+}
+
+Install if needed: npm install concurrently
+
+6. Verify the Database Connection Doesn't Block Startup
+
+If the DB connection fails and crashes the server before it starts listening, the app will be unreachable. Add error handling:
+
+ts
+
+async function startServer() {
+  try {
+    await db.connect(); // or await prisma.$connect() or drizzle check
+    app.listen(PORT, '0.0.0.0', () => console.log(`Running on ${PORT}`));
+  } catch (err) {
+    console.error('Failed to connect to DB:', err);
+    process.exit(1);
+  }
+}
+startServer();
+
+7. Run the Seed Script
+
+After the server is confirmed running, run the seed to create the admin user and default permissions:
+
+bash
+
+npm run seed
+# or
+npx tsx src/db/seed.ts
+
+Then verify login works with:
+
+
+
+
+
+Email: admin@sparkleadhub.com
+
+
+
+Password: Admin@123!
+
+Summary
+
+Fix in this order:
+
+
+
+
+
+app.listen(PORT, '0.0.0.0', ...) — must be 0.0.0.0
+
+
+
+vite.config.ts → server: { host: '0.0.0.0' }
+
+
+
+Verify .replit run command starts the server
+
+
+
+Add DB connection error handling so crashes are visible
+
+
+
+Run seed script
+
+
+
+Confirm preview loads
+
