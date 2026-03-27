@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 interface TablePaginationProps {
   page: number;
@@ -14,19 +15,13 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
   const start = (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
 
-  const getPageNumbers = () => {
+  const getPageNumbers = (): (number | "...")[] => {
     if (totalPages <= 7) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
-    const pages: (number | "...")[] = [];
-    if (page <= 4) {
-      pages.push(1, 2, 3, 4, 5, "...", totalPages);
-    } else if (page >= totalPages - 3) {
-      pages.push(1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pages.push(1, "...", page - 1, page, page + 1, "...", totalPages);
-    }
-    return pages;
+    if (page <= 4) return [1, 2, 3, 4, 5, "...", totalPages];
+    if (page >= totalPages - 3) return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    return [1, "...", page - 1, page, page + 1, "...", totalPages];
   };
 
   return (
@@ -34,9 +29,9 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      padding: "var(--space-4) var(--space-5)",
+      padding: "var(--space-3) var(--space-5)",
       borderTop: "1px solid var(--border-subtle)",
-      background: "var(--bg-overlay)",
+      background: "var(--bg-elevated)",
       flexWrap: "wrap",
       gap: "var(--space-3)",
     }}>
@@ -44,60 +39,122 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
         fontSize: "var(--text-xs)",
         color: "var(--text-muted)",
         fontVariantNumeric: "tabular-nums",
+        letterSpacing: "0.01em",
       }}>
-        Showing <strong style={{ color: "var(--text-secondary)" }}>{start}–{end}</strong> of{" "}
-        <strong style={{ color: "var(--text-secondary)" }}>{total}</strong> results
+        Showing{" "}
+        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{start}–{end}</span>
+        {" "}of{" "}
+        <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>{total}</span>
+        {" "}results
       </span>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
-        <button
-          className="btn btn-ghost btn-sm btn-icon"
+      <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <NavButton
           onClick={() => onChange(page - 1)}
           disabled={page === 1}
-          style={{ opacity: page === 1 ? 0.35 : 1 }}
           title="Previous page"
         >
-          <ChevronLeft size={15} />
-        </button>
+          <ChevronLeft size={14} />
+        </NavButton>
 
         {getPageNumbers().map((p, i) =>
           p === "..." ? (
             <span
-              key={`ellipsis-${i}`}
-              style={{ padding: "0 4px", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}
+              key={`e-${i}`}
+              style={{
+                width: 30, textAlign: "center",
+                fontSize: "var(--text-xs)", color: "var(--text-muted)",
+                userSelect: "none",
+              }}
             >
               …
             </span>
           ) : (
-            <button
-              key={p}
-              onClick={() => onChange(p as number)}
-              className="btn btn-sm btn-icon"
-              style={{
-                minWidth: 32,
-                fontVariantNumeric: "tabular-nums",
-                fontSize: "var(--text-xs)",
-                background: page === p ? "var(--teal-dim)" : "transparent",
-                color: page === p ? "var(--teal)" : "var(--text-muted)",
-                border: page === p ? "1px solid var(--teal)" : "1px solid transparent",
-                fontWeight: page === p ? 700 : 400,
-              }}
-            >
-              {p}
-            </button>
+            <PageButton key={p} num={p as number} active={page === p} onClick={() => onChange(p as number)} />
           )
         )}
 
-        <button
-          className="btn btn-ghost btn-sm btn-icon"
+        <NavButton
           onClick={() => onChange(page + 1)}
           disabled={page === totalPages}
-          style={{ opacity: page === totalPages ? 0.35 : 1 }}
           title="Next page"
         >
-          <ChevronRight size={15} />
-        </button>
+          <ChevronRight size={14} />
+        </NavButton>
       </div>
     </div>
+  );
+}
+
+function PageButton({ num, active, onClick }: { num: number; active: boolean; onClick: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 30, height: 30,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "var(--text-xs)",
+        fontWeight: active ? 700 : 400,
+        fontVariantNumeric: "tabular-nums",
+        borderRadius: "var(--radius-sm)",
+        border: "none",
+        cursor: "pointer",
+        background: active
+          ? "hsl(172 75% 48% / 0.1)"
+          : hovered ? "var(--bg-subtle)" : "transparent",
+        color: active ? "var(--teal)" : hovered ? "var(--text-primary)" : "var(--text-muted)",
+        boxShadow: active ? "0 0 10px hsl(172 75% 48% / 0.18)" : "none",
+        transition: "all 120ms ease",
+        outline: "none",
+        position: "relative",
+      }}
+    >
+      {num}
+      {active && (
+        <span style={{
+          position: "absolute",
+          bottom: 2, left: "50%",
+          transform: "translateX(-50%)",
+          width: 12, height: 2,
+          background: "var(--teal)",
+          borderRadius: 2,
+        }} />
+      )}
+    </button>
+  );
+}
+
+function NavButton({ onClick, disabled, title, children }: {
+  onClick: () => void;
+  disabled: boolean;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        width: 30, height: 30,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        borderRadius: "var(--radius-sm)",
+        border: "none",
+        background: hovered && !disabled ? "var(--bg-subtle)" : "transparent",
+        color: disabled ? "var(--text-muted)" : hovered ? "var(--text-primary)" : "var(--text-secondary)",
+        cursor: disabled ? "not-allowed" : "pointer",
+        opacity: disabled ? 0.35 : 1,
+        transition: "all 120ms ease",
+        outline: "none",
+      }}
+    >
+      {children}
+    </button>
   );
 }
