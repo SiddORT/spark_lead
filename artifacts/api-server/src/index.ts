@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { verifyEmailConnection } from "./lib/email";
+import { seedInitialAdmin } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -41,6 +42,9 @@ app.listen(port, "0.0.0.0", (err) => {
   logger.info(`🌍 NODE_ENV: ${process.env.NODE_ENV || "development"}`);
   logger.info(`🔗 FRONTEND_URL: ${process.env.FRONTEND_URL || "(not set)"}`);
   logger.info(`📊 Health check: http://localhost:${port}/api/health`);
+
+  // Seed initial admin if database is empty (runs on first deploy)
+  seedInitialAdmin();
 
   // Verify email service (non-blocking — warn but don't fail startup)
   verifyEmailConnection().then((ok) => {
