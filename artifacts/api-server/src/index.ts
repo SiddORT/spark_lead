@@ -1,7 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { verifyEmailConnection } from "./lib/email";
-import { seedInitialAdmin } from "./lib/seed";
+import { seedInitialAdmin, seedDefaultPermissions } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -45,6 +45,9 @@ app.listen(port, "0.0.0.0", (err) => {
 
   // Seed initial admin if database is empty (runs on first deploy)
   seedInitialAdmin();
+
+  // Seed default role permissions if table is empty
+  seedDefaultPermissions();
 
   // Verify email service (non-blocking — warn but don't fail startup)
   verifyEmailConnection().then((ok) => {
