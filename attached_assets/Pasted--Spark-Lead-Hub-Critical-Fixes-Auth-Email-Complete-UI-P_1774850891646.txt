@@ -1,0 +1,1356 @@
+# 🚨 Spark Lead Hub — Critical Fixes: Auth, Email & Complete UI Polish
+
+This prompt covers three categories of fixes that must ALL be completed before considering this done:
+1. **Production login broken** — published app cannot authenticate
+2. **Email delivery broken** — invites and access approvals never arrive
+3. **UI uniformity & readability** — forms, dropdowns, typography, spacing all need a final pass
+
+Do NOT skip any section. Test every fix end-to-end before marking complete.
+
+---
+
+## 🔴 PART 1 — Fix Production Login (Published App)
+
+### Root Cause Analysis
+
+The preview works but the published URL fails. This means one or more of these:
+
+1. **Environment variables are not set in the Replit Secrets for production** — `.env` files are ignored in deployed/published Replit apps. Every variable must be in **Replit Secrets** (the lock icon in the sidebar).
+2. **CORS is blocking requests** — the published domain is different from `localhost`, and the backend is rejecting cross-origin requests.
+3. **API base URL is hardcoded to localhost** — the frontend is calling `http://localhost:3000/api/...` which works in preview but fails when published.
+4. **Cookie/JWT not being sent cross-origin** — cookies set with `SameSite=Strict` or missing `Secure` flag won't work on the published HTTPS domain.
+5. **Database connection string uses localhost** — if PostgreSQL URL points to `localhost`, it may not resolve correctly in the published environment.
+
+---
+
+### Fix 1.1 — Move ALL Environment Variables to Replit Secrets
+
+Go to Replit → Secrets (lock icon) and add every single one of these. Do not rely on `.env` files in production:
+
+```
+DATABASE_URL        = postgresql://...  (full connection string)
+JWT_SECRET          = (strong random string, min 32 chars)
+JWT_EXPIRES_IN      = 7d
+ADMIN_EMAIL         = admin@sparkleadhub.com
+ADMIN_PASSWORD      = Admin@123!
+PORT                = 3000
+FRONTEND_URL        = https://YOUR-PUBLISHED-REPLIT-URL.repl.co
+SMTP_HOST           = smtp.gmail.com
+SMTP_PORT           = 587
+SMTP_USER           = your@gmail.com
+SMTP_PASS           = your-app-password
+```
+
+In code, access via `process.env.VARIABLE_NAME` — never hardcode any of these values.
+
+**Verify every env var is loaded at server startup:**
+```ts
+// src/index.ts — add at the very top, before anything else
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'PORT', 'FRONTEND_URL'];
+for (const key of requiredEnvVars) {
+  if (!process.env[key]) {
+    console.error(`❌ Missing required environment variable: ${key}`);
+    process.exit(1);
+  }
+}
+console.log('✅ All required environment variables present');
+console.log('📡 FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('🗄️  DB connected to:', process.env.DATABASE_URL?.split('@')[1]); // safe: hides credentials
+```
+
+---
+
+### Fix 1.2 — Fix CORS for Published Domain
+
+The backend must allow requests from BOTH the preview URL and the published URL:
+
+```ts
+// src/index.ts
+import cors from 'cors';
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,           // published Replit URL
+  /\.repl\.co$/,                       // all *.repl.co subdomains
+  /\.replit\.dev$/,                    // Replit dev domains
+  /\.kirk\.repl\.co$/,                 // Replit published variants
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+
+    const allowed = allowedOrigins.some(pattern => {
+      if (typeof pattern === 'string') return origin === pattern;
+      if (pattern instanceof RegExp) return pattern.test(origin);
+      return false;
+    });
+
+    if (allowed) return callback(null, true);
+
+    console.warn(`🚫 CORS blocked origin: ${origin}`);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Set-Cookie'],
+}));
+
+// Handle preflight for all routes
+app.options('*', cors());
+```
+
+---
+
+### Fix 1.3 — Fix Frontend API Base URL (Dynamic, Not Hardcoded)
+
+**Never hardcode `localhost` in the frontend.** Use a dynamic base URL that works in both preview and production:
+
+```ts
+// src/lib/api.ts
+
+// Determine API base URL dynamically
+const getApiBaseUrl = (): string => {
+  // If an explicit env var is set at build time, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // In production (published Replit), the backend and frontend share the same origin
+  // because Express serves the frontend build
+  if (import.meta.env.PROD) {
+    return '/api'; // relative URL — same origin, no CORS issues
+  }
+
+  // In development (Vite dev server proxies to backend)
+  return 'http://localhost:3000/api';
+};
+
+export const API_BASE = getApiBaseUrl();
+```
+
+**Add Vite proxy for development** so Vite dev server forwards `/api` to Express:
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
+});
+```
+
+**In production, Express must serve the Vite build:**
+```ts
+// src/index.ts — add AFTER all API routes
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+if (process.env.NODE_ENV === 'production') {
+  const clientDistPath = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDistPath));
+
+  // SPA fallback — all non-API routes return index.html
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'API route not found' });
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+
+  console.log('📦 Serving frontend build from:', clientDistPath);
+}
+```
+
+**Update `.replit` to build frontend and start backend:**
+```toml
+[deployment]
+run = ["sh", "-c", "cd client && npm run build && cd ../server && npm start"]
+
+[env]
+NODE_ENV = "production"
+```
+
+Or if monorepo:
+```toml
+run = "npm run build && npm start"
+```
+
+Add to root `package.json`:
+```json
+{
+  "scripts": {
+    "build": "cd client && npm run build",
+    "start": "cd server && node dist/index.js",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\""
+  }
+}
+```
+
+---
+
+### Fix 1.4 — Fix JWT / Cookie for HTTPS Published Domain
+
+If using JWT in Authorization header (recommended for Replit):
+```ts
+// Backend: send JWT in response body, not as a cookie
+res.json({
+  token: jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET!, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  }),
+  user: { id: user.id, email: user.email, role: user.role, displayName: user.display_name }
+});
+```
+
+```ts
+// Frontend: store in localStorage, send as Bearer token
+localStorage.setItem('slh_token', token);
+
+// In API client — attach to every request
+const apiCall = async (endpoint: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('slh_token');
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem('slh_token');
+    window.location.href = '/auth';
+    return;
+  }
+
+  return res;
+};
+```
+
+If using cookies instead, ensure these flags for HTTPS:
+```ts
+res.cookie('token', jwtToken, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' required for cross-origin
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+});
+```
+
+---
+
+### Fix 1.5 — Add a `/api/health` Diagnostic Endpoint
+
+This is critical for debugging production issues without logs:
+
+```ts
+// src/routes/health.ts
+app.get('/api/health', async (req, res) => {
+  const checks: Record<string, string> = {};
+
+  // DB check
+  try {
+    await db.execute('SELECT 1');
+    checks.database = '✅ connected';
+  } catch (e: any) {
+    checks.database = `❌ ${e.message}`;
+  }
+
+  // Env check
+  checks.jwtSecret    = process.env.JWT_SECRET    ? '✅ set' : '❌ missing';
+  checks.frontendUrl  = process.env.FRONTEND_URL  ? `✅ ${process.env.FRONTEND_URL}` : '❌ missing';
+  checks.smtpHost     = process.env.SMTP_HOST     ? '✅ set' : '❌ missing';
+  checks.nodeEnv      = process.env.NODE_ENV      || 'not set';
+  checks.port         = process.env.PORT          || '3000';
+
+  const allOk = Object.values(checks).every(v => !v.startsWith('❌'));
+
+  res.status(allOk ? 200 : 500).json({
+    status: allOk ? 'ok' : 'degraded',
+    timestamp: new Date().toISOString(),
+    checks,
+  });
+});
+```
+
+**After deploying, open `https://YOUR-PUBLISHED-URL.repl.co/api/health` in a browser and verify every check shows ✅.**
+
+---
+
+### Fix 1.6 — Auth Middleware Must Work With Bearer Token
+
+```ts
+// src/middleware/requireAuth.ts
+import jwt from 'jsonwebtoken';
+import type { Request, Response, NextFunction } from 'express';
+
+export interface AuthRequest extends Request {
+  user?: { userId: string; role: string; };
+}
+
+export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+  // Check Authorization header first
+  const authHeader = req.headers.authorization;
+  let token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+  // Fallback: check cookie
+  if (!token && req.cookies?.token) {
+    token = req.cookies.token;
+  }
+
+  if (!token) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string; role: string };
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+```
+
+---
+
+## 🔴 PART 2 — Fix Email Delivery (Invites & Access Approvals)
+
+### Root Cause Analysis
+
+Emails are not arriving because one or more of:
+1. SMTP credentials are not in Replit Secrets (only in `.env`)
+2. Gmail requires an **App Password**, not the regular account password
+3. The SMTP connection is failing silently — errors are swallowed
+4. Port 587 may be blocked on Replit — need to try port 465 with SSL
+5. The `from` email address doesn't match the authenticated SMTP user
+6. Nodemailer transport is created but never verified
+
+---
+
+### Fix 2.1 — Create a Robust Email Service
+
+Replace whatever email code exists with this complete implementation:
+
+```ts
+// src/services/email.ts
+import nodemailer from 'nodemailer';
+
+// Create transporter — try multiple configurations
+const createTransporter = () => {
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const port = parseInt(process.env.SMTP_PORT || '587');
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    console.error('❌ Email: SMTP_USER or SMTP_PASS not configured in Secrets');
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,     // true for 465 (SSL), false for 587 (STARTTLS)
+    requireTLS: port === 587,
+    auth: { user, pass },
+    tls: {
+      rejectUnauthorized: false, // allow self-signed certs (needed on some Replit envs)
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
+  });
+};
+
+let transporter = createTransporter();
+
+// Verify connection on startup
+export const verifyEmailConnection = async (): Promise<boolean> => {
+  if (!transporter) {
+    console.error('❌ Email transporter not created — check SMTP_USER and SMTP_PASS in Secrets');
+    return false;
+  }
+  try {
+    await transporter.verify();
+    console.log('✅ Email service connected to', process.env.SMTP_HOST);
+    return true;
+  } catch (error: any) {
+    console.error('❌ Email service connection failed:', error.message);
+    console.error('   Host:', process.env.SMTP_HOST);
+    console.error('   Port:', process.env.SMTP_PORT);
+    console.error('   User:', process.env.SMTP_USER);
+    console.error('   Hint: If using Gmail, generate an App Password at:');
+    console.error('         https://myaccount.google.com/apppasswords');
+    console.error('   Hint: Enable 2FA on your Google account first');
+    console.error('   Hint: Try SMTP_PORT=465 if 587 fails');
+    return false;
+  }
+};
+
+// Generic send function with retry
+const sendEmail = async (options: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}): Promise<boolean> => {
+  if (!transporter) {
+    console.error('❌ Cannot send email — transporter not initialized');
+    return false;
+  }
+
+  const fromName = 'Spark Lead Hub';
+  const fromEmail = process.env.SMTP_USER!;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+      text: options.text || options.html.replace(/<[^>]+>/g, ''),
+    });
+    console.log(`✅ Email sent to ${options.to} | MessageID: ${info.messageId}`);
+    return true;
+  } catch (error: any) {
+    console.error(`❌ Email failed to ${options.to}:`, error.message);
+    // Don't throw — email failure must never crash user operations
+    return false;
+  }
+};
+
+// ============================================================
+// Email Templates
+// ============================================================
+
+export const sendInviteEmail = async (params: {
+  to: string;
+  displayName: string;
+  setPasswordUrl: string;
+  invitedByName: string;
+  role: string;
+}): Promise<boolean> => {
+  const roleLabel = {
+    admin: 'Admin',
+    lead_owner: 'Lead Owner',
+    deal_handler: 'Deal Handler',
+    manager: 'Manager',
+    member: 'Member',
+  }[params.role] || params.role;
+
+  return sendEmail({
+    to: params.to,
+    subject: `You've been invited to Spark Lead Hub`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're Invited — Spark Lead Hub</title>
+</head>
+<body style="margin:0;padding:0;background:#0d0f14;font-family:'DM Sans',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0f14;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#12151e;border:1px solid #1e2433;border-radius:16px;overflow:hidden;max-width:560px;width:100%;">
+        
+        <!-- Header -->
+        <tr>
+          <td style="background:#0a1a18;padding:28px 36px;border-bottom:1px solid #1e2433;">
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background:#0d2e28;border-radius:8px;width:36px;height:36px;text-align:center;vertical-align:middle;padding:8px;">
+                  <span style="color:#2dd4bf;font-size:18px;">⚡</span>
+                </td>
+                <td style="padding-left:12px;">
+                  <span style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;color:#e8eaf0;letter-spacing:-0.5px;">LeadFlow</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px;">
+            <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#e8eaf0;letter-spacing:-0.5px;">
+              You've been invited! 🎉
+            </h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#8892a4;line-height:1.6;">
+              <strong style="color:#e8eaf0;">${params.invitedByName}</strong> has invited you to join <strong style="color:#2dd4bf;">Spark Lead Hub</strong> as a <strong style="color:#e8eaf0;">${roleLabel}</strong>.
+            </p>
+
+            <div style="background:#0d1117;border:1px solid #1e2433;border-radius:10px;padding:20px;margin-bottom:28px;">
+              <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.08em;">Your account email</p>
+              <p style="margin:0;font-size:15px;color:#2dd4bf;font-weight:600;">${params.to}</p>
+            </div>
+
+            <p style="margin:0 0 20px;font-size:14px;color:#8892a4;line-height:1.6;">
+              Click the button below to set your password and access the platform. This link expires in <strong style="color:#e8eaf0;">24 hours</strong>.
+            </p>
+
+            <!-- CTA Button -->
+            <table cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td align="center">
+                  <a href="${params.setPasswordUrl}" 
+                     style="display:inline-block;background:#2dd4bf;color:#0d0f14;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;letter-spacing:0.01em;">
+                    Set Your Password →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:24px 0 0;font-size:12px;color:#4a5568;line-height:1.6;text-align:center;">
+              Or copy this link into your browser:<br>
+              <span style="color:#2dd4bf;word-break:break-all;">${params.setPasswordUrl}</span>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="padding:20px 36px;border-top:1px solid #1e2433;background:#0d1117;">
+            <p style="margin:0;font-size:12px;color:#4a5568;text-align:center;line-height:1.6;">
+              If you didn't expect this invitation, you can safely ignore this email.<br>
+              © ${new Date().getFullYear()} Spark Lead Hub. All rights reserved.
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+};
+
+export const sendAccessApprovedEmail = async (params: {
+  to: string;
+  displayName: string;
+  setPasswordUrl: string;
+  reviewedByName: string;
+}): Promise<boolean> => {
+  return sendEmail({
+    to: params.to,
+    subject: `Your access to Spark Lead Hub has been approved`,
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background:#0d0f14;font-family:'DM Sans',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0f14;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#12151e;border:1px solid #1e2433;border-radius:16px;overflow:hidden;max-width:560px;width:100%;">
+        
+        <tr>
+          <td style="background:#0a1a18;padding:28px 36px;border-bottom:1px solid #1e2433;">
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="background:#0d2e28;border-radius:8px;width:36px;height:36px;text-align:center;vertical-align:middle;padding:8px;">
+                  <span style="color:#2dd4bf;font-size:18px;">⚡</span>
+                </td>
+                <td style="padding-left:12px;">
+                  <span style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;color:#e8eaf0;letter-spacing:-0.5px;">LeadFlow</span>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:36px;">
+            <div style="background:#0a1f14;border:1px solid #1a4a2e;border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;">
+              <span style="font-size:20px;margin-right:12px;">✅</span>
+              <span style="font-size:14px;font-weight:600;color:#4ade80;">Access Approved</span>
+            </div>
+            
+            <h1 style="margin:0 0 8px;font-size:24px;font-weight:700;color:#e8eaf0;letter-spacing:-0.5px;">
+              Welcome to Spark Lead Hub!
+            </h1>
+            <p style="margin:0 0 24px;font-size:15px;color:#8892a4;line-height:1.6;">
+              Hi <strong style="color:#e8eaf0;">${params.displayName}</strong>, your access request has been reviewed and approved by <strong style="color:#e8eaf0;">${params.reviewedByName}</strong>.
+            </p>
+
+            <p style="margin:0 0 20px;font-size:14px;color:#8892a4;line-height:1.6;">
+              Click the button below to set your password and start using the platform. This link expires in <strong style="color:#e8eaf0;">24 hours</strong>.
+            </p>
+
+            <table cellpadding="0" cellspacing="0" width="100%">
+              <tr>
+                <td align="center">
+                  <a href="${params.setPasswordUrl}"
+                     style="display:inline-block;background:#2dd4bf;color:#0d0f14;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;letter-spacing:0.01em;">
+                    Set Password & Get Started →
+                  </a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:24px 0 0;font-size:12px;color:#4a5568;line-height:1.6;text-align:center;">
+              Link: <span style="color:#2dd4bf;word-break:break-all;">${params.setPasswordUrl}</span>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:20px 36px;border-top:1px solid #1e2433;background:#0d1117;">
+            <p style="margin:0;font-size:12px;color:#4a5568;text-align:center;">
+              © ${new Date().getFullYear()} Spark Lead Hub. All rights reserved.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+};
+
+export const sendActivityAlertEmail = async (params: {
+  to: string;
+  leadName: string;
+  changeDetails: string;
+  actorName: string;
+}): Promise<boolean> => {
+  return sendEmail({
+    to: params.to,
+    subject: `Update on lead: ${params.leadName}`,
+    html: `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#0d0f14;font-family:Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0f14;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#12151e;border:1px solid #1e2433;border-radius:16px;overflow:hidden;max-width:560px;width:100%;">
+        <tr>
+          <td style="background:#0a1a18;padding:24px 36px;border-bottom:1px solid #1e2433;">
+            <span style="font-size:16px;font-weight:700;color:#e8eaf0;">⚡ LeadFlow</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 36px;">
+            <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.08em;">Lead Update</p>
+            <h2 style="margin:0 0 20px;font-size:20px;font-weight:700;color:#2dd4bf;">${params.leadName}</h2>
+            <div style="background:#0d1117;border:1px solid #1e2433;border-radius:8px;padding:16px;margin-bottom:20px;">
+              <p style="margin:0;font-size:14px;color:#8892a4;line-height:1.7;white-space:pre-line;">${params.changeDetails}</p>
+            </div>
+            <p style="margin:0;font-size:13px;color:#4a5568;">Updated by <strong style="color:#e8eaf0;">${params.actorName}</strong></p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 36px;border-top:1px solid #1e2433;background:#0d1117;">
+            <p style="margin:0;font-size:12px;color:#4a5568;text-align:center;">© ${new Date().getFullYear()} Spark Lead Hub</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`,
+  });
+};
+
+export const sendTestEmail = async (to: string, type: 'password' | 'activity'): Promise<boolean> => {
+  if (type === 'password') {
+    return sendInviteEmail({
+      to,
+      displayName: 'Test User',
+      setPasswordUrl: `${process.env.FRONTEND_URL}/set-password?token=test-token-123`,
+      invitedByName: 'System Admin',
+      role: 'deal_handler',
+    });
+  } else {
+    return sendActivityAlertEmail({
+      to,
+      leadName: 'Test Lead — ACME Corp',
+      changeDetails: 'Stage: Discovery → Qualification\nDeal Value: ₹5,00,000',
+      actorName: 'System Admin',
+    });
+  }
+};
+```
+
+---
+
+### Fix 2.2 — Gmail App Password Setup (Required)
+
+Gmail blocks regular passwords for SMTP. You MUST use an App Password:
+
+1. Go to https://myaccount.google.com/security
+2. Enable **2-Step Verification** (required)
+3. Go to https://myaccount.google.com/apppasswords
+4. Select app: **Mail**, device: **Other (Custom name)** → type "SparkLeadHub"
+5. Copy the 16-character password (e.g. `abcd efgh ijkl mnop`)
+6. In Replit Secrets: `SMTP_PASS = abcdEfghIjklMnop` (no spaces)
+
+**If Gmail still blocks it**, switch to a dedicated transactional email service. Add this fallback:
+
+```ts
+// Alternative: Use Brevo (formerly Sendinblue) — free tier: 300 emails/day
+// SMTP_HOST = smtp-relay.brevo.com
+// SMTP_PORT = 587
+// SMTP_USER = your-brevo-login-email
+// SMTP_PASS = your-brevo-smtp-key (from Brevo dashboard → SMTP & API)
+
+// Alternative: Use Resend.com — free tier: 3000 emails/month
+// Install: npm install resend
+// import { Resend } from 'resend';
+// const resend = new Resend(process.env.RESEND_API_KEY);
+// await resend.emails.send({ from: 'onboarding@resend.dev', to, subject, html });
+```
+
+---
+
+### Fix 2.3 — Verify Email is Called Correctly in Routes
+
+After invite or approval, confirm emails are called and errors are logged:
+
+```ts
+// In team route — invite user
+router.post('/team/invite', requireAuth, requireRole('admin'), async (req, res) => {
+  const { email, role } = req.body;
+  
+  try {
+    // 1. Create user record
+    // 2. Generate token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
+    await db.insert(passwordResetTokens).values({
+      userId: newUser.id,
+      token,
+      expiresAt,
+      used: false,
+    });
+
+    // 3. Whitelist the user
+    await db.insert(whitelistedUsers).values({ email, status: 'active', assignedRole: role, invitedBy: req.user!.userId });
+
+    // 4. Send invite email
+    const setPasswordUrl = `${process.env.FRONTEND_URL}/set-password?token=${token}`;
+    const inviter = await db.query.users.findFirst({ where: eq(users.id, req.user!.userId) });
+    
+    const emailSent = await sendInviteEmail({
+      to: email,
+      displayName: email.split('@')[0],
+      setPasswordUrl,
+      invitedByName: inviter?.displayName || 'Admin',
+      role,
+    });
+
+    // 5. Log to audit
+    await logAudit(req.user!.userId, 'user_invited', 'users', newUser.id, { email, role, emailSent });
+
+    res.json({ 
+      success: true, 
+      emailSent,
+      message: emailSent ? 'Invitation sent successfully' : 'User created but email delivery failed — check SMTP configuration'
+    });
+  } catch (error: any) {
+    console.error('Invite error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+---
+
+### Fix 2.4 — Verify Email on Server Startup
+
+```ts
+// src/index.ts — in startServer()
+async function startServer() {
+  // ... db connect ...
+
+  // Verify email (non-blocking — log warning but don't fail startup)
+  verifyEmailConnection().then(ok => {
+    if (!ok) console.warn('⚠️  Email service unavailable — invites and notifications will not be delivered');
+  });
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+  });
+}
+```
+
+---
+
+### Fix 2.5 — Add Email Status Feedback in Admin UI
+
+When an admin sends an invite, show whether the email actually delivered:
+
+```tsx
+// After invite API call:
+const result = await apiCall('/team/invite', { method: 'POST', body: JSON.stringify({ email, role }) });
+const data = await result.json();
+
+if (data.success) {
+  if (data.emailSent) {
+    toast.success(`Invitation sent to ${email}`);
+  } else {
+    toast.warning(`User created but email failed to send. Share this link manually: ${data.setPasswordUrl || '(check server logs)'}`);
+  }
+}
+```
+
+---
+
+## 🔴 PART 3 — UI Uniformity, Readability & Final Polish
+
+### Fix 3.1 — Typography Scale (Increase Size & Contrast)
+
+The current text is too small and too dim. Apply this globally:
+
+```css
+/* Override — increase base font size and improve contrast */
+:root {
+  --text-xs:   12px;   /* was 11px */
+  --text-sm:   14px;   /* was 13px */
+  --text-base: 15px;   /* unchanged */
+  --text-lg:   18px;   /* was 17px */
+  --text-xl:   22px;   /* was 20px */
+  --text-2xl:  26px;   /* was 24px */
+  --text-3xl:  32px;   /* was 30px */
+  --text-4xl:  40px;   /* was 38px */
+
+  /* Improve text contrast */
+  --text-primary:   hsl(210, 35%, 96%);   /* brighter — was 94% */
+  --text-secondary: hsl(210, 20%, 72%);   /* brighter — was 65% */
+  --text-muted:     hsl(210, 15%, 52%);   /* brighter — was 45% */
+}
+
+body {
+  font-size: var(--text-base);
+  line-height: 1.65;
+  letter-spacing: 0.005em;
+}
+
+/* Table cells — ensure readable size */
+.data-table tbody td { font-size: var(--text-sm); line-height: 1.5; }
+.data-table thead th { font-size: 11px; }
+
+/* Labels — increase size */
+.input-label { font-size: 12px; }
+
+/* Badges — increase size */
+.badge { font-size: 12px; padding: 3px var(--space-2); }
+
+/* Sidebar nav items — increase */
+.nav-item { font-size: var(--text-sm); }
+
+/* Stat card value — make it bigger */
+.stat-card-value { font-size: 36px; }
+```
+
+---
+
+### Fix 3.2 — Forms: Uniform Across ALL Pages
+
+Every form in the system (New Lead, Add Company, Add Service, Invite User, Request Access, Set Password, Login) must follow this exact spec:
+
+```css
+/* Form group */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Label */
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.form-label .required {
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Input */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  height: 42px;
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  padding: 0 var(--space-3);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+  -webkit-appearance: none;
+}
+.form-input::placeholder,
+.form-textarea::placeholder { color: var(--text-muted); font-size: var(--text-sm); }
+.form-input:hover,
+.form-select:hover { border-color: var(--border-strong); }
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px hsl(172, 75%, 48%, 0.18);
+  background: var(--bg-overlay);
+}
+.form-input.error,
+.form-select.error { border-color: var(--danger); }
+.form-input.error:focus { box-shadow: 0 0 0 3px hsl(0, 70%, 58%, 0.15); }
+
+/* Textarea */
+.form-textarea {
+  height: auto;
+  min-height: 100px;
+  padding: var(--space-3);
+  resize: vertical;
+  line-height: 1.65;
+}
+
+/* Select — custom arrow */
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+/* Error message */
+.form-error {
+  font-size: 12px;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* Helper text */
+.form-helper {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+/* Form grid */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-5);
+}
+@media (max-width: 640px) {
+  .form-grid-2,
+  .form-grid-3 { grid-template-columns: 1fr; }
+}
+```
+
+**Apply to every existing form in the app.** Replace any existing input/select/textarea classes with these. This must be 100% consistent everywhere.
+
+---
+
+### Fix 3.3 — Dropdown / Select Menus (shadcn or Custom)
+
+All dropdowns must match this style — no browser defaults:
+
+```css
+/* Dropdown panel */
+.dropdown-panel {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 180px;
+  animation: dropdown-enter 120ms ease both;
+}
+@keyframes dropdown-enter {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Dropdown item */
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 120ms ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.dropdown-item:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+.dropdown-item.selected {
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-weight: 600;
+}
+.dropdown-item.danger { color: var(--danger); }
+.dropdown-item.danger:hover { background: var(--danger-dim); }
+
+/* Dropdown separator */
+.dropdown-separator {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 4px 0;
+}
+
+/* Dropdown label */
+.dropdown-label {
+  padding: var(--space-2) var(--space-3) 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+```
+
+If using shadcn/ui Select, override its styles:
+```css
+/* shadcn Select overrides */
+[data-radix-select-trigger] {
+  background: var(--bg-subtle) !important;
+  border: 1.5px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  height: 42px !important;
+  font-size: var(--text-sm) !important;
+  color: var(--text-primary) !important;
+  padding: 0 var(--space-3) !important;
+}
+[data-radix-select-trigger]:focus {
+  border-color: var(--teal) !important;
+  box-shadow: 0 0 0 3px hsl(172, 75%, 48%, 0.18) !important;
+}
+[data-radix-select-content] {
+  background: var(--bg-overlay) !important;
+  border: 1px solid var(--border-default) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+[data-radix-select-item] {
+  font-size: var(--text-sm) !important;
+  color: var(--text-secondary) !important;
+  border-radius: 6px !important;
+  margin: 1px 4px !important;
+}
+[data-radix-select-item]:focus,
+[data-radix-select-item][data-highlighted] {
+  background: var(--bg-subtle) !important;
+  color: var(--text-primary) !important;
+}
+[data-radix-select-item][data-state="checked"] {
+  background: var(--teal-dim) !important;
+  color: var(--teal) !important;
+}
+```
+
+---
+
+### Fix 3.4 — Checkbox Component (Used in Companies/Services Link Dialog)
+
+```css
+.checkbox-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 120ms ease;
+  border: 1.5px solid transparent;
+}
+.checkbox-item:hover { background: var(--bg-subtle); }
+.checkbox-item.checked {
+  background: var(--teal-dim);
+  border-color: hsl(172, 75%, 48%, 0.3);
+}
+.checkbox-box {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-overlay);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms ease;
+}
+.checkbox-item.checked .checkbox-box {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: var(--text-inverse);
+}
+.checkbox-label { font-size: var(--text-sm); color: var(--text-secondary); }
+.checkbox-item.checked .checkbox-label { color: var(--teal); font-weight: 500; }
+```
+
+---
+
+### Fix 3.5 — Page-Specific Form Fixes
+
+**Login Page (`/auth`):**
+```tsx
+// Must have: LeadFlow brand mark at top, centered layout, clean card
+// Form fields: Email, Password (with show/hide toggle)
+// Error message displayed inline (not as toast)
+// Button full-width, height 44px, font-size 15px
+// Link to /request-access below the form
+```
+
+**Set Password Page (`/set-password`):**
+```tsx
+// Password strength indicator bar below password field
+// Confirm password field with match validation
+// Animated validateBar progress on submit (CSS keyframe, 1.5s)
+// Show/hide toggle on both password fields
+```
+
+**New Lead Form (`/leads/new`):**
+```tsx
+// All fields in form-grid-2 layout
+// Service dropdown → triggers company checkbox filtering
+// Required field asterisk (*) on Lead Name
+// Cancel button (ghost) + Create Lead button (primary)
+// Both buttons right-aligned, in a flex row with justify-content: flex-end
+```
+
+**Add Company / Edit Company dialog:**
+```tsx
+// Fields: Name* (required), Industry (text), Notes (textarea)
+// Modal width: max-width 480px
+// Footer: Cancel (ghost) + Save Company (primary)
+```
+
+**Add Service / Edit Service dialog:**
+```tsx
+// Fields: Name* (required), Category (text), Description (textarea)
+// "Link Companies" is a SEPARATE action (link icon button in table row)
+// Link Companies dialog: scrollable checkbox list, max-height 320px
+// Modal footer: Cancel + Save Changes
+```
+
+**Invite User dialog:**
+```tsx
+// Fields: Email Address (input), Initial Role (select: Admin/Lead Owner/Deal Handler)
+// Helper text under email: "An invitation email with password setup link will be sent"
+// Footer: Cancel (ghost) + Send Invite (primary with envelope icon)
+```
+
+---
+
+### Fix 3.6 — Uniform Page Headers
+
+Every single page must have this EXACT structure in its header:
+
+```tsx
+// Pattern — copy this for EVERY page:
+<div className="page-header">
+  <div>
+    <h1 className="page-title">Dashboard</h1>
+    <p className="page-subtitle">Overview of your lead pipeline</p>
+  </div>
+  <div className="page-actions">
+    <button className="btn btn-secondary">
+      <Download size={15} /> Export CSV
+    </button>
+  </div>
+</div>
+```
+
+Page titles and subtitles:
+| Page | Title | Subtitle |
+|---|---|---|
+| Dashboard | Dashboard | Overview of your lead pipeline |
+| Kanban | Kanban Pipeline | Drag and drop leads across stages |
+| New Lead | Create New Lead | Add a new lead to the pipeline |
+| Companies | Companies | Master data — manage your company records |
+| Services | Services | Master data — manage your service offerings |
+| Analytics | Analytics & Reporting | Pipeline performance and conversion insights |
+| Team | Team Management | Manage members, roles and access requests |
+| Permissions | Role Permissions | Granular access control per resource |
+| Audit Log | Audit Log | Full system action trail |
+| Set Password | Set Your Password | Choose a secure password to get started |
+| Request Access | Request Access | Submit your access request for review |
+
+---
+
+### Fix 3.7 — Section Headings Within Pages
+
+```css
+.section-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.section-heading-icon {
+  width: 6px; height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--teal);
+  flex-shrink: 0;
+}
+```
+
+---
+
+### Fix 3.8 — Toast Notifications (Sonner)
+
+Configure Sonner to match the design system:
+
+```tsx
+// In App.tsx or root layout:
+import { Toaster } from 'sonner';
+
+<Toaster
+  position="bottom-right"
+  toastOptions={{
+    style: {
+      background: 'var(--bg-overlay)',
+      border: '1px solid var(--border-default)',
+      borderRadius: 'var(--radius-md)',
+      color: 'var(--text-primary)',
+      fontSize: '14px',
+      fontFamily: 'var(--font-body)',
+      boxShadow: 'var(--shadow-lg)',
+    },
+    classNames: {
+      success: 'toast-success',
+      error: 'toast-error',
+      warning: 'toast-warning',
+    },
+  }}
+  gap={8}
+  richColors
+/>
+```
+
+```css
+.toast-success { border-color: hsl(152, 60%, 44%, 0.4) !important; }
+.toast-error   { border-color: hsl(0, 70%, 58%, 0.4) !important; }
+.toast-warning { border-color: hsl(38, 90%, 54%, 0.4) !important; }
+```
+
+---
+
+## ✅ End-to-End Test Script (Run This After Every Fix)
+
+Test every single flow in this exact order. Do not skip any step:
+
+### Auth Flows
+- [ ] Open published URL → redirects to `/auth`
+- [ ] Login with wrong password → shows error toast, does not navigate
+- [ ] Login with `admin@sparkleadhub.com` / `Admin@123!` → lands on Dashboard
+- [ ] Refresh page while logged in → stays on Dashboard (token persists)
+- [ ] Open `/api/health` on published URL → all checks show ✅
+- [ ] Wait 15 minutes idle → auto-logout, redirected to `/auth`
+- [ ] Navigate to `/` without token → redirected to `/auth`
+
+### Invite Flow
+- [ ] Team → Invite User → enter a real email address → Send Invite
+- [ ] Toast shows "Invitation sent successfully" (not "email failed")
+- [ ] **Check that email arrives** in the invited user's inbox (check spam folder)
+- [ ] Email displays correctly with LeadFlow branding
+- [ ] Click "Set Your Password →" button in email → opens `/set-password?token=...`
+- [ ] Token is valid, form loads
+- [ ] Enter password + confirm → submit → animated progress bar plays
+- [ ] Redirected to `/auth`
+- [ ] Login with the new email + password → access granted, on Dashboard
+
+### Access Request Flow
+- [ ] Sign out → go to `/auth` → click "Request Access"
+- [ ] Fill form (Name, Email, Department, Reason) → Submit
+- [ ] Confirmation screen shows "Request submitted"
+- [ ] Login as admin → Team → Access Requests tab → request visible
+- [ ] Click Approve → **email arrives** in requester's inbox
+- [ ] Requester clicks link → sets password → can log in
+
+### Lead Flows
+- [ ] Dashboard → New Lead → fill Lead Name → Create Lead → appears in table
+- [ ] Click lead row → Lead Detail Sheet opens
+- [ ] Fill Emotional State + Decision Role in Qualify tab → "Proceed to Strategy" appears
+- [ ] Click Proceed to Strategy → Strategy tab unlocks
+- [ ] Fill Strategic Tier → "Proceed to Resolve" appears
+- [ ] Click Proceed → Resolve tab unlocks → set Outcome
+- [ ] Kanban → drag a card to different column → stage updates
+
+### Master Data
+- [ ] Companies → Add Company → fills form → Save → appears in list
+- [ ] Edit company → changes saved
+- [ ] Services → Add Service → Save → Link Companies → checkbox → Save → linked company badge appears
+- [ ] New Lead → select Service → Companies filter shows only linked companies
+
+### Admin Flows
+- [ ] Permissions → toggle a permission OFF → toggle back ON → change persists on refresh
+- [ ] Permissions → Test Password Email → email arrives
+- [ ] Permissions → Test Activity Alert → email arrives
+- [ ] Team → change a member's role → role badge updates
+- [ ] Team → disable a member → status shows "disabled"
+- [ ] Audit Log → actions from above steps are logged
+
+### UI Checks
+- [ ] All pages have consistent page header (title + subtitle + actions)
+- [ ] All form inputs have same height (42px) and same focus ring (teal)
+- [ ] All dropdowns open with animation and match dark theme
+- [ ] All buttons have same border-radius and height
+- [ ] All badges are readable — correct size and contrast
+- [ ] No particle/star background visible anywhere
+- [ ] Sidebar shows all 9 nav items including Audit Log
+- [ ] Sidebar collapse/expand works smoothly
+- [ ] Empty states show on pages with no data
+- [ ] Charts use correct colors (not all-purple)
+- [ ] Analytics avg conversion shows 0 or positive number (never negative)
+- [ ] Kill reason labels show "Feature Gap", "Price", "Ghosted" (not raw enums)
+- [ ] All text is readable — minimum 14px for body, 12px for labels
+- [ ] Toasts appear bottom-right with dark theme styling

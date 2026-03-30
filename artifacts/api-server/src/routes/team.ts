@@ -217,10 +217,13 @@ router.post("/invite", requireAuth, requireAdmin, async (req: AuthRequest, res) 
     });
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    await sendPasswordSetupEmail({
+    const inviter = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+    const emailSent = await sendPasswordSetupEmail({
       toEmail: email,
       userName: email.split("@")[0],
       setPasswordUrl: `${frontendUrl}/set-password?token=${token}`,
+      invitedByName: inviter[0]?.displayName || "Admin",
+      role,
     });
 
     await db.insert(auditLogTable).values({
@@ -229,10 +232,16 @@ router.post("/invite", requireAuth, requireAdmin, async (req: AuthRequest, res) 
       action: "user_invited",
       resource: "team",
       resourceId: userId,
-      details: { email: normalizedEmail, role },
+      details: { email: normalizedEmail, role, emailSent },
     });
 
-    res.status(201).json({ success: true, message: "User invited successfully" });
+    res.status(201).json({
+      success: true,
+      emailSent,
+      message: emailSent
+        ? "User invited successfully — invitation email sent"
+        : "User created but email delivery failed — check SMTP configuration in Replit Secrets",
+    });
   } catch (err) {
     req.log.error({ err }, "Invite user error");
     res.status(500).json({ message: "Internal server error" });

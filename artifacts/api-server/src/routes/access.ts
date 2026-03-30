@@ -13,7 +13,7 @@ import {
 import { eq } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
-import { sendPasswordSetupEmail } from "../lib/email";
+import { sendPasswordSetupEmail, sendAccessApprovedEmail } from "../lib/email";
 
 const router = Router();
 
@@ -150,10 +150,17 @@ router.post("/:id/approve", requireAuth, requireAdmin, async (req: AuthRequest, 
     });
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    await sendPasswordSetupEmail({
+    const setPasswordUrl = `${frontendUrl}/set-password?token=${token}`;
+
+    // Get reviewer's display name for the email
+    const reviewer = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+    const reviewerName = reviewer[0]?.displayName || "Admin";
+
+    const emailSent = await sendAccessApprovedEmail({
       toEmail: email,
-      userName: name,
-      setPasswordUrl: `${frontendUrl}/set-password?token=${token}`,
+      displayName: name,
+      setPasswordUrl,
+      reviewedByName: reviewerName,
     });
 
     await db
@@ -167,10 +174,16 @@ router.post("/:id/approve", requireAuth, requireAdmin, async (req: AuthRequest, 
       action: "access_request_approved",
       resource: "access_requests",
       resourceId: req.params.id,
-      details: { email, name },
+      details: { email, name, emailSent },
     });
 
-    res.json({ success: true, message: "Access request approved and user invited" });
+    res.json({
+      success: true,
+      emailSent,
+      message: emailSent
+        ? "Access request approved and email sent"
+        : "Access request approved but email delivery failed — check SMTP in Secrets",
+    });
   } catch (err) {
     req.log.error({ err }, "Approve access request error");
     res.status(500).json({ message: "Internal server error" });

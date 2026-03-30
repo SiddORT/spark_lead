@@ -39,9 +39,9 @@
   --info-dim:       hsl(210 80% 58% / 0.12);
 
   /* --- Text --- */
-  --text-primary:   hsl(210, 30%, 94%);
-  --text-secondary: hsl(210, 20%, 65%);
-  --text-muted:     hsl(210, 15%, 45%);
+  --text-primary:   hsl(210, 35%, 96%);
+  --text-secondary: hsl(210, 20%, 72%);
+  --text-muted:     hsl(210, 15%, 52%);
   --text-inverse:   hsl(222, 22%, 6%);
 
   /* --- Spacing Scale (4px base) --- */
@@ -68,14 +68,14 @@
   --font-body:    'DM Sans', sans-serif;
 
   /* --- Font Sizes --- */
-  --text-xs:   11px;
-  --text-sm:   13px;
+  --text-xs:   12px;
+  --text-sm:   14px;
   --text-base: 15px;
-  --text-lg:   17px;
-  --text-xl:   20px;
-  --text-2xl:  24px;
-  --text-3xl:  30px;
-  --text-4xl:  38px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  26px;
+  --text-3xl:  32px;
+  --text-4xl:  40px;
 
   /* --- Shadows --- */
   --shadow-sm:   0 1px 3px hsl(222 22% 3% / 0.4);
@@ -562,7 +562,7 @@ a:hover { opacity: 0.85; }
 .stat-icon-purple  { background: var(--purple-dim);  color: var(--purple); }
 .stat-card-value {
   font-family: var(--font-display);
-  font-size: var(--text-4xl);
+  font-size: 36px;
   font-weight: 700;
   color: var(--text-primary);
   line-height: 1.1;
@@ -1043,8 +1043,198 @@ a:hover { opacity: 0.85; }
   border-top: 1px solid var(--border-subtle);
 }
 
-/* Form group inside modal */
-.form-group { margin-bottom: var(--space-4); }
+/* ============================================
+   FORM COMPONENTS — UNIFORM ACROSS ALL PAGES
+   ============================================ */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--space-4);
+}
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+}
+.form-label .required { color: var(--danger); font-size: 14px; line-height: 1; }
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  height: 42px;
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  padding: 0 var(--space-3);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.form-input::placeholder,
+.form-textarea::placeholder { color: var(--text-muted); font-size: var(--text-sm); }
+.form-input:hover,
+.form-select:hover { border-color: var(--border-strong); }
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px hsl(172, 75%, 48%, 0.18);
+  background: var(--bg-overlay);
+}
+.form-input.error,
+.form-select.error { border-color: var(--danger); }
+.form-input.error:focus { box-shadow: 0 0 0 3px hsl(0, 70%, 58%, 0.15); }
+
+.form-textarea {
+  height: auto;
+  min-height: 100px;
+  padding: var(--space-3);
+  resize: vertical;
+  line-height: 1.65;
+}
+
+.form-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238892a4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.form-error {
+  font-size: 12px;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.form-helper {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+.form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-5); }
+@media (max-width: 640px) {
+  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ============================================
+   DROPDOWN
+   ============================================ */
+.dropdown-panel {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 180px;
+  animation: dropdown-enter 120ms ease both;
+}
+@keyframes dropdown-enter {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 120ms ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.dropdown-item:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.dropdown-item.selected { background: var(--teal-dim); color: var(--teal); font-weight: 600; }
+.dropdown-item.danger { color: var(--danger); }
+.dropdown-item.danger:hover { background: var(--danger-dim); }
+.dropdown-separator { height: 1px; background: var(--border-subtle); margin: 4px 0; }
+.dropdown-label {
+  padding: var(--space-2) var(--space-3) 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ============================================
+   CHECKBOX GROUP
+   ============================================ */
+.checkbox-group { display: flex; flex-direction: column; gap: var(--space-2); }
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 120ms ease;
+  border: 1.5px solid transparent;
+}
+.checkbox-item:hover { background: var(--bg-subtle); }
+.checkbox-item.checked { background: var(--teal-dim); border-color: hsl(172, 75%, 48%, 0.3); }
+.checkbox-box {
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-overlay);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms ease;
+}
+.checkbox-item.checked .checkbox-box { background: var(--teal); border-color: var(--teal); color: var(--text-inverse); }
+.checkbox-label { font-size: var(--text-sm); color: var(--text-secondary); }
+.checkbox-item.checked .checkbox-label { color: var(--teal); font-weight: 500; }
+
+/* ============================================
+   SECTION HEADINGS
+   ============================================ */
+.section-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.section-heading-icon {
+  width: 6px; height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--teal);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   TOAST CLASSES (Sonner)
+   ============================================ */
+.toast-success { border-color: hsl(152, 60%, 44%, 0.4) !important; }
+.toast-error   { border-color: hsl(0, 70%, 58%, 0.4) !important; }
+.toast-warning { border-color: hsl(38, 90%, 54%, 0.4) !important; }
 
 /* ============================================
    PERMISSIONS PAGE

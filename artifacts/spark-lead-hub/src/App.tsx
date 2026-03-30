@@ -85,13 +85,23 @@ function App() {
           </AuthProvider>
         </WouterRouter>
         <Toaster
-          theme="dark"
           position="bottom-right"
+          richColors
+          gap={8}
           toastOptions={{
             style: {
-              background: "hsl(220 18% 10%)",
-              border: "1px solid hsl(220 15% 18%)",
-              color: "hsl(210 40% 92%)",
+              background: "var(--bg-overlay)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-primary)",
+              fontSize: "14px",
+              fontFamily: "var(--font-body)",
+              boxShadow: "var(--shadow-lg)",
+            },
+            classNames: {
+              success: "toast-success",
+              error: "toast-error",
+              warning: "toast-warning",
             },
           }}
         />
