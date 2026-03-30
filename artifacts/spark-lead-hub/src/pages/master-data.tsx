@@ -173,23 +173,36 @@ export function Companies() {
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <div className="modal-title">{editingId ? "Edit Company" : "Add Company"}</div>
+        <div className="modal-head">
+          <div className="modal-head-left">
+            <div className="modal-head-icon teal"><Building2 size={16} /></div>
+            <div>
+              <div className="modal-title">{editingId ? "Edit Company" : "Add Company"}</div>
+              <div className="modal-subtitle">{editingId ? "Update company details" : "Add a new company to your database"}</div>
+            </div>
+          </div>
+          <button className="modal-close" onClick={() => setIsOpen(false)}><X size={15} /></button>
+        </div>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="input-label">Company Name *</label>
-            <input className="input" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Acme Corp" />
+          <div className="modal-body">
+            <div className="form-field">
+              <label className="field-label">Company Name <span className="req">*</span></label>
+              <input className="field-input" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Acme Corp" />
+            </div>
+            <div className="form-field">
+              <label className="field-label">Industry</label>
+              <input className="field-input" value={formData.industry} onChange={e => setFormData({ ...formData, industry: e.target.value })} placeholder="e.g. Technology, Finance…" />
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label className="field-label">Notes</label>
+              <textarea className="field-textarea" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Optional notes about this company…" />
+            </div>
           </div>
-          <div className="form-group">
-            <label className="input-label">Industry</label>
-            <input className="input" value={formData.industry} onChange={e => setFormData({ ...formData, industry: e.target.value })} placeholder="e.g. Technology, Finance…" />
-          </div>
-          <div className="form-group">
-            <label className="input-label">Notes</label>
-            <input className="input" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Optional notes…" />
-          </div>
-          <div className="modal-footer">
+          <div className="modal-foot">
             <button type="button" className="btn btn-ghost" onClick={() => setIsOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>Save</button>
+            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) ? <><div className="spinner-sm" /> Saving…</> : "Save Company"}
+            </button>
           </div>
         </form>
       </Dialog>
@@ -367,70 +380,90 @@ export function Services() {
 
       {/* Service Form Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <div className="modal-title">{editingId ? "Edit Service" : "Add Service"}</div>
+        <div className="modal-head">
+          <div className="modal-head-left">
+            <div className="modal-head-icon purple"><Briefcase size={16} /></div>
+            <div>
+              <div className="modal-title">{editingId ? "Edit Service" : "Add Service"}</div>
+              <div className="modal-subtitle">{editingId ? "Update service details" : "Add a new service to your catalog"}</div>
+            </div>
+          </div>
+          <button className="modal-close" onClick={() => setIsOpen(false)}><X size={15} /></button>
+        </div>
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="input-label">Service Name *</label>
-            <input className="input" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. CRM Integration" />
+          <div className="modal-body">
+            <div className="form-field">
+              <label className="field-label">Service Name <span className="req">*</span></label>
+              <input className="field-input" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. CRM Integration" />
+            </div>
+            <div className="form-field">
+              <label className="field-label">Category</label>
+              <input className="field-input" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="e.g. Software, Consulting…" />
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label className="field-label">Description</label>
+              <textarea className="field-textarea" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Describe this service…" />
+            </div>
           </div>
-          <div className="form-group">
-            <label className="input-label">Category</label>
-            <input className="input" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="e.g. Software, Consulting…" />
-          </div>
-          <div className="form-group">
-            <label className="input-label">Description</label>
-            <input className="input" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="Optional description…" />
-          </div>
-          <div className="modal-footer">
+          <div className="modal-foot">
             <button type="button" className="btn btn-ghost" onClick={() => setIsOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>Save</button>
+            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) ? <><div className="spinner-sm" /> Saving…</> : "Save Service"}
+            </button>
           </div>
         </form>
       </Dialog>
 
       {/* Link Companies Dialog */}
       <Dialog open={linkOpen} onOpenChange={setLinkOpen}>
-        <div className="modal-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-          <LinkIcon size={18} style={{ color: "var(--teal)" }} /> Link Companies
-        </div>
-        <div className="modal-desc">
-          Select companies to link to <strong>{linkingService?.name}</strong>
+        <div className="modal-head">
+          <div className="modal-head-left">
+            <div className="modal-head-icon teal"><LinkIcon size={16} /></div>
+            <div>
+              <div className="modal-title">Link Companies</div>
+              <div className="modal-subtitle">Select companies to link to <strong style={{ color: "var(--text-primary)" }}>{linkingService?.name}</strong></div>
+            </div>
+          </div>
+          <button className="modal-close" onClick={() => setLinkOpen(false)}><X size={15} /></button>
         </div>
         <form onSubmit={handleLinkSubmit}>
-          <div style={{
-            maxHeight: 240, overflowY: "auto",
-            border: "1px solid var(--border-default)",
-            borderRadius: "var(--radius-md)",
-            padding: "var(--space-2)",
-            background: "var(--bg-subtle)",
-            marginBottom: "var(--space-4)",
-          }}>
-            {allCompanies.map(c => (
-              <label key={c.id} style={{
-                display: "flex", alignItems: "center", gap: "var(--space-3)",
-                padding: "var(--space-2) var(--space-3)", borderRadius: "var(--radius-sm)",
-                cursor: "pointer",
-              }}>
-                <input
-                  type="checkbox"
-                  checked={selectedCompanies.includes(c.id)}
-                  onChange={e => setSelectedCompanies(prev =>
-                    e.target.checked ? [...prev, c.id] : prev.filter(id => id !== c.id)
-                  )}
-                  style={{ accentColor: "var(--teal)", width: 16, height: 16 }}
-                />
-                <span style={{ fontSize: "var(--text-sm)", color: "var(--text-primary)" }}>{c.name}</span>
-              </label>
-            ))}
-            {allCompanies.length === 0 && (
-              <div style={{ padding: "var(--space-4)", textAlign: "center", color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>
-                No companies available
-              </div>
-            )}
+          <div className="modal-body">
+            <div style={{
+              maxHeight: 240, overflowY: "auto",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--r-md)",
+              padding: "var(--sp-2)",
+              background: "var(--bg-subtle)",
+            }}>
+              {allCompanies.map(c => (
+                <label key={c.id} style={{
+                  display: "flex", alignItems: "center", gap: "var(--sp-3)",
+                  padding: "var(--sp-2) var(--sp-3)", borderRadius: "var(--r-sm)",
+                  cursor: "pointer",
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedCompanies.includes(c.id)}
+                    onChange={e => setSelectedCompanies(prev =>
+                      e.target.checked ? [...prev, c.id] : prev.filter(id => id !== c.id)
+                    )}
+                    style={{ accentColor: "var(--teal)", width: 16, height: 16 }}
+                  />
+                  <span style={{ fontSize: "var(--text-sm)", color: "var(--text-primary)" }}>{c.name}</span>
+                </label>
+              ))}
+              {allCompanies.length === 0 && (
+                <div style={{ padding: "var(--sp-4)", textAlign: "center", color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>
+                  No companies available
+                </div>
+              )}
+            </div>
           </div>
-          <div className="modal-footer">
+          <div className="modal-foot">
             <button type="button" className="btn btn-ghost" onClick={() => setLinkOpen(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={linkMutation.isPending}>Save Links</button>
+            <button type="submit" className="btn btn-primary" disabled={linkMutation.isPending}>
+              {linkMutation.isPending ? <><div className="spinner-sm" /> Saving…</> : "Save Links"}
+            </button>
           </div>
         </form>
       </Dialog>

@@ -11,7 +11,7 @@ import { TablePagination } from "@/components/table-pagination";
 import { FilterSelect } from "@/components/filter-select";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell,
+  BarChart, Bar, Cell, CartesianGrid,
 } from "recharts";
 import { formatValue } from "@/lib/utils";
 import { format } from "date-fns";
@@ -24,10 +24,10 @@ import { PermissionCheck } from "@/components/auth-provider";
 const PAGE_SIZE = 10;
 
 const STAGE_COLORS: Record<string, string> = {
-  discovery:     "hsl(210 15% 45%)",
-  qualification: "var(--warning)",
-  strategy:      "var(--purple)",
-  resolution:    "var(--success)",
+  discovery:     "hsl(210, 15%, 48%)",
+  qualification: "hsl(36, 88%, 52%)",
+  strategy:      "hsl(258, 62%, 62%)",
+  resolution:    "hsl(152, 58%, 43%)",
 };
 
 const TYPE_CONFIG: Record<string, { emoji: string; label: string; cls: string }> = {
@@ -52,11 +52,21 @@ const LEAD_TYPE_OPTIONS = [
 ];
 
 const tooltipStyle = {
-  backgroundColor: "var(--bg-overlay)",
-  border: "1px solid var(--border-default)",
-  borderRadius: "var(--radius-md)",
-  color: "var(--text-primary)",
-  fontSize: "var(--text-xs)",
+  background: "hsl(222, 18%, 12%)",
+  border: "1px solid hsl(222, 15%, 26%)",
+  borderRadius: 10,
+  padding: "8px 12px",
+  fontSize: 13,
+  fontFamily: "DM Sans, sans-serif",
+  color: "hsl(210, 30%, 95%)",
+  boxShadow: "0 8px 32px hsla(222, 22%, 2%, 0.6)",
+};
+
+const STAGE_LABELS: Record<string, string> = {
+  discovery:     "Discovery",
+  qualification: "Qualification",
+  strategy:      "Strategy",
+  resolution:    "Resolution",
 };
 
 export function Dashboard() {
@@ -303,7 +313,12 @@ export function Dashboard() {
               </defs>
               <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)} />
               <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "var(--border-default)" }} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ stroke: "var(--border-default)" }}
+                formatter={(value: any) => [value, "Leads Created"]}
+                labelFormatter={(label: string) => `Date: ${label}`}
+              />
               <Area type="monotone" dataKey="count" stroke="hsl(172 75% 48%)" strokeWidth={2.5} fillOpacity={1} fill="url(#tealGrad)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -311,11 +326,31 @@ export function Dashboard() {
         <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
           <div className="chart-title">Pipeline by Stage</div>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stageDist}>
-              <XAxis dataKey="stage" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(222 16% 14% / 0.6)" }} />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40}>
+            <BarChart
+              data={stageDist.map((d: any) => ({ ...d, label: STAGE_LABELS[d.stage] || d.stage }))}
+              margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 18%)" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fill: "hsl(210, 14%, 48%)", fontSize: 12, fontFamily: "DM Sans" }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tick={{ fill: "hsl(210, 14%, 48%)", fontSize: 11, fontFamily: "DM Sans" }}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+                width={28}
+              />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ fill: "hsla(222, 15%, 22%, 0.5)" }}
+                formatter={(value: any) => [`${value} Lead${value !== 1 ? "s" : ""}`, ""]}
+                labelStyle={{ color: "hsl(210, 30%, 95%)", fontWeight: 600, marginBottom: 2 }}
+              />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={56}>
                 {stageDist.map((entry: any, i: number) => (
                   <Cell key={i} fill={STAGE_COLORS[entry.stage] || "var(--border-strong)"} />
                 ))}

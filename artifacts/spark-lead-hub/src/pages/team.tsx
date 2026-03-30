@@ -364,37 +364,49 @@ export function Team() {
 
       {/* Invite modal */}
       <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
-        <div className="modal-title">Invite User</div>
-        <div className="modal-desc">Send an invitation email to add them to the whitelist.</div>
+        <div className="modal-head">
+          <div className="modal-head-left">
+            <div className="modal-head-icon teal"><Users size={16} /></div>
+            <div>
+              <div className="modal-title">Invite User</div>
+              <div className="modal-subtitle">Send a setup link to add them to the workspace</div>
+            </div>
+          </div>
+          <button className="modal-close" onClick={() => setInviteOpen(false)}><X size={15} /></button>
+        </div>
         <form onSubmit={handleInvite}>
-          <div className="form-group">
-            <label className="input-label">Email Address</label>
-            <input
-              className="input"
-              type="email"
-              required
-              placeholder="colleague@company.com"
-              value={inviteData.email}
-              onChange={e => setInviteData({ ...inviteData, email: e.target.value })}
-            />
+          <div className="modal-body">
+            <div className="form-field">
+              <label className="field-label">Email Address <span className="req">*</span></label>
+              <input
+                className="field-input"
+                type="email"
+                required
+                placeholder="colleague@company.com"
+                value={inviteData.email}
+                onChange={e => setInviteData({ ...inviteData, email: e.target.value })}
+              />
+              <span className="field-helper">An invitation email with a password setup link will be sent</span>
+            </div>
+            <div className="form-field" style={{ marginBottom: 0 }}>
+              <label className="field-label">Initial Role</label>
+              <select
+                className="field-select"
+                value={inviteData.role}
+                onChange={e => setInviteData({ ...inviteData, role: e.target.value })}
+              >
+                <option value="admin">Admin</option>
+                <option value="lead_owner">Lead Owner</option>
+                <option value="deal_handler">Deal Handler</option>
+                <option value="member">Member</option>
+              </select>
+              <span className="field-helper">This can be changed later from Team Management</span>
+            </div>
           </div>
-          <div className="form-group">
-            <label className="input-label">Initial Role</label>
-            <select
-              className="input select-field"
-              value={inviteData.role}
-              onChange={e => setInviteData({ ...inviteData, role: e.target.value })}
-            >
-              <option value="admin">Admin</option>
-              <option value="lead_owner">Lead Owner</option>
-              <option value="deal_handler">Deal Handler</option>
-              <option value="member">Member</option>
-            </select>
-          </div>
-          <div className="modal-footer">
+          <div className="modal-foot">
             <button type="button" className="btn btn-ghost" onClick={() => setInviteOpen(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={inviteUser.isPending}>
-              <Mail size={15} /> Send Invite
+              {inviteUser.isPending ? <><div className="spinner-sm" /> Sending…</> : <><Mail size={15} /> Send Invite</>}
             </button>
           </div>
         </form>
@@ -402,70 +414,59 @@ export function Team() {
 
       {/* Set-password link dialog */}
       <Dialog open={!!pendingLink} onOpenChange={() => setPendingLink(null)}>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginBottom: "var(--space-2)" }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%",
-            background: pendingLink?.emailSent ? "hsl(142 76% 36% / 0.15)" : "hsl(38 92% 50% / 0.15)",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-          }}>
-            <Link2 size={17} style={{ color: pendingLink?.emailSent ? "var(--success)" : "hsl(38 92% 50%)" }} />
-          </div>
-          <div>
-            <div className="modal-title" style={{ margin: 0 }}>
-              {pendingLink?.emailSent ? "Invitation Sent!" : "Share Set-Password Link"}
+        <div className="modal-head">
+          <div className="modal-head-left">
+            <div className={`modal-head-icon ${pendingLink?.emailSent ? "success" : "warning"}`}>
+              {pendingLink?.emailSent ? <CheckCircle size={16} /> : <Link2 size={16} />}
+            </div>
+            <div>
+              <div className="modal-title">{pendingLink?.emailSent ? "Invitation Sent!" : "Share Set-Password Link"}</div>
+              <div className="modal-subtitle">
+                {pendingLink?.emailSent
+                  ? `Email dispatched to ${pendingLink?.email}`
+                  : `Share this link with ${pendingLink?.email}`}
+              </div>
             </div>
           </div>
+          <button className="modal-close" onClick={() => setPendingLink(null)}><X size={15} /></button>
         </div>
-
-        {pendingLink?.emailSent ? (
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: "0 0 var(--space-4)" }}>
-            An invitation email was sent to <strong style={{ color: "var(--text-primary)" }}>{pendingLink.email}</strong>.
-            You can also share this link directly:
+        <div className="modal-body">
+          {!pendingLink?.emailSent && (
+            <div style={{
+              background: "var(--warning-dim)", border: "1px solid hsla(36, 88%, 52%, 0.3)",
+              borderRadius: "var(--r-md)", padding: "var(--sp-3) var(--sp-4)", marginBottom: "var(--sp-4)",
+            }}>
+              <p style={{ fontSize: "var(--text-sm)", color: "var(--warning)", margin: 0, lineHeight: 1.5 }}>
+                Email delivery failed — share this link directly via Slack, WhatsApp, or any channel.
+              </p>
+            </div>
+          )}
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)", marginBottom: "var(--sp-3)", lineHeight: 1.65 }}>
+            You can also share the setup link directly if the email doesn't arrive:
           </p>
-        ) : (
-          <div style={{
-            background: "hsl(38 92% 50% / 0.08)", border: "1px solid hsl(38 92% 50% / 0.25)",
-            borderRadius: "var(--radius)", padding: "var(--space-3) var(--space-4)", marginBottom: "var(--space-4)",
-          }}>
-            <p style={{ fontSize: "var(--text-sm)", color: "hsl(38 92% 60%)", margin: 0, lineHeight: 1.5 }}>
-              Email is not configured — copy and share this set-password link with <strong>{pendingLink?.email}</strong> via any channel (email, Slack, WhatsApp, etc.).
-            </p>
+          <div className="invite-link-box">
+            <code className="invite-link-url">{pendingLink?.url || ""}</code>
+            <button
+              className="btn btn-ghost btn-sm btn-icon"
+              onClick={() => { navigator.clipboard.writeText(pendingLink?.url || ""); toast.success("Link copied!"); }}
+              title="Copy link"
+            >
+              <Copy size={13} />
+            </button>
           </div>
-        )}
-
-        <div style={{ position: "relative" }}>
-          <input
-            className="input"
-            readOnly
-            value={pendingLink?.url || ""}
-            style={{ paddingRight: "var(--space-12)", fontSize: "var(--text-xs)", fontFamily: "monospace", color: "var(--teal)" }}
-            onFocus={e => e.target.select()}
-          />
-          <button
-            className="btn btn-secondary btn-sm"
-            style={{ position: "absolute", right: "var(--space-2)", top: "50%", transform: "translateY(-50%)" }}
-            onClick={() => {
-              navigator.clipboard.writeText(pendingLink?.url || "");
-              toast.success("Link copied to clipboard!");
-            }}
-          >
-            <Copy size={13} /> Copy
-          </button>
+          <p style={{ fontSize: "var(--text-xs)", color: "var(--text-faint)", display: "flex", alignItems: "center", gap: 4, marginTop: "var(--sp-2)" }}>
+            🕐 This link expires in 24 hours
+          </p>
         </div>
-
-        <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "var(--space-3) 0 0" }}>
-          This link expires in 24 hours.
-        </p>
-
-        <div className="modal-footer">
+        <div className="modal-foot">
+          <button className="btn btn-ghost" onClick={() => setPendingLink(null)}>Close</button>
           <button className="btn btn-primary" onClick={() => {
             navigator.clipboard.writeText(pendingLink?.url || "");
             toast.success("Link copied!");
             setPendingLink(null);
           }}>
-            <Copy size={14} /> Copy &amp; Close
+            <Copy size={14} /> Copy Link &amp; Close
           </button>
-          <button className="btn btn-ghost" onClick={() => setPendingLink(null)}>Close</button>
         </div>
       </Dialog>
     </div>

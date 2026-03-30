@@ -127,8 +127,7 @@ export const Dialog = ({ open, onOpenChange, children }: { open: boolean, onOpen
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-      <div className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl glass-strong p-6 shadow-2xl animate-slide-in max-h-[90vh] overflow-y-auto">
-        <button onClick={() => onOpenChange(false)} className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 hover:text-primary focus:outline-none"><X size={20} /></button>
+      <div className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl glass-strong shadow-2xl animate-slide-in max-h-[90vh] overflow-y-auto">
         {children}
       </div>
     </div>

@@ -1,55 +1,61 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
-import { Zap, CheckCircle, AlertCircle } from "lucide-react";
+import { Zap, CheckCircle, AlertCircle, Eye, EyeOff, ChevronLeft, Check } from "lucide-react";
+
+function getPasswordStrength(pw: string): { score: number; label: string } {
+  if (!pw) return { score: 0, label: "" };
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const clamped = Math.min(4, Math.ceil((score / 5) * 4));
+  const labels = ["", "Weak", "Fair", "Good", "Strong"];
+  return { score: clamped, label: labels[clamped] };
+}
+
+const SEG_CLASSES = ["", "s-weak", "s-fair", "s-good", "s-strong"];
 
 export function SetPassword() {
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  const [confirm, setConfirm]   = useState("");
+  const [showPw, setShowPw]     = useState(false);
+  const [showCf, setShowCf]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [success, setSuccess]   = useState(false);
   const [progress, setProgress] = useState(false);
-  const [, setLocation] = useLocation();
+  const [, setLocation]         = useLocation();
 
   const params = new URLSearchParams(window.location.search);
-  const token = params.get("token");
+  const token  = params.get("token");
+
+  const { score, label } = getPasswordStrength(password);
+  const passwordsMatch   = password.length > 0 && confirm.length > 0 && password === confirm;
+  const confirmMismatch  = confirm.length > 0 && password !== confirm;
+  const canSubmit        = !!token && password.length >= 8 && passwordsMatch && !loading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (!token) {
-      setError("Invalid token. Please use the link from your email.");
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
-    }
-
-    if (password !== confirm) {
-      setError("Passwords do not match");
-      return;
-    }
+    if (!token) { setError("Invalid token. Please use the link from your invitation email."); return; }
+    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (password !== confirm) { setError("Passwords do not match"); return; }
 
     setLoading(true);
     setProgress(true);
-
     try {
-      const res = await fetch("/api/auth/set-password", {
+      const res  = await fetch("/api/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password }),
       });
-
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
-
-      // Wait for progress bar animation
-      await new Promise((r) => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 1200));
       setSuccess(true);
-      setTimeout(() => setLocation("/auth"), 2000);
+      setTimeout(() => setLocation("/auth"), 2200);
     } catch (err: any) {
       setError(err.message || "Failed to set password");
       setProgress(false);
@@ -59,89 +65,146 @@ export function SetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary/10 blur-[120px] rounded-full" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent/10 blur-[120px] rounded-full" />
-      </div>
+    <div className="auth-page">
+      <div className="auth-bg-glow-1" />
+      <div className="auth-bg-glow-2" />
 
-      <div className="w-full max-w-md animate-slide-in relative z-10">
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <div className="p-3 rounded-xl bg-primary/10 border border-primary/30 neon-glow">
-              <Zap className="h-7 w-7 text-primary" />
-            </div>
+      <div className="auth-card animate-slide-in">
+        {/* Brand */}
+        <div className="auth-brand">
+          <div className="auth-brand-icon">
+            <Zap size={22} />
           </div>
-          <h1 className="text-3xl font-display font-bold text-foreground">Set Your Password</h1>
-          <p className="text-muted-foreground mt-2 text-sm">Create a secure password to activate your account</p>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "var(--text-xl)", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+            LeadFlow
+          </span>
         </div>
 
-        <div className="glass-strong rounded-2xl p-8 shadow-2xl border border-primary/20">
-          {success ? (
-            <div className="text-center space-y-4">
-              <CheckCircle className="w-16 h-16 text-success mx-auto" style={{ filter: "drop-shadow(0 0 12px hsl(var(--success)))" }} />
-              <h2 className="text-xl font-display font-bold">Password Set!</h2>
-              <p className="text-muted-foreground text-sm">Redirecting you to login...</p>
+        {success ? (
+          <div style={{ textAlign: "center", padding: "var(--sp-8) 0" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "var(--sp-4)" }}>
+              <CheckCircle size={56} style={{ color: "var(--success)", filter: "drop-shadow(0 0 12px var(--success))" }} />
             </div>
-          ) : (
-            <>
-              {error && (
-                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-center gap-2">
-                  <AlertCircle size={16} />
-                  {error}
-                </div>
-              )}
+            <div className="auth-title" style={{ fontSize: "var(--text-xl)" }}>Password Set!</div>
+            <p className="auth-subtitle">Redirecting you to login…</p>
+          </div>
+        ) : (
+          <>
+            <div className="auth-title">Set Your Password</div>
+            <p className="auth-subtitle">Create a secure password to activate your account</p>
 
-              {!token && (
-                <div className="mb-4 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning text-sm">
-                  Invalid or missing token. Please use the link from your invitation email.
-                </div>
-              )}
+            {error && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: "var(--sp-2)",
+                padding: "var(--sp-3) var(--sp-4)", marginBottom: "var(--sp-4)",
+                background: "var(--danger-dim)", border: "1px solid hsla(4,68%,58%,0.35)",
+                borderRadius: "var(--r-md)", color: "var(--danger)", fontSize: "var(--text-sm)",
+              }}>
+                <AlertCircle size={15} /> {error}
+              </div>
+            )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1.5">New Password</label>
+            {!token && (
+              <div style={{
+                padding: "var(--sp-3) var(--sp-4)", marginBottom: "var(--sp-4)",
+                background: "var(--warning-dim)", border: "1px solid hsla(36,88%,52%,0.35)",
+                borderRadius: "var(--r-md)", color: "var(--warning)", fontSize: "var(--text-sm)",
+              }}>
+                Invalid or missing token. Please use the link from your invitation email.
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              {/* New Password */}
+              <div className="form-field">
+                <label className="field-label">New Password <span className="req">*</span></label>
+                <div className="field-password-wrap">
                   <input
-                    type="password"
+                    className="field-input"
+                    type={showPw ? "text" : "password"}
                     required
                     minLength={8}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     placeholder="Min. 8 characters"
-                    className="flex h-10 w-full rounded-md border border-border bg-card/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+                    autoComplete="new-password"
                   />
+                  <button type="button" className="field-password-toggle" onClick={() => setShowPw(v => !v)} tabIndex={-1}>
+                    {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
+                {/* Strength bar */}
+                {password.length > 0 && (
+                  <>
+                    <div className="pw-strength">
+                      {[1, 2, 3, 4].map(i => (
+                        <div
+                          key={i}
+                          className={`pw-strength-seg ${i <= score ? SEG_CLASSES[score] : ""}`}
+                        />
+                      ))}
+                    </div>
+                    {label && <div className="pw-strength-label">{label}</div>}
+                  </>
+                )}
+              </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-1.5">Confirm Password</label>
+              {/* Confirm Password */}
+              <div className="form-field">
+                <label className="field-label">Confirm Password <span className="req">*</span></label>
+                <div className="field-password-wrap">
                   <input
-                    type="password"
+                    className="field-input"
+                    type={showCf ? "text" : "password"}
                     required
                     value={confirm}
                     onChange={e => setConfirm(e.target.value)}
                     placeholder="Repeat your password"
-                    className="flex h-10 w-full rounded-md border border-border bg-card/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors"
+                    autoComplete="new-password"
                   />
+                  <button type="button" className="field-password-toggle" onClick={() => setShowCf(v => !v)} tabIndex={-1}>
+                    {showCf ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
                 </div>
+                {passwordsMatch  && <div className="pw-match-ok"><Check size={12} /> Passwords match</div>}
+                {confirmMismatch && <div className="pw-match-err"><AlertCircle size={12} /> Passwords don't match</div>}
+              </div>
 
-                {/* Progress bar */}
-                {progress && (
-                  <div className="relative h-1.5 w-full bg-muted rounded-full overflow-hidden">
-                    <div className="absolute top-0 left-0 h-full bg-primary rounded-full animate-validate-bar" style={{ animationDuration: "1.5s" }} />
+              {/* Progress bar during submit */}
+              {progress && (
+                <div style={{ marginBottom: "var(--sp-4)" }}>
+                  <div style={{ height: 3, background: "var(--bg-muted)", borderRadius: "var(--r-full)", overflow: "hidden" }}>
+                    <div
+                      className="animate-validate-bar"
+                      style={{
+                        height: "100%",
+                        background: "var(--teal)",
+                        borderRadius: "var(--r-full)",
+                        animationDuration: "1.5s",
+                      }}
+                    />
                   </div>
-                )}
+                </div>
+              )}
 
-                <button
-                  type="submit"
-                  disabled={loading || !token}
-                  className="w-full h-11 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 neon-glow transition-all disabled:opacity-50"
-                >
-                  {loading ? "Setting password..." : "Set Password & Activate Account"}
-                </button>
-              </form>
-            </>
-          )}
-        </div>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="btn btn-primary btn-full btn-lg"
+                style={{ marginTop: "var(--sp-2)" }}
+              >
+                {loading
+                  ? <><div className="spinner-sm" /> Setting password…</>
+                  : "Set Password & Activate Account"
+                }
+              </button>
+            </form>
+
+            <a href="/auth" className="auth-back-link">
+              <ChevronLeft size={15} /> Back to Login
+            </a>
+          </>
+        )}
       </div>
     </div>
   );
