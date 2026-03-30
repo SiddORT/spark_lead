@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/components/auth-provider";
-import { Zap } from "lucide-react";
+import { Zap, Eye, EyeOff } from "lucide-react";
 
 const inputBase: React.CSSProperties = {
   width: "100%",
@@ -59,8 +59,10 @@ export function AuthPage() {
   const [loading, setLoading] = useState(false);
   const { token, setToken, loading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+  const [showPassword, setShowPassword] = useState(false);
   const [btnHover, setBtnHover] = useState(false);
   const [btnActive, setBtnActive] = useState(false);
+  const [eyeHover, setEyeHover] = useState(false);
 
   useEffect(() => {
     if (!authLoading && token) setLocation("/");
@@ -221,13 +223,44 @@ export function AuthPage() {
 
             <div>
               <FieldLabel>Password</FieldLabel>
-              <AuthInput
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
+              <div style={{ position: "relative" }}>
+                <AuthInput
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{ paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword(v => !v)}
+                  onMouseEnter={() => setEyeHover(true)}
+                  onMouseLeave={() => setEyeHover(false)}
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    right: 12,
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: eyeHover ? "var(--teal)" : "var(--text-muted)",
+                    transition: "color 150ms ease",
+                    lineHeight: 0,
+                  }}
+                >
+                  {showPassword
+                    ? <EyeOff size={17} strokeWidth={1.8} />
+                    : <Eye size={17} strokeWidth={1.8} />
+                  }
+                </button>
+              </div>
             </div>
 
             <button
