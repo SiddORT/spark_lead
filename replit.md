@@ -20,7 +20,7 @@ Production-grade closed-circuit CRM system built as a pnpm monorepo. Features a 
 - **Auth**: JWT (HS256) with whitelist-gating + 15-min inactivity timeout
 - **API Layer**: OpenAPI spec → Orval codegen → React Query hooks (Zod schemas)
 - **Database**: PostgreSQL (Drizzle Kit schema push)
-- **Email**: Nodemailer (SMTP, non-blocking)
+- **Email**: Nodemailer (SMTP, non-blocking); when SMTP not configured, set-password URLs are returned in API responses and shown in admin UI copy-link dialog
 
 ## Design System (index.css)
 

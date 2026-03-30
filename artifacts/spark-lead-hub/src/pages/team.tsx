@@ -10,7 +10,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { format } from "date-fns";
 import {
   PlusCircle, Search, Mail, CheckCircle, XCircle, Trash2,
-  Users, ShieldCheck, UserCheck, Bell, X,
+  Users, ShieldCheck, UserCheck, Bell, X, Copy, Link2,
 } from "lucide-react";
 import { useAuth, PermissionCheck } from "@/components/auth-provider";
 import { toast } from "sonner";
@@ -45,6 +45,7 @@ export function Team() {
   const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteData, setInviteData] = useState({ email: "", role: "deal_handler" });
+  const [pendingLink, setPendingLink] = useState<{ url: string; email: string; emailSent: boolean } | null>(null);
 
   const search = useDebounce(searchRaw, 300);
   const hasFilters = !!(searchRaw || roleFilter);
@@ -68,11 +69,17 @@ export function Team() {
 
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
+    const emailBeingInvited = inviteData.email;
     inviteUser.mutate({ data: inviteData as any }, {
-      onSuccess: () => {
-        toast.success("User invited successfully");
+      onSuccess: (res: any) => {
         setInviteOpen(false);
         queryClient.invalidateQueries({ queryKey: ["/api/team/members"] });
+        if (res?.setPasswordUrl) {
+          setPendingLink({ url: res.setPasswordUrl, email: emailBeingInvited, emailSent: !!res.emailSent });
+        } else {
+          toast.success("User invited successfully");
+        }
+        setInviteData({ email: "", role: "deal_handler" });
       },
       onError: (err: any) => toast.error(err.message),
     });
@@ -100,13 +107,17 @@ export function Team() {
     }
   };
 
-  const handleRequestAction = (id: string, action: "approve" | "reject") => {
+  const handleRequestAction = (id: string, action: "approve" | "reject", userEmail?: string) => {
     const mutation = action === "approve" ? approveRequest : rejectRequest;
     mutation.mutate({ id }, {
-      onSuccess: () => {
-        toast.success(`Request ${action}d`);
+      onSuccess: (res: any) => {
         queryClient.invalidateQueries({ queryKey: ["/api/access-requests"] });
         queryClient.invalidateQueries({ queryKey: ["/api/team/members"] });
+        if (action === "approve" && res?.setPasswordUrl) {
+          setPendingLink({ url: res.setPasswordUrl, email: userEmail || "", emailSent: !!res.emailSent });
+        } else {
+          toast.success(`Request ${action}d`);
+        }
       },
     });
   };
@@ -325,7 +336,7 @@ export function Team() {
                   </td>
                   <td>
                     <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleRequestAction(r.id, "approve")}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleRequestAction(r.id, "approve", r.email)}>
                         <CheckCircle size={13} /> Approve
                       </button>
                       <button className="btn btn-danger btn-sm" onClick={() => handleRequestAction(r.id, "reject")}>
@@ -387,6 +398,75 @@ export function Team() {
             </button>
           </div>
         </form>
+      </Dialog>
+
+      {/* Set-password link dialog */}
+      <Dialog open={!!pendingLink} onOpenChange={() => setPendingLink(null)}>
+        <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginBottom: "var(--space-2)" }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%",
+            background: pendingLink?.emailSent ? "hsl(142 76% 36% / 0.15)" : "hsl(38 92% 50% / 0.15)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <Link2 size={17} style={{ color: pendingLink?.emailSent ? "var(--success)" : "hsl(38 92% 50%)" }} />
+          </div>
+          <div>
+            <div className="modal-title" style={{ margin: 0 }}>
+              {pendingLink?.emailSent ? "Invitation Sent!" : "Share Set-Password Link"}
+            </div>
+          </div>
+        </div>
+
+        {pendingLink?.emailSent ? (
+          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", margin: "0 0 var(--space-4)" }}>
+            An invitation email was sent to <strong style={{ color: "var(--text-primary)" }}>{pendingLink.email}</strong>.
+            You can also share this link directly:
+          </p>
+        ) : (
+          <div style={{
+            background: "hsl(38 92% 50% / 0.08)", border: "1px solid hsl(38 92% 50% / 0.25)",
+            borderRadius: "var(--radius)", padding: "var(--space-3) var(--space-4)", marginBottom: "var(--space-4)",
+          }}>
+            <p style={{ fontSize: "var(--text-sm)", color: "hsl(38 92% 60%)", margin: 0, lineHeight: 1.5 }}>
+              Email is not configured — copy and share this set-password link with <strong>{pendingLink?.email}</strong> via any channel (email, Slack, WhatsApp, etc.).
+            </p>
+          </div>
+        )}
+
+        <div style={{ position: "relative" }}>
+          <input
+            className="input"
+            readOnly
+            value={pendingLink?.url || ""}
+            style={{ paddingRight: "var(--space-12)", fontSize: "var(--text-xs)", fontFamily: "monospace", color: "var(--teal)" }}
+            onFocus={e => e.target.select()}
+          />
+          <button
+            className="btn btn-secondary btn-sm"
+            style={{ position: "absolute", right: "var(--space-2)", top: "50%", transform: "translateY(-50%)" }}
+            onClick={() => {
+              navigator.clipboard.writeText(pendingLink?.url || "");
+              toast.success("Link copied to clipboard!");
+            }}
+          >
+            <Copy size={13} /> Copy
+          </button>
+        </div>
+
+        <p style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", margin: "var(--space-3) 0 0" }}>
+          This link expires in 24 hours.
+        </p>
+
+        <div className="modal-footer">
+          <button className="btn btn-primary" onClick={() => {
+            navigator.clipboard.writeText(pendingLink?.url || "");
+            toast.success("Link copied!");
+            setPendingLink(null);
+          }}>
+            <Copy size={14} /> Copy &amp; Close
+          </button>
+          <button className="btn btn-ghost" onClick={() => setPendingLink(null)}>Close</button>
+        </div>
       </Dialog>
     </div>
   );

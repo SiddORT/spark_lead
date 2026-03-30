@@ -216,12 +216,16 @@ router.post("/invite", requireAuth, requireAdmin, async (req: AuthRequest, res) 
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const origin = (req.headers.origin as string) || (req.headers.referer as string) || "";
+    const baseUrl = origin.replace(/\/$/, "") || process.env.FRONTEND_URL || "";
+    const frontendUrl = baseUrl || "http://localhost:5173";
+    const setPasswordUrl = `${frontendUrl}/set-password?token=${token}`;
+
     const inviter = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
     const emailSent = await sendPasswordSetupEmail({
       toEmail: email,
       userName: email.split("@")[0],
-      setPasswordUrl: `${frontendUrl}/set-password?token=${token}`,
+      setPasswordUrl,
       invitedByName: inviter[0]?.displayName || "Admin",
       role,
     });
@@ -238,9 +242,10 @@ router.post("/invite", requireAuth, requireAdmin, async (req: AuthRequest, res) 
     res.status(201).json({
       success: true,
       emailSent,
+      setPasswordUrl,
       message: emailSent
         ? "User invited successfully — invitation email sent"
-        : "User created but email delivery failed — check SMTP configuration in Replit Secrets",
+        : "User created — share the set-password link manually (email not configured)",
     });
   } catch (err) {
     req.log.error({ err }, "Invite user error");

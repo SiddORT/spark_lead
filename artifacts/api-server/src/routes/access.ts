@@ -149,7 +149,9 @@ router.post("/:id/approve", requireAuth, requireAdmin, async (req: AuthRequest, 
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const origin = (req.headers.origin as string) || (req.headers.referer as string) || "";
+    const baseUrl = origin.replace(/\/$/, "") || process.env.FRONTEND_URL || "";
+    const frontendUrl = baseUrl || "http://localhost:5173";
     const setPasswordUrl = `${frontendUrl}/set-password?token=${token}`;
 
     // Get reviewer's display name for the email
@@ -180,9 +182,10 @@ router.post("/:id/approve", requireAuth, requireAdmin, async (req: AuthRequest, 
     res.json({
       success: true,
       emailSent,
+      setPasswordUrl,
       message: emailSent
         ? "Access request approved and email sent"
-        : "Access request approved but email delivery failed — check SMTP in Secrets",
+        : "Access approved — share the set-password link manually (email not configured)",
     });
   } catch (err) {
     req.log.error({ err }, "Approve access request error");
