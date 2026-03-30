@@ -116,11 +116,12 @@ export function Dashboard() {
   const filteredLeads = useMemo(() => {
     const q = search.toLowerCase();
     return leads.filter((l: any) => {
+      const companyNames: string[] = (l.companies || []).map((c: any) => c.name as string);
       const matchSearch = !q
         || l.leadName.toLowerCase().includes(q)
-        || (l.company || "").toLowerCase().includes(q);
+        || companyNames.some(n => n.toLowerCase().includes(q));
       const matchService = !serviceFilter || l.serviceId === serviceFilter;
-      const matchCompany = !companyFilter || (l.company || "") === companyFilter;
+      const matchCompany = !companyFilter || companyNames.some(n => n === companyFilter);
       const matchType = !typeFilter || l.leadType === typeFilter;
       return matchSearch && matchService && matchCompany && matchType;
     });
@@ -158,7 +159,39 @@ export function Dashboard() {
             <span className={`badge ${tc.cls}`}>{tc.emoji} {tc.label}</span>
           </td>
           <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.serviceName || "—"}</td>
-          <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.company || "—"}</td>
+          <td style={{ fontSize: "var(--text-xs)" }}>
+            {lead.companies && lead.companies.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                {lead.companies.slice(0, 2).map((c: any) => (
+                  <span key={c.id} style={{
+                    display: "inline-block",
+                    padding: "1px 6px",
+                    background: "hsl(172 75% 48% / 0.08)",
+                    border: "1px solid hsl(172 75% 48% / 0.2)",
+                    borderRadius: "var(--radius-full)",
+                    color: "var(--teal)",
+                    fontSize: 10,
+                    fontWeight: 500,
+                    lineHeight: 1.6,
+                    whiteSpace: "nowrap",
+                  }}>{c.name}</span>
+                ))}
+                {lead.companies.length > 2 && (
+                  <span style={{
+                    display: "inline-block",
+                    padding: "1px 6px",
+                    background: "var(--bg-subtle)",
+                    border: "1px solid var(--border-default)",
+                    borderRadius: "var(--radius-full)",
+                    color: "var(--text-muted)",
+                    fontSize: 10,
+                    fontWeight: 500,
+                    lineHeight: 1.6,
+                  }}>+{lead.companies.length - 2}</span>
+                )}
+              </div>
+            ) : <span style={{ color: "var(--text-muted)" }}>—</span>}
+          </td>
           <td style={{ fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--teal)", fontWeight: 600 }}>
             {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
           </td>

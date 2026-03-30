@@ -296,13 +296,40 @@ export function KanbanBoard() {
                                     </span>
                                   </div>
 
-                                  {lead.company && (
+                                  {lead.companies && lead.companies.length > 0 && (
                                     <div style={{
-                                      fontSize: "var(--text-xs)",
-                                      color: "var(--text-muted)",
-                                      marginBottom: "var(--space-3)",
+                                      display: "flex",
+                                      flexWrap: "wrap",
+                                      gap: 3,
+                                      marginBottom: "var(--space-2)",
                                     }}>
-                                      {lead.company}
+                                      {(lead.companies as any[]).slice(0, 2).map((c: any) => (
+                                        <span key={c.id} style={{
+                                          display: "inline-block",
+                                          padding: "1px 5px",
+                                          background: "hsl(172 75% 48% / 0.08)",
+                                          border: "1px solid hsl(172 75% 48% / 0.18)",
+                                          borderRadius: "var(--radius-full)",
+                                          color: "var(--teal)",
+                                          fontSize: 9,
+                                          fontWeight: 500,
+                                          lineHeight: 1.7,
+                                          whiteSpace: "nowrap",
+                                        }}>{c.name}</span>
+                                      ))}
+                                      {lead.companies.length > 2 && (
+                                        <span style={{
+                                          display: "inline-block",
+                                          padding: "1px 5px",
+                                          background: "var(--bg-muted)",
+                                          border: "1px solid var(--border-subtle)",
+                                          borderRadius: "var(--radius-full)",
+                                          color: "var(--text-muted)",
+                                          fontSize: 9,
+                                          fontWeight: 500,
+                                          lineHeight: 1.7,
+                                        }}>+{lead.companies.length - 2}</span>
+                                      )}
                                     </div>
                                   )}
 
