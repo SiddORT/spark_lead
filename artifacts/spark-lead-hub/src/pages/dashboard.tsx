@@ -224,9 +224,24 @@ export function Dashboard() {
             ) : <span style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>—</span>}
           </td>
           <td>
-            <span className={`badge ${STAGE_BADGE[lead.stage || "discovery"] || "badge-muted"}`}>
-              {lead.stage}
-            </span>
+            {lead.stageName ? (
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "2px 8px",
+                background: `${lead.stageColor || "var(--teal)"}18`,
+                border: `1px solid ${lead.stageColor || "var(--teal)"}30`,
+                borderRadius: "var(--radius-full)",
+                color: lead.stageColor || "var(--teal)",
+                fontSize: "var(--text-xs)", fontWeight: 600, whiteSpace: "nowrap",
+              }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: lead.stageColor || "var(--teal)", flexShrink: 0 }} />
+                {lead.stageName}
+              </span>
+            ) : (
+              <span className={`badge ${STAGE_BADGE[lead.stage || "discovery"] || "badge-muted"}`}>
+                {lead.stage}
+              </span>
+            )}
           </td>
           <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)", whiteSpace: "nowrap" }}>
             {format(new Date(lead.createdAt), "MMM d, yyyy")}
@@ -327,7 +342,11 @@ export function Dashboard() {
           <div className="chart-title">Pipeline by Stage</div>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={stageDist.map((d: any) => ({ ...d, label: STAGE_LABELS[d.stage] || d.stage }))}
+              data={stageDist.map((d: any) => ({
+                ...d,
+                label: d.stageName || STAGE_LABELS[d.stage] || d.stage,
+                color: d.stageColor || STAGE_COLORS[d.stage] || "var(--border-strong)",
+              }))}
               margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 18%)" vertical={false} />
@@ -352,7 +371,7 @@ export function Dashboard() {
               />
               <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={56}>
                 {stageDist.map((entry: any, i: number) => (
-                  <Cell key={i} fill={STAGE_COLORS[entry.stage] || "var(--border-strong)"} />
+                  <Cell key={i} fill={entry.stageColor || STAGE_COLORS[entry.stage] || "var(--border-strong)"} />
                 ))}
               </Bar>
             </BarChart>

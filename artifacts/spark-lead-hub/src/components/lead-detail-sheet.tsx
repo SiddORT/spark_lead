@@ -11,6 +11,8 @@ import { Check, Lock, Send, Clock, Trash2, X, AlertCircle, ChevronDown } from "l
 import { useUserMap } from "@/hooks/use-user-map";
 import { useAuth, PermissionCheck } from "./auth-provider";
 import { toast } from "sonner";
+import { usePipelineStages } from "@/hooks/use-pipeline";
+import { StageStatusSelect, PipelineProgressBar } from "./stage-status-select";
 
 // ─── Currency formatter ───────────────────────────────
 function formatCurrency(val: string | number | null | undefined): string {
@@ -118,6 +120,7 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
   const { resolveName, users }   = useUserMap();
   const { user }                 = useAuth();
   const queryClient              = useQueryClient();
+  const { data: pipelineStages = [] } = usePipelineStages();
 
   const updateLeadMutation = useUpdateLead({
     mutation: {
@@ -129,41 +132,20 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
     }
   });
 
-  const isQualifyComplete  = !!(lead?.emotionalState && lead?.decisionRole);
-  const isStrategyComplete = !!(lead?.strategicTier);
-  const isResolveComplete  = !!(lead?.outcome);
-
-  const [proceededStages, setProceededStages] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (lead) {
-      const set = new Set(proceededStages);
-      if (isQualifyComplete  && lead.strategicTier) set.add("strategy");
-      if (isStrategyComplete && lead.outcome)        set.add("resolve");
-      setProceededStages(set);
-    }
-  }, [lead]);
-
   const handleUpdate = (field: string, value: any) => {
-    if (!lead || lead[field as keyof typeof lead] === value) return;
+    if (!lead) return;
+    if (lead[field as keyof typeof lead] === value) return;
+    updateLeadMutation.mutate({ id: lead.id, data: { [field]: value } });
+  };
 
-    let targetStage = lead.stage;
-    const stages    = ["discovery", "qualification", "strategy", "resolution"];
-    const merged    = { ...lead, [field]: value };
-
-    const qualify  = !!(merged.emotionalState && merged.decisionRole);
-    const strategy = !!(merged.strategicTier);
-    const resolve  = !!(merged.outcome);
-
-    if (resolve)        targetStage = "resolution";
-    else if (strategy)  targetStage = "strategy";
-    else if (qualify)   targetStage = "qualification";
-
-    const updates: any = { [field]: value };
-    if (stages.indexOf(targetStage) > stages.indexOf(lead.stage)) updates.stage = targetStage;
-    if (field === "outcome" && value !== "wip" && !lead.resolvedAt) updates.resolvedAt = new Date().toISOString();
-
-    updateLeadMutation.mutate({ id: lead.id, data: updates });
+  const handlePipelineChange = (stageId: string, statusId: string) => {
+    if (!lead) return;
+    const updates: any = {};
+    if (stageId !== lead.pipelineStageId) updates.pipelineStageId = stageId || null;
+    if (statusId !== lead.pipelineStatusId) updates.pipelineStatusId = statusId || null;
+    if (Object.keys(updates).length > 0) {
+      updateLeadMutation.mutate({ id: lead.id, data: updates });
+    }
   };
 
   if (!lead) return (
@@ -171,15 +153,6 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
       <div style={{ padding: "var(--sp-8)", textAlign: "center", color: "var(--text-muted)" }}>Loading…</div>
     </Sheet>
   );
-
-  const strategyLocked = !isQualifyComplete || !proceededStages.has("strategy");
-  const resolveLocked  = !isStrategyComplete || !proceededStages.has("resolve");
-
-  const milestoneSteps = [
-    { id: "qualify",  label: "Qualify",   complete: isQualifyComplete },
-    { id: "strategy", label: "Strategy",  complete: isStrategyComplete },
-    { id: "resolve",  label: "Resolve",   complete: isResolveComplete },
-  ];
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} className="w-full sm:w-[600px] md:w-[700px] max-w-full">
@@ -190,9 +163,32 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
           <div>
             <div className="sheet-lead-name">{lead.leadName}</div>
             <div className="sheet-lead-meta">
-              <span className={`badge badge-${lead.stage || "discovery"}`} style={{ textTransform: "capitalize" }}>
-                {lead.stage || "Discovery"}
-              </span>
+              {lead.stageName && (
+                <span style={{
+                  display: "inline-flex", alignItems: "center", gap: 5,
+                  padding: "2px 8px",
+                  background: `${lead.stageColor || "var(--teal)"}18`,
+                  border: `1px solid ${lead.stageColor || "var(--teal)"}30`,
+                  borderRadius: "var(--radius-full)",
+                  color: lead.stageColor || "var(--teal)",
+                  fontSize: "var(--text-xs)", fontWeight: 600,
+                }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: lead.stageColor || "var(--teal)", flexShrink: 0 }} />
+                  {lead.stageName}
+                </span>
+              )}
+              {lead.statusName && (
+                <span style={{
+                  padding: "2px 8px",
+                  background: `${lead.statusColor || "var(--border-default)"}18`,
+                  border: `1px solid ${lead.statusColor || "var(--border-default)"}30`,
+                  borderRadius: "var(--radius-full)",
+                  color: lead.statusColor || "var(--text-muted)",
+                  fontSize: "var(--text-xs)", fontWeight: 600,
+                }}>
+                  {lead.statusName}
+                </span>
+              )}
               {lead.leadType && (
                 <span className={`badge badge-${lead.leadType}`} style={{ textTransform: "capitalize" }}>
                   {lead.leadType}
@@ -210,43 +206,21 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
           </button>
         </div>
 
-        {/* ── Milestone bar ── */}
-        <div style={{
-          display: "flex", alignItems: "center",
-          padding: "var(--sp-4) var(--sp-6)",
-          borderBottom: "1px solid var(--border-faint)",
-          background: "var(--bg-overlay)",
-          flexShrink: 0,
-          gap: 0,
-        }}>
-          {milestoneSteps.map((step, i) => {
-            const circleClass = step.complete ? "done" : (i === 0 || milestoneSteps[i-1]?.complete ? "active" : "locked");
-            return (
-              <div key={step.id} style={{ display: "flex", alignItems: "center", flex: 1 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-                  <div className={`milestone-circle ${circleClass}`}>
-                    {step.complete ? <Check size={14} /> : <span>{i + 1}</span>}
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em",
-                    color: step.complete ? "var(--success)" : (circleClass === "active" ? "var(--teal)" : "var(--text-muted)"),
-                    whiteSpace: "nowrap",
-                  }}>
-                    {step.label}
-                  </span>
-                </div>
-                {i < milestoneSteps.length - 1 && (
-                  <div style={{
-                    flex: 1, height: "1.5px",
-                    background: step.complete ? "var(--success)" : "var(--border-faint)",
-                    margin: "0 var(--sp-2) 15px",
-                    transition: "background var(--t-base)",
-                  }} />
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {/* ── Pipeline Progress Bar ── */}
+        {pipelineStages.length > 0 && (
+          <div style={{
+            padding: "var(--sp-4) var(--sp-6) var(--sp-5)",
+            borderBottom: "1px solid var(--border-faint)",
+            background: "var(--bg-overlay)",
+            flexShrink: 0,
+          }}>
+            <PipelineProgressBar
+              stages={pipelineStages}
+              currentStageId={lead.pipelineStageId}
+              currentStatusId={lead.pipelineStatusId}
+            />
+          </div>
+        )}
 
         {/* ── Tabs ── */}
         <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
@@ -259,16 +233,8 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
               flexShrink: 0,
               background: "var(--bg-overlay)",
             }}>
-              {["details", "qualify", "strategy", "resolve", "notes"].map(tab => (
-                <TabsTrigger
-                  key={tab}
-                  value={tab}
-                  disabled={(tab === "strategy" && strategyLocked) || (tab === "resolve" && resolveLocked)}
-                  style={{ borderRadius: 0 }}
-                >
-                  {tab === "qualify" && isQualifyComplete && <Check size={12} style={{ color: "var(--success)", marginRight: 4 }} />}
-                  {tab === "strategy" && strategyLocked && <Lock size={11} style={{ marginRight: 4 }} />}
-                  {tab === "resolve"  && resolveLocked  && <Lock size={11} style={{ marginRight: 4 }} />}
+              {["details", "notes"].map(tab => (
+                <TabsTrigger key={tab} value={tab} style={{ borderRadius: 0 }}>
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
                 </TabsTrigger>
               ))}
@@ -278,6 +244,17 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
 
               {/* ── DETAILS TAB ── */}
               <TabsContent value="details" style={{ margin: 0, padding: "var(--sp-6)" }}>
+                {/* Pipeline Stage + Status */}
+                <div className="form-field details-grid-full" style={{ marginBottom: "var(--sp-5)" }}>
+                  <label className="field-label">Pipeline Stage &amp; Status</label>
+                  <StageStatusSelect
+                    stageId={lead.pipelineStageId}
+                    statusId={lead.pipelineStatusId}
+                    onStageChange={(stageId) => handlePipelineChange(stageId, "")}
+                    onStatusChange={(statusId) => handlePipelineChange(lead.pipelineStageId || "", statusId)}
+                  />
+                </div>
+
                 {/* Row 1: Lead Name — full width */}
                 <div className="form-field details-grid-full">
                   <label className="field-label">Lead Name</label>
@@ -395,155 +372,6 @@ export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string
 
                 {/* Activity Log */}
                 <ActivityLog leadId={lead.id} />
-              </TabsContent>
-
-              {/* ── QUALIFY TAB ── */}
-              <TabsContent value="qualify" style={{ margin: 0, padding: "var(--sp-6)" }}>
-                <div style={{
-                  background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
-                  borderRadius: "var(--r-lg)", padding: "var(--sp-5)", marginBottom: "var(--sp-5)",
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--sp-4)" }}>
-                    <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--teal)", margin: 0 }}>
-                      Qualification Assessment
-                    </h3>
-                    {isQualifyComplete && (
-                      <span className="badge badge-success"><Check size={11} /> Completed</span>
-                    )}
-                  </div>
-                  <div className="form-row">
-                    <div className="form-field">
-                      <label className="field-label">Emotional State <span className="req">*</span></label>
-                      <select className="field-select" value={lead.emotionalState || ""} onChange={e => handleUpdate("emotionalState", e.target.value)}>
-                        <option value="">Select…</option>
-                        <option value="skeptical">Skeptical</option>
-                        <option value="enthusiastic">Enthusiastic</option>
-                        <option value="frustrated">Frustrated</option>
-                      </select>
-                    </div>
-                    <div className="form-field">
-                      <label className="field-label">Decision Role <span className="req">*</span></label>
-                      <select className="field-select" value={lead.decisionRole || ""} onChange={e => handleUpdate("decisionRole", e.target.value)}>
-                        <option value="">Select…</option>
-                        <option value="champion">Champion</option>
-                        <option value="gatekeeper">Gatekeeper</option>
-                        <option value="economic_buyer">Economic Buyer</option>
-                      </select>
-                    </div>
-                  </div>
-                  {isQualifyComplete && !proceededStages.has("strategy") && (
-                    <button
-                      className="btn btn-primary btn-full"
-                      style={{ marginTop: "var(--sp-4)" }}
-                      onClick={() => setProceededStages(new Set(proceededStages).add("strategy"))}
-                    >
-                      Proceed to Strategy →
-                    </button>
-                  )}
-                </div>
-                <NotesSection leadId={lead.id} stageContext="qualify" />
-              </TabsContent>
-
-              {/* ── STRATEGY TAB ── */}
-              <TabsContent value="strategy" style={{ margin: 0, padding: "var(--sp-6)" }}>
-                {strategyLocked ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "var(--sp-16) var(--sp-8)", gap: "var(--sp-3)", textAlign: "center" }}>
-                    <div style={{ width: 52, height: 52, borderRadius: "var(--r-lg)", background: "var(--bg-subtle)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-faint)" }}>
-                      <Lock size={22} />
-                    </div>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--text-secondary)" }}>Strategy Locked</div>
-                    <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", maxWidth: 240, lineHeight: 1.6 }}>Complete Qualification phase to unlock Strategy.</div>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)", borderRadius: "var(--r-lg)", padding: "var(--sp-5)", marginBottom: "var(--sp-5)" }}>
-                      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--purple)", marginBottom: "var(--sp-4)" }}>Strategy Formulation</h3>
-                      <div className="form-field">
-                        <label className="field-label">Strategic Tier <span className="req">*</span></label>
-                        <select className="field-select" value={lead.strategicTier || ""} onChange={e => handleUpdate("strategicTier", e.target.value)}>
-                          <option value="">Select…</option>
-                          <option value="high">High Priority</option>
-                          <option value="med">Medium</option>
-                          <option value="low">Low Priority</option>
-                        </select>
-                      </div>
-                      <div className="form-field">
-                        <label className="field-label">Custom Hook</label>
-                        <textarea
-                          className="field-textarea"
-                          defaultValue={lead.customHook || ""}
-                          onBlur={e => handleUpdate("customHook", e.target.value)}
-                          placeholder="What's our angle?"
-                          style={{ minHeight: 72 }}
-                        />
-                      </div>
-                      <div className="form-field" style={{ marginBottom: 0 }}>
-                        <label className="field-label">Known Objections</label>
-                        <input className="field-input" defaultValue={lead.objection || ""} onBlur={e => handleUpdate("objection", e.target.value)} />
-                      </div>
-                      {isStrategyComplete && !proceededStages.has("resolve") && (
-                        <button className="btn btn-primary btn-full" style={{ marginTop: "var(--sp-4)" }} onClick={() => setProceededStages(new Set(proceededStages).add("resolve"))}>
-                          Proceed to Resolve →
-                        </button>
-                      )}
-                    </div>
-                    <NotesSection leadId={lead.id} stageContext="strategy" />
-                  </>
-                )}
-              </TabsContent>
-
-              {/* ── RESOLVE TAB ── */}
-              <TabsContent value="resolve" style={{ margin: 0, padding: "var(--sp-6)" }}>
-                {resolveLocked ? (
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "var(--sp-16) var(--sp-8)", gap: "var(--sp-3)", textAlign: "center" }}>
-                    <div style={{ width: 52, height: 52, borderRadius: "var(--r-lg)", background: "var(--bg-subtle)", border: "1px solid var(--border-subtle)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-faint)" }}>
-                      <Lock size={22} />
-                    </div>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--text-secondary)" }}>Resolution Locked</div>
-                    <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", maxWidth: 240, lineHeight: 1.6 }}>Complete Strategy phase to unlock Resolution.</div>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)", borderRadius: "var(--r-lg)", padding: "var(--sp-5)", marginBottom: "var(--sp-5)" }}>
-                      <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 600, color: "var(--warning)", marginBottom: "var(--sp-4)" }}>Outcome Resolution</h3>
-                      <div className="form-field">
-                        <label className="field-label">Outcome <span className="req">*</span></label>
-                        <select className="field-select" value={lead.outcome || ""} onChange={e => handleUpdate("outcome", e.target.value)}>
-                          <option value="">Select…</option>
-                          <option value="closed">Closed Won</option>
-                          <option value="lost">Closed Lost</option>
-                          <option value="wip">Work in Progress</option>
-                          <option value="delayed">Delayed</option>
-                        </select>
-                      </div>
-                      {lead.outcome === "lost" && (
-                        <div className="form-field" style={{ animation: "slide-in 200ms ease both" }}>
-                          <label className="field-label">Kill Reason</label>
-                          <select className="field-select" value={lead.killReason || ""} onChange={e => handleUpdate("killReason", e.target.value)}>
-                            <option value="">Select…</option>
-                            <option value="feature_gap">Feature Gap</option>
-                            <option value="price">Price</option>
-                            <option value="ghosted">Ghosted</option>
-                          </select>
-                        </div>
-                      )}
-                      <div className="form-field">
-                        <label className="field-label">Friction Point</label>
-                        <select className="field-select" value={lead.frictionPoint || ""} onChange={e => handleUpdate("frictionPoint", e.target.value)}>
-                          <option value="">Select…</option>
-                          <option value="scaling">Scaling</option>
-                          <option value="tech_debt">Tech Debt</option>
-                          <option value="budget">Budget</option>
-                        </select>
-                      </div>
-                      <div className="form-field" style={{ marginBottom: 0 }}>
-                        <label className="field-label">Internal Rating (1–10)</label>
-                        <input className="field-input" type="number" min="1" max="10" defaultValue={lead.internalRating || ""} onBlur={e => handleUpdate("internalRating", parseInt(e.target.value))} />
-                      </div>
-                    </div>
-                    <NotesSection leadId={lead.id} stageContext="resolve" />
-                  </>
-                )}
               </TabsContent>
 
               {/* ── NOTES TAB ── */}

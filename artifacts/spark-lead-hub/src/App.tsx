@@ -10,6 +10,7 @@ import { NewLead } from "@/pages/leads-new";
 import { Analytics } from "@/pages/analytics";
 import { Team } from "@/pages/team";
 import { Companies, Services } from "@/pages/master-data";
+import { PipelineMaster } from "@/pages/pipeline-master";
 import { Permissions, AuditLog } from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import { AuthPage } from "@/pages/auth";
@@ -62,6 +63,9 @@ function Router() {
       </Route>
       <Route path="/master/services">
         <ProtectedLayout><Services /></ProtectedLayout>
+      </Route>
+      <Route path="/master/pipeline">
+        <ProtectedLayout><PipelineMaster /></ProtectedLayout>
       </Route>
       <Route path="/settings/permissions">
         <ProtectedLayout><Permissions /></ProtectedLayout>

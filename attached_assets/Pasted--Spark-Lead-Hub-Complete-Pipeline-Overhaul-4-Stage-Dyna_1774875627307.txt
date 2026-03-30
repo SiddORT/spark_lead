@@ -1,0 +1,1527 @@
+# 🔄 Spark Lead Hub — Complete Pipeline Overhaul: 4-Stage + Dynamic Status System
+
+This is a **full pipeline architecture replacement**. The old `discovery → qualification → strategy → resolution` system with its hardcoded qualify/strategy/resolve tabs is being completely replaced with a flexible, master-data-driven 4-stage pipeline with dynamic per-stage statuses. Every single part of the system that touches stage or status must be updated.
+
+**Do not leave any trace of the old stage names anywhere — not in the DB, not in the UI, not in enums, not in filter dropdowns, not in charts, not in CSV exports, not in audit logs.**
+
+---
+
+## THE NEW PIPELINE (Source of Truth)
+
+```
+Stage 1: Lead Initiation
+  → Statuses: New Lead Connected
+
+Stage 2: Qualification & Analysis
+  → Statuses: Internal Discussion, Requirement Analysis, Eligibility Check
+
+Stage 3: Proposal & Negotiation
+  → Statuses: Proposal Shared, Ongoing Negotiation
+
+Stage 4: Closure
+  → Statuses: Closed – Won, Closed – Lost, Closed – Postponed
+```
+
+---
+
+## PART 1 — Database: New Schema
+
+### Step 1.1 — Create Pipeline Masters Tables
+
+```sql
+-- ─── pipeline_stages — master table for stages ───
+CREATE TABLE pipeline_stages (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name         TEXT NOT NULL UNIQUE,
+  display_name TEXT NOT NULL,
+  description  TEXT,
+  color        TEXT NOT NULL DEFAULT '#6b7a9a',
+  icon         TEXT,
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  is_active    BOOLEAN NOT NULL DEFAULT true,
+  is_terminal  BOOLEAN NOT NULL DEFAULT false, -- true for Closure stage
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ─── pipeline_statuses — master table for statuses ───
+CREATE TABLE pipeline_statuses (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  stage_id     UUID NOT NULL REFERENCES pipeline_stages(id) ON DELETE CASCADE,
+  name         TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  description  TEXT,
+  color        TEXT NOT NULL DEFAULT '#6b7a9a',
+  sort_order   INTEGER NOT NULL DEFAULT 0,
+  is_active    BOOLEAN NOT NULL DEFAULT true,
+  is_won       BOOLEAN NOT NULL DEFAULT false,  -- for "Closed – Won"
+  is_lost      BOOLEAN NOT NULL DEFAULT false,  -- for "Closed – Lost" / "Closed – Postponed"
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(stage_id, name)
+);
+
+-- ─── Add stage_id and status_id to leads table ───
+ALTER TABLE leads
+  ADD COLUMN IF NOT EXISTS pipeline_stage_id   UUID REFERENCES pipeline_stages(id),
+  ADD COLUMN IF NOT EXISTS pipeline_status_id  UUID REFERENCES pipeline_statuses(id);
+
+-- Keep old 'stage' column temporarily for migration, then drop after migration confirmed
+-- ALTER TABLE leads DROP COLUMN stage;         ← run AFTER migration verified
+-- ALTER TABLE leads DROP COLUMN outcome;       ← run AFTER migration verified
+
+-- Update triggers for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN NEW.updated_at = now(); RETURN NEW; END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER pipeline_stages_updated_at
+  BEFORE UPDATE ON pipeline_stages
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER pipeline_statuses_updated_at
+  BEFORE UPDATE ON pipeline_statuses
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+```
+
+### Step 1.2 — Seed the 4 Stages and All Statuses
+
+```sql
+-- ─── INSERT STAGES ───
+INSERT INTO pipeline_stages (id, name, display_name, description, color, icon, sort_order, is_terminal) VALUES
+  ('a1000000-0000-0000-0000-000000000001', 'lead_initiation',           'Lead Initiation',           'First contact & capturing the lead',       'hsl(212, 78%, 58%)', 'Target',       1, false),
+  ('a1000000-0000-0000-0000-000000000002', 'qualification_analysis',    'Qualification & Analysis',  'Understanding if the lead is worth pursuing','hsl(36, 88%, 52%)',  'Search',       2, false),
+  ('a1000000-0000-0000-0000-000000000003', 'proposal_negotiation',      'Proposal & Negotiation',    'Converting interest into a deal',            'hsl(258, 62%, 62%)', 'FileText',     3, false),
+  ('a1000000-0000-0000-0000-000000000004', 'closure',                   'Closure',                   'Final outcome tracking',                     'hsl(152, 58%, 43%)', 'CheckCircle2', 4, true)
+ON CONFLICT (name) DO NOTHING;
+
+-- ─── INSERT STATUSES ───
+-- Stage 1: Lead Initiation
+INSERT INTO pipeline_statuses (stage_id, name, display_name, color, sort_order, is_won, is_lost) VALUES
+  ('a1000000-0000-0000-0000-000000000001', 'new_lead_connected', 'New Lead Connected', 'hsl(212, 78%, 58%)', 1, false, false)
+ON CONFLICT (stage_id, name) DO NOTHING;
+
+-- Stage 2: Qualification & Analysis
+INSERT INTO pipeline_statuses (stage_id, name, display_name, color, sort_order, is_won, is_lost) VALUES
+  ('a1000000-0000-0000-0000-000000000002', 'internal_discussion',  'Internal Discussion',  'hsl(36, 88%, 52%)', 1, false, false),
+  ('a1000000-0000-0000-0000-000000000002', 'requirement_analysis', 'Requirement Analysis', 'hsl(36, 88%, 52%)', 2, false, false),
+  ('a1000000-0000-0000-0000-000000000002', 'eligibility_check',    'Eligibility Check',    'hsl(36, 88%, 52%)', 3, false, false)
+ON CONFLICT (stage_id, name) DO NOTHING;
+
+-- Stage 3: Proposal & Negotiation
+INSERT INTO pipeline_statuses (stage_id, name, display_name, color, sort_order, is_won, is_lost) VALUES
+  ('a1000000-0000-0000-0000-000000000003', 'proposal_shared',     'Proposal Shared',     'hsl(258, 62%, 62%)', 1, false, false),
+  ('a1000000-0000-0000-0000-000000000003', 'ongoing_negotiation', 'Ongoing Negotiation', 'hsl(258, 62%, 62%)', 2, false, false)
+ON CONFLICT (stage_id, name) DO NOTHING;
+
+-- Stage 4: Closure
+INSERT INTO pipeline_statuses (stage_id, name, display_name, color, sort_order, is_won, is_lost) VALUES
+  ('a1000000-0000-0000-0000-000000000004', 'closed_won',       'Closed – Won',       'hsl(152, 58%, 43%)', 1, true,  false),
+  ('a1000000-0000-0000-0000-000000000004', 'closed_lost',      'Closed – Lost',      'hsl(4, 68%, 58%)',   2, false, true),
+  ('a1000000-0000-0000-0000-000000000004', 'closed_postponed', 'Closed – Postponed', 'hsl(36, 88%, 52%)',  3, false, true)
+ON CONFLICT (stage_id, name) DO NOTHING;
+
+-- ─── MIGRATE existing leads to new pipeline ───
+-- Map old 'discovery' → Lead Initiation / New Lead Connected
+UPDATE leads SET
+  pipeline_stage_id  = 'a1000000-0000-0000-0000-000000000001',
+  pipeline_status_id = (SELECT id FROM pipeline_statuses WHERE name = 'new_lead_connected')
+WHERE stage = 'discovery' OR pipeline_stage_id IS NULL;
+
+-- Map old 'qualification' → Qualification & Analysis / Internal Discussion
+UPDATE leads SET
+  pipeline_stage_id  = 'a1000000-0000-0000-0000-000000000002',
+  pipeline_status_id = (SELECT id FROM pipeline_statuses WHERE name = 'internal_discussion')
+WHERE stage = 'qualification';
+
+-- Map old 'strategy' → Proposal & Negotiation / Proposal Shared
+UPDATE leads SET
+  pipeline_stage_id  = 'a1000000-0000-0000-0000-000000000003',
+  pipeline_status_id = (SELECT id FROM pipeline_statuses WHERE name = 'proposal_shared')
+WHERE stage = 'strategy';
+
+-- Map old 'resolution' with outcome 'closed' → Closure / Closed Won
+UPDATE leads SET
+  pipeline_stage_id  = 'a1000000-0000-0000-0000-000000000004',
+  pipeline_status_id = (SELECT id FROM pipeline_statuses WHERE name = 'closed_won')
+WHERE stage = 'resolution' AND outcome = 'closed';
+
+-- Map old 'resolution' with outcome 'lost' → Closure / Closed Lost
+UPDATE leads SET
+  pipeline_stage_id  = 'a1000000-0000-0000-0000-000000000004',
+  pipeline_status_id = (SELECT id FROM pipeline_statuses WHERE name = 'closed_lost')
+WHERE stage = 'resolution' AND outcome = 'lost';
+
+-- Map old 'resolution' with outcome 'delayed' → Closure / Closed Postponed
+UPDATE leads SET
+  pipeline_stage_id  = 'a1000000-0000-0000-0000-000000000004',
+  pipeline_status_id = (SELECT id FROM pipeline_statuses WHERE name = 'closed_postponed')
+WHERE stage = 'resolution' AND outcome = 'delayed';
+
+-- Map remaining resolution (wip) → Proposal Negotiation
+UPDATE leads SET
+  pipeline_stage_id  = 'a1000000-0000-0000-0000-000000000003',
+  pipeline_status_id = (SELECT id FROM pipeline_statuses WHERE name = 'ongoing_negotiation')
+WHERE stage = 'resolution' AND (outcome = 'wip' OR outcome IS NULL);
+
+-- Make NOT NULL after migration verified:
+-- ALTER TABLE leads ALTER COLUMN pipeline_stage_id SET NOT NULL;
+-- ALTER TABLE leads ALTER COLUMN pipeline_status_id SET NOT NULL;
+```
+
+---
+
+## PART 2 — Backend API Routes
+
+### Step 2.1 — Pipeline Masters API
+
+```ts
+// GET /api/pipeline/stages
+// Returns all active stages ordered by sort_order, with their statuses nested
+router.get('/pipeline/stages', requireAuth, async (req, res) => {
+  const stages = await db
+    .select()
+    .from(pipelineStages)
+    .where(eq(pipelineStages.isActive, true))
+    .orderBy(asc(pipelineStages.sortOrder));
+
+  const statuses = await db
+    .select()
+    .from(pipelineStatuses)
+    .where(eq(pipelineStatuses.isActive, true))
+    .orderBy(asc(pipelineStatuses.sortOrder));
+
+  const result = stages.map(stage => ({
+    ...stage,
+    statuses: statuses.filter(s => s.stageId === stage.id),
+  }));
+
+  res.json(result);
+});
+
+// GET /api/pipeline/stages/:stageId/statuses
+// Returns statuses for a specific stage (used in Create Lead form dropdown)
+router.get('/pipeline/stages/:stageId/statuses', requireAuth, async (req, res) => {
+  const statuses = await db
+    .select()
+    .from(pipelineStatuses)
+    .where(
+      and(
+        eq(pipelineStatuses.stageId, req.params.stageId),
+        eq(pipelineStatuses.isActive, true)
+      )
+    )
+    .orderBy(asc(pipelineStatuses.sortOrder));
+  res.json(statuses);
+});
+
+// POST /api/pipeline/stages
+// Admin only — create new stage
+router.post('/pipeline/stages', requireAuth, requireRole('admin'), async (req, res) => {
+  const { displayName, description, color, icon, sortOrder } = req.body;
+  const name = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  const [stage] = await db.insert(pipelineStages).values({
+    name, displayName, description, color, icon, sortOrder: sortOrder || 0,
+  }).returning();
+  await logAudit(req.user!.userId, 'stage_created', 'pipeline_stages', stage.id, { displayName });
+  res.status(201).json(stage);
+});
+
+// PATCH /api/pipeline/stages/:id
+router.patch('/pipeline/stages/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  const [updated] = await db.update(pipelineStages)
+    .set({ ...req.body, updatedAt: new Date() })
+    .where(eq(pipelineStages.id, req.params.id))
+    .returning();
+  await logAudit(req.user!.userId, 'stage_updated', 'pipeline_stages', req.params.id, req.body);
+  res.json(updated);
+});
+
+// DELETE /api/pipeline/stages/:id
+// Soft delete — set is_active = false. Cannot delete if leads are using this stage.
+router.delete('/pipeline/stages/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  const leadsUsingStage = await db.select({ count: sql`count(*)` })
+    .from(leads).where(eq(leads.pipelineStageId, req.params.id));
+  if (Number(leadsUsingStage[0].count) > 0) {
+    return res.status(400).json({
+      error: `Cannot delete — ${leadsUsingStage[0].count} lead(s) are currently in this stage`
+    });
+  }
+  await db.update(pipelineStages)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(eq(pipelineStages.id, req.params.id));
+  res.json({ success: true });
+});
+
+// POST /api/pipeline/statuses
+router.post('/pipeline/statuses', requireAuth, requireRole('admin'), async (req, res) => {
+  const { stageId, displayName, description, color, sortOrder, isWon, isLost } = req.body;
+  const name = displayName.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+  const [status] = await db.insert(pipelineStatuses).values({
+    stageId, name, displayName, description, color,
+    sortOrder: sortOrder || 0, isWon: isWon || false, isLost: isLost || false,
+  }).returning();
+  res.status(201).json(status);
+});
+
+// PATCH /api/pipeline/statuses/:id
+router.patch('/pipeline/statuses/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  const [updated] = await db.update(pipelineStatuses)
+    .set({ ...req.body, updatedAt: new Date() })
+    .where(eq(pipelineStatuses.id, req.params.id))
+    .returning();
+  res.json(updated);
+});
+
+// DELETE /api/pipeline/statuses/:id — soft delete, check no leads using it
+router.delete('/pipeline/statuses/:id', requireAuth, requireRole('admin'), async (req, res) => {
+  const leadsUsing = await db.select({ count: sql`count(*)` })
+    .from(leads).where(eq(leads.pipelineStatusId, req.params.id));
+  if (Number(leadsUsing[0].count) > 0) {
+    return res.status(400).json({
+      error: `Cannot delete — ${leadsUsing[0].count} lead(s) have this status`
+    });
+  }
+  await db.update(pipelineStatuses)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(eq(pipelineStatuses.id, req.params.id));
+  res.json({ success: true });
+});
+```
+
+### Step 2.2 — Update Leads API to Use New Pipeline Fields
+
+```ts
+// GET /api/leads — join pipeline_stages and pipeline_statuses
+const leadsQuery = db
+  .select({
+    // all lead fields...
+    id: leads.id,
+    leadName: leads.leadName,
+    leadType: leads.leadType,
+    dealValue: leads.dealValue,
+    contactEmail: leads.contactEmail,
+    phone: leads.phone,
+    serviceId: leads.serviceId,
+    leadOwner: leads.leadOwner,
+    dealHandler: leads.dealHandler,
+    followUpDate: leads.followUpDate,
+    nextAction: leads.nextAction,
+    sourceContext: leads.sourceContext,
+    internalRating: leads.internalRating,
+    resolvedAt: leads.resolvedAt,
+    createdAt: leads.createdAt,
+    updatedAt: leads.updatedAt,
+    createdBy: leads.createdBy,
+    // new pipeline fields
+    pipelineStageId:   leads.pipelineStageId,
+    pipelineStatusId:  leads.pipelineStatusId,
+    // joined names
+    stageName:         pipelineStages.displayName,
+    stageColor:        pipelineStages.color,
+    stageSortOrder:    pipelineStages.sortOrder,
+    stageIsTerminal:   pipelineStages.isTerminal,
+    statusName:        pipelineStatuses.displayName,
+    statusColor:       pipelineStatuses.color,
+    statusIsWon:       pipelineStatuses.isWon,
+    statusIsLost:      pipelineStatuses.isLost,
+  })
+  .from(leads)
+  .leftJoin(pipelineStages,   eq(leads.pipelineStageId,  pipelineStages.id))
+  .leftJoin(pipelineStatuses, eq(leads.pipelineStatusId, pipelineStatuses.id))
+  .orderBy(desc(leads.createdAt));
+
+// POST /api/leads — accept pipelineStageId and pipelineStatusId
+router.post('/leads', requireAuth, requirePermission('leads', 'create'), async (req, res) => {
+  const { companyIds = [], pipelineStageId, pipelineStatusId, ...leadData } = req.body;
+
+  // Validate that status belongs to stage
+  if (pipelineStageId && pipelineStatusId) {
+    const status = await db.query.pipelineStatuses.findFirst({
+      where: and(
+        eq(pipelineStatuses.id, pipelineStatusId),
+        eq(pipelineStatuses.stageId, pipelineStageId)
+      )
+    });
+    if (!status) {
+      return res.status(400).json({ error: 'Status does not belong to the selected stage' });
+    }
+  }
+
+  const [newLead] = await db.insert(leads).values({
+    ...leadData,
+    pipelineStageId,
+    pipelineStatusId,
+    createdBy: req.user!.userId,
+  }).returning();
+
+  // Link companies
+  if (companyIds.length > 0) {
+    await db.insert(leadCompanies).values(companyIds.map((cid: string) => ({ leadId: newLead.id, companyId: cid })));
+  }
+
+  // Log activity
+  await logActivities(newLead.id, req.user!.userId, [{
+    action: 'created', fieldName: 'lead', oldValue: null, newValue: newLead.leadName
+  }]);
+
+  // Auto-set resolvedAt if stage is terminal
+  const stage = await db.query.pipelineStages.findFirst({ where: eq(pipelineStages.id, pipelineStageId) });
+  if (stage?.isTerminal && !newLead.resolvedAt) {
+    await db.update(leads).set({ resolvedAt: new Date() }).where(eq(leads.id, newLead.id));
+  }
+
+  res.status(201).json(newLead);
+});
+
+// PATCH /api/leads/:id — handle pipeline stage/status change
+router.patch('/leads/:id', requireAuth, requirePermission('leads', 'update'), async (req, res) => {
+  const { pipelineStageId, pipelineStatusId, ...otherUpdates } = req.body;
+  const updates: Record<string, any> = { ...otherUpdates, updatedAt: new Date() };
+
+  // Validate status belongs to stage if both provided
+  if (pipelineStageId && pipelineStatusId) {
+    const status = await db.query.pipelineStatuses.findFirst({
+      where: and(
+        eq(pipelineStatuses.id, pipelineStatusId),
+        eq(pipelineStatuses.stageId, pipelineStageId)
+      )
+    });
+    if (!status) {
+      return res.status(400).json({ error: 'Status does not belong to the selected stage' });
+    }
+    updates.pipelineStageId  = pipelineStageId;
+    updates.pipelineStatusId = pipelineStatusId;
+  } else if (pipelineStageId && !pipelineStatusId) {
+    // If only stage changed, auto-select first status of new stage
+    const firstStatus = await db.query.pipelineStatuses.findFirst({
+      where: and(eq(pipelineStatuses.stageId, pipelineStageId), eq(pipelineStatuses.isActive, true)),
+      orderBy: asc(pipelineStatuses.sortOrder),
+    });
+    updates.pipelineStageId  = pipelineStageId;
+    updates.pipelineStatusId = firstStatus?.id || null;
+  }
+
+  // Auto-set resolvedAt when moved to terminal stage for the first time
+  if (pipelineStageId) {
+    const stage = await db.query.pipelineStages.findFirst({ where: eq(pipelineStages.id, pipelineStageId) });
+    const existingLead = await db.query.leads.findFirst({ where: eq(leads.id, req.params.id) });
+    if (stage?.isTerminal && !existingLead?.resolvedAt) {
+      updates.resolvedAt = new Date();
+    }
+    if (!stage?.isTerminal) {
+      updates.resolvedAt = null; // clear if moved back from terminal
+    }
+  }
+
+  // Log stage/status changes
+  const existing = await db.query.leads.findFirst({ where: eq(leads.id, req.params.id) });
+  const activities: ActivityLog[] = [];
+  if (pipelineStageId && pipelineStageId !== existing?.pipelineStageId) {
+    activities.push({ fieldName: 'stage', oldValue: existing?.stageName, newValue: updates.pipelineStageId });
+  }
+  if (pipelineStatusId && pipelineStatusId !== existing?.pipelineStatusId) {
+    activities.push({ fieldName: 'status', oldValue: existing?.statusName, newValue: updates.pipelineStatusId });
+  }
+
+  const [updated] = await db.update(leads).set(updates).where(eq(leads.id, req.params.id)).returning();
+
+  if (activities.length > 0) await logActivities(req.params.id, req.user!.userId, activities);
+
+  // Send email notification on stage change
+  if (pipelineStageId !== existing?.pipelineStageId) {
+    sendActivityAlertEmail({ ... }).catch(console.error);
+  }
+
+  res.json(updated);
+});
+```
+
+---
+
+## PART 3 — Frontend Hooks
+
+```ts
+// hooks/usePipeline.ts
+
+export interface PipelineStatus {
+  id: string;
+  stageId: string;
+  name: string;
+  displayName: string;
+  color: string;
+  sortOrder: number;
+  isWon: boolean;
+  isLost: boolean;
+}
+
+export interface PipelineStage {
+  id: string;
+  name: string;
+  displayName: string;
+  description: string;
+  color: string;
+  icon: string;
+  sortOrder: number;
+  isTerminal: boolean;
+  statuses: PipelineStatus[];
+}
+
+// Fetch all stages with nested statuses
+export const usePipelineStages = () => {
+  return useQuery({
+    queryKey: ['pipeline-stages'],
+    queryFn: async () => {
+      const res = await apiCall('/pipeline/stages');
+      return res.json() as Promise<PipelineStage[]>;
+    },
+    staleTime: 5 * 60 * 1000, // cache for 5 minutes
+  });
+};
+
+// Get statuses for a specific stage (reactive to stageId)
+export const useStageStatuses = (stageId: string | null) => {
+  const { data: stages = [] } = usePipelineStages();
+  return stageId
+    ? (stages.find(s => s.id === stageId)?.statuses ?? [])
+    : [];
+};
+
+// Mutation: update lead pipeline stage + status
+export const useUpdateLeadPipeline = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ leadId, pipelineStageId, pipelineStatusId }: {
+      leadId: string;
+      pipelineStageId: string;
+      pipelineStatusId: string;
+    }) => {
+      const res = await apiCall(`/leads/${leadId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ pipelineStageId, pipelineStatusId }),
+      });
+      if (!res.ok) throw new Error('Failed to update pipeline');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+    },
+    onError: () => {
+      toast.error('Failed to update stage/status');
+    },
+  });
+};
+
+// Admin mutations for pipeline masters
+export const useCreateStage = () => { /* POST /pipeline/stages */ };
+export const useUpdateStage = () => { /* PATCH /pipeline/stages/:id */ };
+export const useDeleteStage = () => { /* DELETE /pipeline/stages/:id */ };
+export const useCreateStatus = () => { /* POST /pipeline/statuses */ };
+export const useUpdateStatus = () => { /* PATCH /pipeline/statuses/:id */ };
+export const useDeleteStatus = () => { /* DELETE /pipeline/statuses/:id */ };
+```
+
+---
+
+## PART 4 — StageStatusSelect Component (Shared, Reusable)
+
+Used in New Lead form, Lead Detail Sheet, and anywhere stage/status is shown as editable:
+
+```tsx
+// components/StageStatusSelect.tsx
+
+interface Props {
+  stageId: string | null;
+  statusId: string | null;
+  onStageChange: (stageId: string, autoStatus: string) => void;
+  onStatusChange: (statusId: string) => void;
+  disabled?: boolean;
+  size?: 'sm' | 'md';
+}
+
+export const StageStatusSelect = ({
+  stageId, statusId, onStageChange, onStatusChange, disabled, size = 'md'
+}: Props) => {
+  const { data: stages = [], isLoading } = usePipelineStages();
+  const currentStage = stages.find(s => s.id === stageId);
+  const availableStatuses = currentStage?.statuses ?? [];
+
+  const handleStageChange = (newStageId: string) => {
+    const newStage = stages.find(s => s.id === newStageId);
+    const firstStatus = newStage?.statuses[0];
+    // Auto-select first status when stage changes
+    onStageChange(newStageId, firstStatus?.id ?? '');
+  };
+
+  if (isLoading) return <div className="pipeline-select-loading">Loading pipeline…</div>;
+
+  return (
+    <div className="stage-status-select">
+      {/* Stage Dropdown */}
+      <div className="form-field">
+        <label className="field-label">Stage</label>
+        <select
+          className="field-select"
+          value={stageId || ''}
+          onChange={e => handleStageChange(e.target.value)}
+          disabled={disabled}
+        >
+          <option value="" disabled>Select stage…</option>
+          {stages.map(stage => (
+            <option key={stage.id} value={stage.id}>
+              {stage.displayName}
+            </option>
+          ))}
+        </select>
+        {currentStage && (
+          <span className="field-helper" style={{ color: currentStage.color }}>
+            {currentStage.description}
+          </span>
+        )}
+      </div>
+
+      {/* Status Dropdown — only visible when stage is selected */}
+      {stageId && (
+        <div className="form-field">
+          <label className="field-label">Status</label>
+          {availableStatuses.length === 0 ? (
+            <div className="pipeline-no-statuses">No statuses configured for this stage</div>
+          ) : (
+            <select
+              className="field-select"
+              value={statusId || ''}
+              onChange={e => onStatusChange(e.target.value)}
+              disabled={disabled}
+            >
+              <option value="" disabled>Select status…</option>
+              {availableStatuses.map(status => (
+                <option key={status.id} value={status.id}>
+                  {status.displayName}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+---
+
+## PART 5 — Create New Lead Form
+
+Replace the old `stage` and `outcome` fields with the new `StageStatusSelect`:
+
+```tsx
+// pages/NewLeadPage.tsx
+
+const [form, setForm] = useState({
+  leadName: '',
+  leadType: 'cold' as LeadType,
+  dealValue: '',
+  contactEmail: '',
+  phone: '',
+  serviceId: null as string | null,
+  companyIds: [] as string[],
+  leadOwner: null as string | null,
+  dealHandler: null as string | null,
+  pipelineStageId: null as string | null,   // ← NEW
+  pipelineStatusId: null as string | null,  // ← NEW
+  nextAction: '',
+  followUpDate: '',
+});
+
+// Auto-select first status when stage changes
+const handleStageChange = (stageId: string, autoStatusId: string) => {
+  setForm(p => ({
+    ...p,
+    pipelineStageId: stageId,
+    pipelineStatusId: autoStatusId,
+  }));
+};
+
+// Form field order in New Lead:
+// 1. Lead Name (full width)
+// 2. Lead Type | Deal Value
+// 3. Contact Email | Phone
+// 4. Stage (full width) ← StageStatusSelect renders both stage + status
+// 5. Status auto-appears below Stage when stage is selected
+// 6. Service (full width)
+// 7. Companies (full width, filtered by service)
+// 8. Lead Owner | Deal Handler
+// 9. Follow-up Date | Next Action
+// 10. Notes/Source Context (full width)
+```
+
+### Validation on submit:
+```ts
+const handleSubmit = async () => {
+  if (!form.leadName.trim()) { toast.error('Lead name is required'); return; }
+  if (!form.pipelineStageId) { toast.error('Please select a stage'); return; }
+  if (!form.pipelineStatusId) { toast.error('Please select a status'); return; }
+  // ... rest of submit
+};
+```
+
+---
+
+## PART 6 — Lead Detail Sheet: Stage & Status Editing
+
+Remove the entire Qualify / Strategy / Resolve tab system. Replace with a clean Details tab that has the Stage + Status selects inline:
+
+```tsx
+// Inside LeadDetailSheet.tsx — Details Tab
+
+// Local state
+const [localStageId, setLocalStageId]   = useState(lead.pipelineStageId);
+const [localStatusId, setLocalStatusId] = useState(lead.pipelineStatusId);
+
+const { mutate: updatePipeline } = useUpdateLeadPipeline();
+
+const handleStageChange = (newStageId: string, autoStatusId: string) => {
+  setLocalStageId(newStageId);
+  setLocalStatusId(autoStatusId);
+  updatePipeline({
+    leadId: lead.id,
+    pipelineStageId: newStageId,
+    pipelineStatusId: autoStatusId,
+  });
+};
+
+const handleStatusChange = (newStatusId: string) => {
+  setLocalStatusId(newStatusId);
+  updatePipeline({
+    leadId: lead.id,
+    pipelineStageId: localStageId!,
+    pipelineStatusId: newStatusId,
+  });
+};
+
+// In JSX — Details tab, Stage section at top:
+<div className="sheet-pipeline-section">
+  <StageStatusSelect
+    stageId={localStageId}
+    statusId={localStatusId}
+    onStageChange={handleStageChange}
+    onStatusChange={handleStatusChange}
+  />
+</div>
+```
+
+### Sheet Header — Show Stage + Status as Badges:
+```tsx
+// Sheet top bar sub-line (below lead name):
+<div className="sheet-lead-meta">
+  {lead.stageName && (
+    <span className="pipeline-stage-badge" style={{ '--stage-color': lead.stageColor } as any}>
+      {lead.stageName}
+    </span>
+  )}
+  {lead.statusName && (
+    <span className="pipeline-status-badge" style={{ '--status-color': lead.statusColor } as any}>
+      {lead.statusName}
+    </span>
+  )}
+  {lead.dealValue && (
+    <span className="sheet-value-badge">{formatCurrency(lead.dealValue)}</span>
+  )}
+</div>
+```
+
+```css
+.pipeline-stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: color-mix(in srgb, var(--stage-color) 12%, transparent);
+  color: var(--stage-color);
+  border: 1px solid color-mix(in srgb, var(--stage-color) 25%, transparent);
+}
+.pipeline-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--status-color) 10%, transparent);
+  color: var(--status-color);
+  border: 1px solid color-mix(in srgb, var(--status-color) 20%, transparent);
+}
+.sheet-value-badge {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--teal);
+}
+```
+
+### Remove These Tab Completely From Lead Sheet:
+- ❌ `Qualify` tab
+- ❌ `Strategy` tab
+- ❌ `Resolve` tab
+
+### Keep These Tabs:
+- ✅ `Details` (with stage/status selects at top)
+- ✅ `Notes` (general notes)
+- ✅ `Activity` (activity log)
+
+### Milestone Progress Bar — Replace With Pipeline Stage Indicator:
+```tsx
+// Replace the 1-2-3 milestone circles with a stage progress track
+
+const { data: stages = [] } = usePipelineStages();
+const currentStageOrder = stages.find(s => s.id === lead.pipelineStageId)?.sortOrder ?? 0;
+
+<div className="pipeline-progress-track">
+  {stages.map((stage, index) => {
+    const isPast    = stage.sortOrder < currentStageOrder;
+    const isCurrent = stage.id === lead.pipelineStageId;
+    const isFuture  = stage.sortOrder > currentStageOrder;
+    return (
+      <React.Fragment key={stage.id}>
+        <div className={`pipeline-step ${isPast ? 'past' : ''} ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}`}>
+          <div className="pipeline-step-dot" style={{ '--c': stage.color } as any}>
+            {isPast ? <Check size={11} strokeWidth={3} /> : index + 1}
+          </div>
+          <span className="pipeline-step-label">{stage.displayName}</span>
+        </div>
+        {index < stages.length - 1 && (
+          <div className={`pipeline-step-line ${isPast ? 'filled' : ''}`}
+               style={{ '--c': isPast ? stage.color : undefined } as any} />
+        )}
+      </React.Fragment>
+    );
+  })}
+</div>
+```
+
+```css
+.pipeline-progress-track {
+  display: flex;
+  align-items: center;
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: 1px solid var(--border-faint);
+  background: var(--bg-overlay);
+  gap: 0;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.pipeline-step-dot {
+  width: 28px; height: 28px;
+  border-radius: var(--r-full);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  border: 2px solid var(--border-default);
+  background: var(--bg-overlay);
+  color: var(--text-faint);
+  transition: all var(--t-base);
+}
+.pipeline-step.past .pipeline-step-dot {
+  background: color-mix(in srgb, var(--c) 15%, transparent);
+  border-color: var(--c);
+  color: var(--c);
+}
+.pipeline-step.current .pipeline-step-dot {
+  background: color-mix(in srgb, var(--c) 15%, transparent);
+  border-color: var(--c);
+  color: var(--c);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 15%, transparent);
+}
+.pipeline-step-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  white-space: nowrap;
+  text-align: center;
+}
+.pipeline-step.current .pipeline-step-label { color: var(--text-secondary); }
+.pipeline-step.past .pipeline-step-label    { color: var(--text-muted); }
+
+.pipeline-step-line {
+  flex: 1;
+  height: 1.5px;
+  background: var(--border-faint);
+  margin: 0 var(--sp-2);
+  margin-bottom: 14px;
+  transition: background var(--t-base);
+  min-width: var(--sp-6);
+}
+.pipeline-step-line.filled { background: var(--c); }
+```
+
+---
+
+## PART 7 — Kanban Board
+
+Replace the 4 hardcoded columns with dynamic columns from `usePipelineStages()`:
+
+```tsx
+// pages/KanbanPage.tsx
+
+const { data: stages = [], isLoading: stagesLoading } = usePipelineStages();
+const { data: leads = [] } = useLeads();
+const { mutate: updatePipeline } = useUpdateLeadPipeline();
+
+// Group leads by stage
+const leadsByStage = stages.reduce((acc, stage) => {
+  acc[stage.id] = leads.filter(l => l.pipelineStageId === stage.id);
+  return acc;
+}, {} as Record<string, Lead[]>);
+
+// On drag end
+const handleDragEnd = (result: DropResult) => {
+  if (!result.destination) return;
+  const { draggableId, destination } = result;
+  const newStageId = destination.droppableId;  // column id = stage id
+  const lead = leads.find(l => l.id === draggableId);
+  if (!lead || lead.pipelineStageId === newStageId) return;
+
+  // Auto-select first status of new stage
+  const newStage = stages.find(s => s.id === newStageId);
+  const firstStatus = newStage?.statuses[0];
+
+  updatePipeline({
+    leadId: draggableId,
+    pipelineStageId: newStageId,
+    pipelineStatusId: firstStatus?.id ?? lead.pipelineStatusId,
+  });
+
+  toast.success(`Moved to ${newStage?.displayName}`);
+};
+
+// Render
+<DragDropContext onDragEnd={handleDragEnd}>
+  <div className="kanban-grid" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(280px, 1fr))` }}>
+    {stages.map(stage => (
+      <Droppable key={stage.id} droppableId={stage.id}>
+        {(provided, snapshot) => (
+          <div
+            className={`kanban-column ${snapshot.isDraggingOver ? 'drag-over' : ''}`}
+            style={{ '--col-color': stage.color } as any}
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+          >
+            <div className="kanban-column-header">
+              <div className="kanban-column-title" style={{ color: stage.color }}>
+                {stage.displayName}
+              </div>
+              <span className="kanban-column-count">
+                {leadsByStage[stage.id]?.length ?? 0}
+              </span>
+            </div>
+            <div className="kanban-cards">
+              {(leadsByStage[stage.id] ?? []).map((lead, index) => (
+                <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                  {(provided, snapshot) => (
+                    <KanbanCard
+                      lead={lead}
+                      isDragging={snapshot.isDragging}
+                      innerRef={provided.innerRef}
+                      draggableProps={provided.draggableProps}
+                      dragHandleProps={provided.dragHandleProps}
+                      onClick={() => openLeadSheet(lead)}
+                    />
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+              {(leadsByStage[stage.id] ?? []).length === 0 && !snapshot.isDraggingOver && (
+                <div className="kanban-empty">
+                  <span>No leads in this stage</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Droppable>
+    ))}
+  </div>
+</DragDropContext>
+```
+
+```css
+.kanban-column {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-top: 2.5px solid var(--col-color);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.kanban-column.drag-over {
+  background: color-mix(in srgb, var(--col-color) 5%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--col-color) 40%, var(--border-subtle));
+}
+.kanban-empty {
+  padding: var(--sp-8) var(--sp-4);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  border: 1.5px dashed var(--border-faint);
+  border-radius: var(--r-md);
+  margin: var(--sp-3);
+}
+```
+
+### Kanban Card — Show Stage + Status:
+```tsx
+const KanbanCard = ({ lead, isDragging, innerRef, draggableProps, dragHandleProps, onClick }) => (
+  <div
+    ref={innerRef}
+    className={`kanban-card ${isDragging ? 'dragging' : ''}`}
+    onClick={onClick}
+    {...draggableProps}
+    {...dragHandleProps}
+  >
+    <div className="kanban-card-header">
+      <span className="kanban-card-name">{lead.leadName}</span>
+      <span className="lead-type-emoji">{leadTypeEmoji[lead.leadType]}</span>
+    </div>
+
+    {/* Status badge */}
+    {lead.statusName && (
+      <span className="kanban-status-badge" style={{ '--c': lead.statusColor } as any}>
+        {lead.statusName}
+      </span>
+    )}
+
+    {/* Service + Companies */}
+    {lead.serviceName && (
+      <div className="kanban-card-service">{lead.serviceName}</div>
+    )}
+    {lead.companies?.length > 0 && (
+      <div className="kanban-card-companies">
+        {lead.companies.slice(0, 2).map(c => (
+          <span key={c.id} className="badge badge-muted" style={{ fontSize: 11 }}>{c.name}</span>
+        ))}
+        {lead.companies.length > 2 && (
+          <span className="badge badge-muted" style={{ fontSize: 11 }}>+{lead.companies.length - 2}</span>
+        )}
+      </div>
+    )}
+
+    <div className="kanban-card-footer">
+      <span className="kanban-card-value">{lead.dealValue ? formatCurrency(lead.dealValue) : '—'}</span>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {lead.ownerInitials && <div className="avatar avatar-sm">{lead.ownerInitials}</div>}
+      </div>
+    </div>
+  </div>
+);
+```
+
+```css
+.kanban-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  color: var(--c);
+  border: 1px solid color-mix(in srgb, var(--c) 20%, transparent);
+  margin-bottom: var(--sp-2);
+}
+```
+
+---
+
+## PART 8 — Dashboard Pipeline Chart
+
+Replace old hardcoded `discovery/qualification/strategy/resolution` with dynamic stages:
+
+```tsx
+// components/DashboardCharts.tsx — PipelineStagesChart
+
+const { data: stages = [] } = usePipelineStages();
+
+const chartData = stages.map(stage => ({
+  stage:  stage.displayName,
+  count:  leads.filter(l => l.pipelineStageId === stage.id).length,
+  fill:   stage.color,
+}));
+
+// Bar chart with per-stage colors and correct labels
+<BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+  <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 18%)" vertical={false} />
+  <XAxis
+    dataKey="stage"
+    tick={{ fill: 'hsl(210, 14%, 48%)', fontSize: 12, fontFamily: 'DM Sans' }}
+    axisLine={false} tickLine={false}
+  />
+  <YAxis
+    tick={{ fill: 'hsl(210, 14%, 48%)', fontSize: 11 }}
+    axisLine={false} tickLine={false}
+    allowDecimals={false}
+  />
+  <Tooltip
+    contentStyle={{
+      background: 'var(--bg-overlay)',
+      border: '1px solid var(--border-default)',
+      borderRadius: 10,
+      fontFamily: 'DM Sans',
+      fontSize: 13,
+    }}
+    formatter={(value: number, _, props) => [
+      `${value} Lead${value !== 1 ? 's' : ''}`,
+      props.payload?.stage
+    ]}
+  />
+  <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={56}>
+    {chartData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
+  </Bar>
+</BarChart>
+```
+
+---
+
+## PART 9 — Dashboard Table & Filters
+
+### Replace Stage Column:
+```tsx
+// In leads table — Stage column:
+{
+  header: 'Stage',
+  cell: (lead) => lead.stageName ? (
+    <span className="pipeline-stage-badge" style={{ '--stage-color': lead.stageColor } as any}>
+      {lead.stageName}
+    </span>
+  ) : '—'
+},
+{
+  header: 'Status',
+  cell: (lead) => lead.statusName ? (
+    <span className="pipeline-status-badge" style={{ '--status-color': lead.statusColor } as any}>
+      {lead.statusName}
+    </span>
+  ) : '—'
+},
+```
+
+### Replace Stage Filter Dropdown:
+```tsx
+// Old: static list of discovery/qualification/strategy/resolution
+// New: dynamic from pipeline stages
+
+const { data: stages = [] } = usePipelineStages();
+
+<select className="field-select" value={filters.stageId || ''} onChange={e => setFilters(p => ({ ...p, stageId: e.target.value || null }))}>
+  <option value="">All Stages</option>
+  {stages.map(s => <option key={s.id} value={s.id}>{s.displayName}</option>)}
+</select>
+
+// Optional: Status filter (only shows statuses for the selected stage)
+{filters.stageId && (
+  <select className="field-select" value={filters.statusId || ''} onChange={e => setFilters(p => ({ ...p, statusId: e.target.value || null }))}>
+    <option value="">All Statuses</option>
+    {stages.find(s => s.id === filters.stageId)?.statuses.map(st => (
+      <option key={st.id} value={st.id}>{st.displayName}</option>
+    ))}
+  </select>
+)}
+```
+
+### Update leads filtering in `useLeads`:
+```ts
+// Filter by pipelineStageId and pipelineStatusId (not old 'stage' column)
+if (filters.stageId)  leads = leads.filter(l => l.pipelineStageId  === filters.stageId);
+if (filters.statusId) leads = leads.filter(l => l.pipelineStatusId === filters.statusId);
+```
+
+### Dashboard Stat Cards — Update:
+```tsx
+// "Closed" stat → leads where statusIsWon === true
+const closed = leads.filter(l => l.statusIsWon).length;
+
+// "In Progress" → leads where stage is NOT terminal
+const inProgress = leads.filter(l => !l.stageIsTerminal).length;
+
+// "Hot Leads" → unchanged (lead type, not stage)
+```
+
+---
+
+## PART 10 — Analytics Page Updates
+
+```tsx
+// Win Rate → leads where statusIsWon / total
+const winRate = total > 0 ? Math.round((leads.filter(l => l.statusIsWon).length / total) * 100) : 0;
+
+// Lost → leads where statusIsLost
+const lost = leads.filter(l => l.statusIsLost).length;
+
+// Active Pipeline → leads NOT in terminal stage
+const active = leads.filter(l => !l.stageIsTerminal).length;
+
+// Avg Conversion → from createdAt to resolvedAt (resolvedAt is set when moved to terminal stage)
+// Same calculation as before — no change needed
+
+// Kill Reasons chart → replace enum-based with status-based
+// Group "Closed" leads by their terminal status name
+const closureData = stages
+  .find(s => s.isTerminal)
+  ?.statuses
+  .map(status => ({
+    name:  status.displayName,
+    count: leads.filter(l => l.pipelineStatusId === status.id).length,
+    fill:  status.isWon ? 'var(--success)' : status.isLost ? 'var(--danger)' : 'var(--warning)',
+  })) ?? [];
+```
+
+---
+
+## PART 11 — Pipeline Masters Page (`/master/pipeline`)
+
+Add a new admin-only master data page for managing stages and statuses:
+
+```
+Route: /master/pipeline
+Nav item: "Pipeline" under Master Data section (visible to admins only)
+Icon: <Workflow size={16} />
+```
+
+```tsx
+// pages/PipelineMasterPage.tsx
+
+export const PipelineMasterPage = () => {
+  const { data: stages = [], isLoading } = usePipelineStages();
+  const [selectedStageId, setSelectedStageId] = useState<string | null>(stages[0]?.id ?? null);
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Pipeline Stages & Statuses</h1>
+          <p className="page-subtitle">Master data — configure your lead pipeline stages and statuses</p>
+        </div>
+        <div className="page-actions">
+          <button className="btn btn-primary" onClick={openAddStageModal}>
+            <Plus size={15} /> Add Stage
+          </button>
+        </div>
+      </div>
+
+      <div className="pipeline-master-layout">
+        {/* Left panel: Stage list */}
+        <div className="pipeline-stages-panel">
+          <div className="panel-header">
+            <span className="panel-title">Stages</span>
+            <span className="badge badge-muted">{stages.length}</span>
+          </div>
+          <div className="stage-list">
+            {stages.map(stage => (
+              <div
+                key={stage.id}
+                className={`stage-list-item ${selectedStageId === stage.id ? 'active' : ''}`}
+                onClick={() => setSelectedStageId(stage.id)}
+                style={{ '--c': stage.color } as any}
+              >
+                <div className="stage-list-dot" />
+                <div className="stage-list-content">
+                  <div className="stage-list-name">{stage.displayName}</div>
+                  <div className="stage-list-sub">{stage.statuses?.length ?? 0} statuses</div>
+                </div>
+                <div className="stage-list-actions">
+                  <button className="btn btn-ghost btn-icon btn-sm" onClick={e => { e.stopPropagation(); openEditStage(stage); }}>
+                    <Pencil size={13} />
+                  </button>
+                  <button className="btn btn-ghost btn-icon btn-sm danger" onClick={e => { e.stopPropagation(); confirmDeleteStage(stage); }}>
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Right panel: Statuses for selected stage */}
+        <div className="pipeline-statuses-panel">
+          {selectedStageId ? (
+            <>
+              <div className="panel-header">
+                <div>
+                  <span className="panel-title">
+                    Statuses — {stages.find(s => s.id === selectedStageId)?.displayName}
+                  </span>
+                  <p className="panel-sub">{stages.find(s => s.id === selectedStageId)?.description}</p>
+                </div>
+                <button className="btn btn-secondary btn-sm" onClick={() => openAddStatus(selectedStageId)}>
+                  <Plus size={13} /> Add Status
+                </button>
+              </div>
+              <div className="status-list">
+                {stages.find(s => s.id === selectedStageId)?.statuses.map(status => (
+                  <div key={status.id} className="status-list-item" style={{ '--c': status.color } as any}>
+                    <div className="status-dot" />
+                    <div className="status-content">
+                      <span className="status-name">{status.displayName}</span>
+                      <div style={{ display: 'flex', gap: 4, marginTop: 3 }}>
+                        {status.isWon  && <span className="badge badge-success" style={{ fontSize: 10 }}>Won</span>}
+                        {status.isLost && <span className="badge badge-danger"  style={{ fontSize: 10 }}>Lost/Postponed</span>}
+                      </div>
+                    </div>
+                    <div className="status-actions">
+                      <button className="btn btn-ghost btn-icon btn-sm" onClick={() => openEditStatus(status)}>
+                        <Pencil size={12} />
+                      </button>
+                      <button className="btn btn-ghost btn-icon btn-sm danger" onClick={() => confirmDeleteStatus(status)}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-state-icon"><Workflow size={22} /></div>
+              <div className="empty-state-title">Select a stage</div>
+              <div className="empty-state-desc">Click a stage on the left to manage its statuses</div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+```css
+.pipeline-master-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: var(--sp-6);
+  align-items: start;
+}
+.pipeline-stages-panel,
+.pipeline-statuses-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+.panel-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  border-bottom: 1px solid var(--border-faint);
+}
+.panel-title { font-family: var(--font-display); font-size: var(--text-base); font-weight: 700; color: var(--text-primary); }
+.panel-sub   { font-size: var(--text-sm); color: var(--text-muted); margin-top: 2px; }
+
+.stage-list { padding: var(--sp-2); display: flex; flex-direction: column; gap: 2px; }
+.stage-list-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-3);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: background var(--t-fast);
+}
+.stage-list-item:hover { background: var(--bg-subtle); }
+.stage-list-item.active { background: color-mix(in srgb, var(--c) 10%, var(--bg-subtle)); }
+.stage-list-dot {
+  width: 8px; height: 8px;
+  border-radius: var(--r-full);
+  background: var(--c);
+  flex-shrink: 0;
+}
+.stage-list-name { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
+.stage-list-sub  { font-size: var(--text-xs); color: var(--text-muted); margin-top: 1px; }
+.stage-list-actions { margin-left: auto; display: flex; gap: 2px; opacity: 0; transition: opacity var(--t-fast); }
+.stage-list-item:hover .stage-list-actions { opacity: 1; }
+
+.status-list { padding: var(--sp-2); display: flex; flex-direction: column; gap: 2px; }
+.status-list-item {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  transition: all var(--t-fast);
+}
+.status-list-item:hover { background: var(--bg-subtle); border-color: var(--border-faint); }
+.status-dot {
+  width: 10px; height: 10px;
+  border-radius: var(--r-full);
+  background: var(--c);
+  flex-shrink: 0;
+}
+.status-name { font-size: var(--text-sm); font-weight: 500; color: var(--text-primary); }
+.status-actions { margin-left: auto; display: flex; gap: 2px; opacity: 0; transition: opacity var(--t-fast); }
+.status-list-item:hover .status-actions { opacity: 1; }
+```
+
+---
+
+## PART 12 — Sidebar Navigation Update
+
+```tsx
+// AppSidebar.tsx — add Pipeline under Master Data
+
+// Master Data section:
+{ label: 'Companies', icon: <Building2 size={16} />, path: '/master/companies' },
+{ label: 'Services',  icon: <Briefcase size={16} />, path: '/master/services'  },
+{ label: 'Pipeline',  icon: <Workflow  size={16} />, path: '/master/pipeline',
+  adminOnly: true  // only visible to admins
+},
+```
+
+---
+
+## PART 13 — CSV Export Update
+
+```ts
+const headers = [
+  'Lead Name', 'Contact Email', 'Phone', 'Lead Type',
+  'Stage',       // ← was 'Stage' (old enum) → now stageName
+  'Status',      // ← NEW column
+  'Service', 'Companies', 'Lead Owner', 'Deal Handler',
+  'Deal Value', 'Follow-up Date', 'Next Action', 'Created',
+  // Remove: 'Outcome', 'Kill Reason' (replaced by status)
+];
+
+const rows = leads.map(lead => [
+  lead.leadName,
+  lead.contactEmail || '',
+  lead.phone || '',
+  lead.leadType,
+  lead.stageName  || '',   // ← stageName from join
+  lead.statusName || '',   // ← statusName from join
+  lead.serviceName || '',
+  (lead.companies || []).map(c => c.name).join('; '),
+  lead.ownerName   || '',
+  lead.handlerName || '',
+  lead.dealValue   || '',
+  lead.followUpDate ? format(new Date(lead.followUpDate), 'yyyy-MM-dd') : '',
+  lead.nextAction  || '',
+  format(new Date(lead.createdAt), 'yyyy-MM-dd'),
+]);
+```
+
+---
+
+## PART 14 — Remove All Old Stage/Outcome References
+
+Search the entire codebase for every one of these strings and remove or replace them:
+
+```
+FIND AND REPLACE/DELETE:
+❌ 'discovery'      → replace with pipeline_stage_id lookup
+❌ 'qualification'  → replace with pipeline_stage_id lookup
+❌ 'strategy'       → replace with pipeline_stage_id lookup
+❌ 'resolution'     → replace with pipeline_stage_id lookup
+❌ 'closed'         → replace with statusIsWon check
+❌ 'lost'           → replace with statusIsLost check
+❌ 'wip'            → replace with !stageIsTerminal check
+❌ 'delayed'        → replace with statusIsLost check
+❌ lead_stage enum  → delete from DB schema after migration
+❌ lead_outcome enum → delete from DB schema after migration
+❌ Qualify tab      → DELETE entirely
+❌ Strategy tab     → DELETE entirely
+❌ Resolve tab      → DELETE entirely
+❌ emotional_state field → remove from forms (keep in DB for legacy, hide in UI)
+❌ decision_role field   → remove from forms (keep in DB for legacy, hide in UI)
+❌ strategic_tier field  → remove from forms (keep in DB for legacy, hide in UI)
+❌ kill_reason field     → remove from forms (keep in DB for legacy, hide in UI)
+❌ outcome field         → remove from forms (keep in DB for legacy, hide in UI)
+❌ custom_hook field     → remove from forms (keep in DB for legacy, hide in UI)
+❌ objection field       → remove from forms (keep in DB for legacy, hide in UI)
+```
+
+**Note:** Keep the legacy columns in the database (don't `ALTER TABLE DROP COLUMN`) until you've verified all migration data is correct. Just hide them from the UI.
+
+---
+
+## PART 15 — End-to-End Test Checklist
+
+Run EVERY scenario. Do not ship until all pass:
+
+### Pipeline Masters
+- [ ] `/master/pipeline` page loads and shows 4 stages
+- [ ] Click each stage → statuses for that stage appear in right panel
+- [ ] Stage 1 "Lead Initiation" shows 1 status: "New Lead Connected"
+- [ ] Stage 2 "Qualification & Analysis" shows 3 statuses
+- [ ] Stage 3 "Proposal & Negotiation" shows 2 statuses
+- [ ] Stage 4 "Closure" shows 3 statuses (Won/Lost/Postponed)
+- [ ] Add a new status to a stage → appears immediately in the list
+- [ ] Edit a status name → updates everywhere in the app (leads table, kanban, sheet)
+- [ ] Delete a status with no leads → succeeds
+- [ ] Delete a status with leads attached → shows error "N leads have this status"
+- [ ] Pipeline nav item visible only to admins
+
+### New Lead Form
+- [ ] Stage dropdown shows all 4 stages
+- [ ] Select "Lead Initiation" → Status dropdown auto-shows "New Lead Connected" (pre-selected)
+- [ ] Select "Qualification & Analysis" → Status dropdown shows 3 options
+- [ ] Select "Proposal & Negotiation" → Status dropdown shows 2 options
+- [ ] Select "Closure" → Status dropdown shows Won/Lost/Postponed
+- [ ] Changing stage resets status and auto-selects first status of new stage
+- [ ] Create lead without stage → validation error "Please select a stage"
+- [ ] Create lead → appears in correct Kanban column immediately
+
+### Lead Detail Sheet
+- [ ] Open any lead → stage and status shown as colored badges in header
+- [ ] Pipeline progress bar shows correct current position (1 of 4, 2 of 4, etc.)
+- [ ] Past stages have colored/filled indicator, current stage has active highlight, future stages are grey
+- [ ] Change stage in Details tab → status dropdown immediately updates with new stage's statuses
+- [ ] Change stage → lead moves to correct Kanban column on next render
+- [ ] Change status within same stage → status badge updates in header
+- [ ] Activity log records "stage changed: X → Y" and "status changed: A → B"
+- [ ] NO Qualify/Strategy/Resolve tabs visible anywhere
+- [ ] Notes tab and Activity tab still work
+
+### Kanban Board
+- [ ] 4 columns shown with correct stage names and colors
+- [ ] Each column header shows correct stage name (not old names)
+- [ ] Lead cards show status badge with correct color
+- [ ] Drag card from "Lead Initiation" → "Qualification & Analysis" → lead updates to first status of new stage
+- [ ] Drag card to "Closure" → resolvedAt gets set automatically
+- [ ] Drag card back from Closure to earlier stage → resolvedAt cleared
+- [ ] Empty column shows "No leads in this stage" with dashed border
+- [ ] Drop zone highlight uses stage color (not generic teal)
+
+### Dashboard
+- [ ] Pipeline chart shows 4 bars with correct stage names (Title Case)
+- [ ] Bar colors match: Lead Initiation=blue, Qualification=amber, Proposal=purple, Closure=green
+- [ ] "Closed Deals" stat card counts leads with `statusIsWon = true`
+- [ ] "In Progress" stat card counts leads in non-terminal stages
+- [ ] Stage filter dropdown shows 4 stages (not old enum values)
+- [ ] Filter by stage → table filters correctly
+- [ ] Status filter appears when stage is selected → filters correctly
+
+### Analytics
+- [ ] Win Rate uses `statusIsWon` leads
+- [ ] Lost count uses `statusIsLost` leads
+- [ ] Closure breakdown chart shows Won/Lost/Postponed with correct colors
+
+### CSV Export
+- [ ] Download CSV → has "Stage" and "Status" columns
+- [ ] Stage column shows display name (e.g. "Lead Initiation")
+- [ ] Status column shows display name (e.g. "New Lead Connected")
+- [ ] No "Outcome" or "Kill Reason" columns
+
+### Data Integrity
+- [ ] Open `/api/health` → all checks pass
+- [ ] All existing leads have `pipeline_stage_id` and `pipeline_status_id` set (not null)
+- [ ] No leads with null stage/status after migration
+- [ ] Dragging a lead and refreshing the page → stage persists correctly

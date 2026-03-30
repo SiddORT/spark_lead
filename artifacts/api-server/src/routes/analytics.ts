@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { leadsTable } from "@workspace/db";
-import { sql, and, gte, lte, eq, isNotNull } from "drizzle-orm";
+import {
+  leadsTable,
+  pipelineStagesTable,
+  pipelineStatusesTable,
+} from "@workspace/db";
+import { asc } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { subDays, format, startOfWeek, endOfWeek, subWeeks } from "date-fns";
@@ -11,17 +15,28 @@ const router = Router();
 router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable);
+    const statuses = await db.select().from(pipelineStatusesTable);
 
     const totalLeads = leads.length;
-    const closedLeads = leads.filter((l) => l.outcome === "closed");
-    const lostLeads = leads.filter((l) => l.outcome === "lost");
-    const activeLeads = leads.filter((l) => l.outcome === "wip" || !l.outcome);
 
-    const winRate = totalLeads > 0 ? (closedLeads.length / totalLeads) * 100 : 0;
+    // New pipeline-aware won/lost
+    const wonStatusIds = new Set(statuses.filter((s) => s.isWon).map((s) => s.id));
+    const lostStatusIds = new Set(statuses.filter((s) => s.isLost).map((s) => s.id));
 
-    const resolvedLeads = leads.filter(
-      (l) => l.resolvedAt && l.outcome && l.outcome !== "wip"
+    const wonLeads = leads.filter(
+      (l) => l.pipelineStatusId && wonStatusIds.has(l.pipelineStatusId)
     );
+    const lostLeads = leads.filter(
+      (l) => l.pipelineStatusId && lostStatusIds.has(l.pipelineStatusId)
+    );
+    const terminalIds = new Set([...wonStatusIds, ...lostStatusIds]);
+    const activeLeads = leads.filter(
+      (l) => !l.pipelineStatusId || !terminalIds.has(l.pipelineStatusId)
+    );
+
+    const winRate = totalLeads > 0 ? (wonLeads.length / totalLeads) * 100 : 0;
+
+    const resolvedLeads = leads.filter((l) => l.resolvedAt);
     let avgConversionDays: number | null = null;
     if (resolvedLeads.length > 0) {
       const totalDays = resolvedLeads.reduce((acc, l) => {
@@ -45,11 +60,10 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
 
 router.get("/lead-trend", requireAuth, async (req: AuthRequest, res) => {
   try {
+    const { subDays: sdFn, format: fmtFn } = await import("date-fns");
     const since = subDays(new Date(), 30);
-    const leads = await db
-      .select()
-      .from(leadsTable)
-      .where(gte(leadsTable.createdAt, since));
+    const leads = await db.select().from(leadsTable);
+    const recent = leads.filter((l) => l.createdAt >= since);
 
     const counts: Record<string, number> = {};
     for (let i = 0; i < 30; i++) {
@@ -57,7 +71,7 @@ router.get("/lead-trend", requireAuth, async (req: AuthRequest, res) => {
       counts[d] = 0;
     }
 
-    for (const lead of leads) {
+    for (const lead of recent) {
       const d = format(lead.createdAt, "yyyy-MM-dd");
       if (counts[d] !== undefined) counts[d]++;
     }
@@ -71,17 +85,51 @@ router.get("/lead-trend", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
+// Dynamic stage distribution using new pipeline stages
 router.get("/stage-distribution", requireAuth, async (req: AuthRequest, res) => {
   try {
+    const stages = await db
+      .select()
+      .from(pipelineStagesTable)
+      .where((t: any) => t.isActive)
+      .orderBy(asc(pipelineStagesTable.sortOrder));
     const leads = await db.select().from(leadsTable);
-    const stages = ["discovery", "qualification", "strategy", "resolution"];
+
     const counts = stages.map((stage) => ({
-      stage,
-      count: leads.filter((l) => l.stage === stage).length,
+      stage: stage.displayName,
+      stageName: stage.name,
+      color: stage.color,
+      count: leads.filter((l) => l.pipelineStageId === stage.id).length,
     }));
+
     res.json(counts);
   } catch (err) {
     req.log.error({ err }, "Get stage distribution error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Closure breakdown by terminal statuses
+router.get("/closure-breakdown", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const leads = await db.select().from(leadsTable);
+    const statuses = await db
+      .select()
+      .from(pipelineStatusesTable)
+      .orderBy(asc(pipelineStatusesTable.sortOrder));
+
+    const terminalStatuses = statuses.filter((s) => s.isWon || s.isLost);
+    const result = terminalStatuses.map((status) => ({
+      status: status.displayName,
+      color: status.color,
+      isWon: status.isWon,
+      isLost: status.isLost,
+      count: leads.filter((l) => l.pipelineStatusId === status.id).length,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    req.log.error({ err }, "Get closure breakdown error");
     res.status(500).json({ message: "Internal server error" });
   }
 });
@@ -104,6 +152,9 @@ router.get("/kill-reasons", requireAuth, async (req: AuthRequest, res) => {
 router.get("/weekly-conversion", requireAuth, async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable);
+    const statuses = await db.select().from(pipelineStatusesTable);
+    const wonStatusIds = new Set(statuses.filter((s) => s.isWon).map((s) => s.id));
+
     const result = [];
 
     for (let i = 7; i >= 0; i--) {
@@ -113,14 +164,16 @@ router.get("/weekly-conversion", requireAuth, async (req: AuthRequest, res) => {
       const weekLeads = leads.filter(
         (l) => l.createdAt >= weekStart && l.createdAt <= weekEnd
       );
-      const closed = weekLeads.filter((l) => l.outcome === "closed").length;
+      const won = weekLeads.filter(
+        (l) => l.pipelineStatusId && wonStatusIds.has(l.pipelineStatusId)
+      ).length;
       const total = weekLeads.length;
-      const rate = total > 0 ? (closed / total) * 100 : 0;
+      const rate = total > 0 ? (won / total) * 100 : 0;
 
       result.push({
         week: format(weekStart, "MMM dd"),
         rate: Math.round(rate * 10) / 10,
-        closed,
+        closed: won,
         total,
       });
     }

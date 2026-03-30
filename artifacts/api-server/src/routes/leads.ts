@@ -10,8 +10,10 @@ import {
   servicesTable,
   usersTable,
   auditLogTable,
+  pipelineStagesTable,
+  pipelineStatusesTable,
 } from "@workspace/db";
-import { eq, inArray, and, or, gte, sql } from "drizzle-orm";
+import { eq, inArray, and, or, gte, asc, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { sendActivityAlertEmail } from "../lib/email";
@@ -42,19 +44,48 @@ async function getLeadWithRelations(leadId: string) {
     serviceName = svc[0]?.name || null;
   }
 
+  let stageInfo: any = null;
+  if (lead[0].pipelineStageId) {
+    const st = await db.select().from(pipelineStagesTable).where(eq(pipelineStagesTable.id, lead[0].pipelineStageId!)).limit(1);
+    stageInfo = st[0] || null;
+  }
+
+  let statusInfo: any = null;
+  if (lead[0].pipelineStatusId) {
+    const st = await db.select().from(pipelineStatusesTable).where(eq(pipelineStatusesTable.id, lead[0].pipelineStatusId!)).limit(1);
+    statusInfo = st[0] || null;
+  }
+
   return {
     ...lead[0],
     serviceName,
     companies: linkedCompanies.map((lc) => lc.company).filter(Boolean),
+    stageInfo,
+    statusInfo,
   };
 }
 
 function formatLead(lead: any) {
+  const stage = lead.stageInfo;
+  const status = lead.statusInfo;
   return {
     id: lead.id,
     leadName: lead.leadName,
     createdBy: lead.createdBy,
+    // ─── New pipeline fields ───
+    pipelineStageId:  lead.pipelineStageId  || null,
+    pipelineStatusId: lead.pipelineStatusId || null,
+    stageName:        stage?.displayName    || null,
+    stageColor:       stage?.color          || null,
+    stageSortOrder:   stage?.sortOrder      || null,
+    stageIsTerminal:  stage?.isTerminal     ?? null,
+    statusName:       status?.displayName   || null,
+    statusColor:      status?.color         || null,
+    statusIsWon:      status?.isWon         ?? false,
+    statusIsLost:     status?.isLost        ?? false,
+    // ─── Legacy (kept for backward compat) ───
     stage: lead.stage,
+    outcome: lead.outcome,
     leadType: lead.leadType,
     contactEmail: lead.contactEmail,
     phone: lead.phone,
@@ -68,26 +99,18 @@ function formatLead(lead: any) {
     followUpDate: lead.followUpDate,
     nextAction: lead.nextAction,
     sourceContext: lead.sourceContext,
-    emotionalState: lead.emotionalState,
-    decisionRole: lead.decisionRole,
-    strategicTier: lead.strategicTier,
-    customHook: lead.customHook,
-    objection: lead.objection,
-    outcome: lead.outcome,
-    killReason: lead.killReason,
     internalRating: lead.internalRating,
-    frictionPoint: lead.frictionPoint,
-    resolvedAt: lead.resolvedAt?.toISOString() || null,
+    resolvedAt: lead.resolvedAt?.toISOString?.() || (typeof lead.resolvedAt === "string" ? lead.resolvedAt : null),
     companies: (lead.companies || []).map((c: any) => ({
       id: c?.id,
       name: c?.name,
       industry: c?.industry || null,
       notes: c?.notes || null,
       createdBy: c?.createdBy || null,
-      createdAt: c?.createdAt?.toISOString() || new Date().toISOString(),
+      createdAt: c?.createdAt?.toISOString?.() || new Date().toISOString(),
     })),
-    createdAt: lead.createdAt.toISOString(),
-    updatedAt: lead.updatedAt.toISOString(),
+    createdAt: lead.createdAt?.toISOString?.() || lead.createdAt,
+    updatedAt: lead.updatedAt?.toISOString?.() || lead.updatedAt,
   };
 }
 
@@ -96,9 +119,10 @@ router.get("/export/csv", requireAuth, async (req: AuthRequest, res) => {
     const leads = await db.select().from(leadsTable).orderBy(leadsTable.createdAt);
 
     const headers = [
-      "Name", "Contact Email", "Phone", "Lead Type", "Service", "Companies",
-      "Lead Owner", "Deal Handler", "Deal Value", "Stage", "Follow-up Date",
-      "Next Action", "Outcome", "Created"
+      "Lead Name", "Contact Email", "Phone", "Lead Type",
+      "Stage", "Status",
+      "Service", "Companies", "Lead Owner", "Deal Handler",
+      "Deal Value", "Follow-up Date", "Next Action", "Created"
     ];
 
     const rows = await Promise.all(
@@ -114,20 +138,31 @@ router.get("/export/csv", requireAuth, async (req: AuthRequest, res) => {
           .leftJoin(companiesTable, eq(leadCompaniesTable.companyId, companiesTable.id))
           .where(eq(leadCompaniesTable.leadId, lead.id));
 
+        let stageName = "";
+        if (lead.pipelineStageId) {
+          const st = await db.select().from(pipelineStagesTable).where(eq(pipelineStagesTable.id, lead.pipelineStageId)).limit(1);
+          stageName = st[0]?.displayName || "";
+        }
+        let statusName = "";
+        if (lead.pipelineStatusId) {
+          const st = await db.select().from(pipelineStatusesTable).where(eq(pipelineStatusesTable.id, lead.pipelineStatusId)).limit(1);
+          statusName = st[0]?.displayName || "";
+        }
+
         return [
           lead.leadName,
           lead.contactEmail || "",
           lead.phone || "",
           lead.leadType || "",
+          stageName,
+          statusName,
           serviceName,
           linkedCompanies.map((c) => c.name).join("; "),
           lead.leadOwner || "",
           lead.dealHandler || "",
           lead.dealValue || "",
-          lead.stage,
           lead.followUpDate || "",
           lead.nextAction || "",
-          lead.outcome || "",
           lead.createdAt.toISOString(),
         ];
       })
@@ -162,6 +197,10 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
       leads = leads.filter((l) => l.dealHandler === userId);
     }
 
+    // Fetch all pipeline stages/statuses once (batch for performance)
+    const allStages = await db.select().from(pipelineStagesTable);
+    const allStatuses = await db.select().from(pipelineStatusesTable);
+
     const result = await Promise.all(
       leads.map(async (lead) => {
         const linkedCompanies = await db
@@ -176,7 +215,20 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
           serviceName = svc[0]?.name || null;
         }
 
-        return formatLead({ ...lead, serviceName, companies: linkedCompanies.map((lc) => lc.company) });
+        const stageInfo = lead.pipelineStageId
+          ? allStages.find((s) => s.id === lead.pipelineStageId) || null
+          : null;
+        const statusInfo = lead.pipelineStatusId
+          ? allStatuses.find((s) => s.id === lead.pipelineStatusId) || null
+          : null;
+
+        return formatLead({
+          ...lead,
+          serviceName,
+          companies: linkedCompanies.map((lc) => lc.company),
+          stageInfo,
+          statusInfo,
+        });
       })
     );
 
@@ -197,6 +249,8 @@ router.post("/", requireAuth, async (req: AuthRequest, res) => {
       leadName: data.leadName,
       createdBy: req.user!.userId,
       stage: "discovery",
+      pipelineStageId: data.pipelineStageId || null,
+      pipelineStatusId: data.pipelineStatusId || null,
       leadType: data.leadType || null,
       contactEmail: data.contactEmail || null,
       phone: data.phone || null,
@@ -268,6 +322,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     // Track changes for activity log
     const activities: any[] = [];
     const trackableFields = [
+      "pipelineStageId", "pipelineStatusId",
       "stage", "leadType", "contactEmail", "phone", "serviceId", "company",
       "leadOwner", "dealHandler", "dealValue", "value", "followUpDate",
       "nextAction", "emotionalState", "decisionRole", "strategicTier",
@@ -275,23 +330,31 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     ];
 
     for (const field of trackableFields) {
-      const camelField = field;
-      if (updateData[camelField] !== undefined) {
-        const oldVal = (old as any)[camelField];
-        const newVal = updateData[camelField];
+      if (updateData[field] !== undefined) {
+        const oldVal = (old as any)[field];
+        const newVal = updateData[field];
         if (String(oldVal) !== String(newVal)) {
           activities.push({ field_name: field, old_value: String(oldVal || ""), new_value: String(newVal || "") });
         }
       }
     }
 
-    // Auto-set resolved_at when outcome changes from null/wip to non-wip
-    if (updateData.outcome && updateData.outcome !== "wip" && !old.resolvedAt) {
-      updateData.resolvedAt = new Date();
+    // Auto-set resolved_at when moving to a terminal pipeline status or legacy outcome change
+    let autoResolvedAt: Date | undefined;
+    if (updateData.pipelineStatusId && !old.resolvedAt) {
+      const newStatus = await db.select().from(pipelineStatusesTable)
+        .where(eq(pipelineStatusesTable.id, updateData.pipelineStatusId)).limit(1);
+      if (newStatus[0] && (newStatus[0].isWon || newStatus[0].isLost)) {
+        autoResolvedAt = new Date();
+      }
+    } else if (updateData.outcome && updateData.outcome !== "wip" && !old.resolvedAt) {
+      autoResolvedAt = new Date();
     }
 
     const dbUpdate: any = { updatedAt: new Date() };
     if (updateData.leadName !== undefined) dbUpdate.leadName = updateData.leadName;
+    if (updateData.pipelineStageId !== undefined) dbUpdate.pipelineStageId = updateData.pipelineStageId;
+    if (updateData.pipelineStatusId !== undefined) dbUpdate.pipelineStatusId = updateData.pipelineStatusId;
     if (updateData.stage !== undefined) dbUpdate.stage = updateData.stage;
     if (updateData.leadType !== undefined) dbUpdate.leadType = updateData.leadType;
     if (updateData.contactEmail !== undefined) dbUpdate.contactEmail = updateData.contactEmail;
@@ -315,6 +378,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     if (updateData.internalRating !== undefined) dbUpdate.internalRating = updateData.internalRating;
     if (updateData.frictionPoint !== undefined) dbUpdate.frictionPoint = updateData.frictionPoint;
     if (updateData.resolvedAt !== undefined) dbUpdate.resolvedAt = updateData.resolvedAt;
+    if (autoResolvedAt) dbUpdate.resolvedAt = autoResolvedAt;
 
     await db.update(leadsTable).set(dbUpdate).where(eq(leadsTable.id, req.params.id));
 

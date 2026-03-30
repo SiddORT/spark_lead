@@ -9,6 +9,7 @@ import teamRouter from "./team";
 import permissionsRouter from "./permissions";
 import auditRouter from "./audit";
 import analyticsRouter from "./analytics";
+import pipelineRouter from "./pipeline";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/team", teamRouter);
 router.use("/permissions", permissionsRouter);
 router.use("/audit", auditRouter);
 router.use("/analytics", analyticsRouter);
+router.use("/pipeline", pipelineRouter);
 
 export default router;

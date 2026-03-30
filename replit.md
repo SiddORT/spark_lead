@@ -33,16 +33,29 @@ Custom CSS design tokens — NOT relying on shadcn defaults for layout:
 
 ## Features
 
-1. **Dashboard** — Stats, area/bar charts, leads table with search/filter
-2. **Kanban Board** — Drag-and-drop 4-stage pipeline (discovery → qualification → strategy → resolution)
-3. **Lead Detail Sheet** — Full pipeline progression with stage locking, notes, activities
-4. **Analytics** — Win rate, conversion trends, weekly charts, kill reasons
+1. **Dashboard** — Stats, area/bar charts, leads table with dynamic pipeline stage badges
+2. **Kanban Board** — Dynamic pipeline columns from DB-driven stages (usePipelineStages hook), status badges on cards
+3. **Lead Detail Sheet** — Pipeline progress bar (PipelineProgressBar), StageStatusSelect in Details tab, only Details/Notes tabs (Qualify/Strategy/Resolve removed)
+4. **Analytics** — Win rate, conversion trends, weekly charts, kill reasons, closure breakdown pie chart
 5. **Team Management** — Invite users, set roles, approve/reject access requests
 6. **Permissions** — Granular RBAC per resource/action per role
 7. **Audit Log** — Full system audit trail with actor names
 8. **Companies** — Company CRUD with industry/notes
 9. **Services** — Service catalog with company associations
-10. **New Lead Form** — Multi-field lead creation with service/company linking
+10. **New Lead Form** — Multi-field lead creation with pipeline stage/status selectors, service/company linking
+11. **Pipeline Master** — Admin CRUD for pipeline stages and statuses at /master/pipeline
+
+## Pipeline System
+
+Dynamic 4-stage pipeline replacing the old hardcoded discovery/qualification/strategy/resolution enum:
+
+- **DB Tables**: `pipeline_stages` + `pipeline_statuses` (seeded with 4 stages: Lead Initiation, Qualification & Analysis, Proposal & Negotiation, Closure; 9 statuses)
+- **Backend Routes**: `GET/POST /api/pipeline/stages`, `PUT/DELETE /api/pipeline/stages/:id`, same for statuses
+- **Lead fields**: `pipelineStageId`, `pipelineStatusId` FKs with join data (`stageName`, `stageColor`, `statusName`, `statusColor`, `statusIsWon`, `statusIsLost`)
+- **Analytics**: `/api/analytics/closure-breakdown` returns per-status counts for Won/Lost statuses
+- **Stage distribution**: `/api/analytics/stage-distribution` returns `stageName` + `stageColor` from pipeline tables
+- **Frontend hooks**: `usePipelineStages()`, `useCreateStage()`, `useUpdateStage()`, `useDeleteStage()` etc. in `hooks/use-pipeline.ts`
+- **Components**: `StageStatusSelect` (2-column stage+status dropdowns), `PipelineProgressBar` (animated stage track)
 
 ## Architecture
 

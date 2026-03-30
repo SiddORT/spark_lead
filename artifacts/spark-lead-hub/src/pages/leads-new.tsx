@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { useUserMap } from "@/hooks/use-user-map";
 import { toast } from "sonner";
 import { PlusCircle, ArrowLeft } from "lucide-react";
+import { StageStatusSelect } from "@/components/stage-status-select";
 
 const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
   <label style={{
@@ -111,6 +112,8 @@ export function NewLead() {
     dealValue: "",
     nextAction: "",
     companyIds: [],
+    pipelineStageId: "",
+    pipelineStatusId: "",
   });
 
   const { data: companies } = useGetServiceCompanies(formData.serviceId, {
@@ -230,6 +233,17 @@ export function NewLead() {
                   placeholder="0.00"
                 />
               </div>
+            </div>
+
+            {/* Pipeline Stage + Status */}
+            <div>
+              <FieldLabel>Pipeline Stage &amp; Status</FieldLabel>
+              <StageStatusSelect
+                stageId={formData.pipelineStageId}
+                statusId={formData.pipelineStatusId}
+                onStageChange={(stageId) => { set("pipelineStageId", stageId); set("pipelineStatusId", ""); }}
+                onStatusChange={(statusId) => set("pipelineStatusId", statusId)}
+              />
             </div>
 
             {/* 2-col: Contact Email + Phone */}

@@ -156,10 +156,44 @@ export const companyServicesTable = pgTable("company_services", {
     .references(() => servicesTable.id, { onDelete: "cascade" }),
 });
 
+// ─── Pipeline master tables ───────────────────────────
+export const pipelineStagesTable = pgTable("pipeline_stages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  color: text("color").notNull().default("#6b7a9a"),
+  icon: text("icon"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  isTerminal: boolean("is_terminal").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const pipelineStatusesTable = pgTable("pipeline_statuses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  stageId: uuid("stage_id")
+    .notNull()
+    .references(() => pipelineStagesTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  color: text("color").notNull().default("#6b7a9a"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  isWon: boolean("is_won").notNull().default(false),
+  isLost: boolean("is_lost").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 export const leadsTable = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   leadName: text("lead_name").notNull(),
   createdBy: uuid("created_by").references(() => usersTable.id),
+  pipelineStageId: uuid("pipeline_stage_id").references(() => pipelineStagesTable.id),
+  pipelineStatusId: uuid("pipeline_status_id").references(() => pipelineStatusesTable.id),
   stage: leadStageEnum("stage").notNull().default("discovery"),
   leadType: leadTypeEnum("lead_type"),
   contactEmail: text("contact_email"),
@@ -247,3 +281,5 @@ export type Company = typeof companiesTable.$inferSelect;
 export type Service = typeof servicesTable.$inferSelect;
 export type AuditLog = typeof auditLogTable.$inferSelect;
 export type AccessRequest = typeof accessRequestsTable.$inferSelect;
+export type PipelineStage = typeof pipelineStagesTable.$inferSelect;
+export type PipelineStatus = typeof pipelineStatusesTable.$inferSelect;

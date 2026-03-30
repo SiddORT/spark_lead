@@ -3,9 +3,23 @@ import {
 } from "@workspace/api-client-react";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, Cell
+  ResponsiveContainer, Cell, PieChart, Pie, Legend
 } from "recharts";
 import { BarChart3, Target, Clock, Layers, XCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+
+function useClosureBreakdown() {
+  return useQuery({
+    queryKey: ["analytics", "closure-breakdown"],
+    queryFn: async () => {
+      const token = localStorage.getItem("slh_token");
+      const res = await fetch("/api/analytics/closure-breakdown", { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<Array<{ status: string; color: string; isWon: boolean; isLost: boolean; count: number }>>;
+    },
+    staleTime: 30_000,
+  });
+}
 
 const KILL_REASON_LABELS: Record<string, string> = {
   feature_gap: "Feature Gap",
@@ -26,6 +40,7 @@ export function Analytics() {
   const { data: trendData = [] } = useGetLeadTrend();
   const { data: killReasons = [] } = useGetKillReasons();
   const { data: weeklyConversion = [] } = useGetWeeklyConversion();
+  const { data: closureBreakdown = [] } = useClosureBreakdown();
 
   const avgDays = stats?.avgConversionDays;
   const avgDisplay = (avgDays != null && avgDays > 0) ? Math.round(avgDays) : "N/A";
@@ -94,32 +109,51 @@ export function Analytics() {
         </div>
       </div>
 
-      <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
-        <div className="chart-title">Deal Kill Reasons</div>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={formattedKillReasons} layout="vertical" margin={{ left: 16, right: 16 }}>
-            <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
-            <YAxis
-              type="category"
-              dataKey="label"
-              stroke="var(--text-muted)"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              width={90}
-            />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              cursor={{ fill: "hsl(0 70% 58% / 0.06)" }}
-              formatter={(v: any) => [v, "Deals lost"]}
-            />
-            <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={28}>
-              {formattedKillReasons.map((_, i) => (
-                <Cell key={i} fill="hsl(0 70% 58%)" />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
+        <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
+          <div className="chart-title">Deal Kill Reasons</div>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={formattedKillReasons} layout="vertical" margin={{ left: 16, right: 16 }}>
+              <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+              <YAxis type="category" dataKey="label" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} width={90} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(0 70% 58% / 0.06)" }} formatter={(v: any) => [v, "Deals lost"]} />
+              <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={28}>
+                {formattedKillReasons.map((_, i) => (
+                  <Cell key={i} fill="hsl(0 70% 58%)" />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
+          <div className="chart-title">Closure Breakdown</div>
+          {closureBreakdown.filter(c => c.count > 0).length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={closureBreakdown.filter(c => c.count > 0)}
+                  dataKey="count"
+                  nameKey="status"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                >
+                  {closureBreakdown.filter(c => c.count > 0).map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [v, "Leads"]} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>
+              No closed deals yet
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
