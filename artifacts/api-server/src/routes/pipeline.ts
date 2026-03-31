@@ -10,6 +10,7 @@ import {
 import { eq, asc, and, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
+import { seedPipelineStages } from "../lib/seed";
 
 const router = Router();
 
@@ -217,6 +218,22 @@ router.delete("/statuses/:id", requireAuth, requireAdmin, async (req: AuthReques
   } catch (err) {
     req.log.error({ err }, "Delete status error");
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// POST /api/pipeline/seed-defaults — admin-only: seed default stages+statuses if missing
+router.post("/seed-defaults", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const before = await db.select().from(pipelineStagesTable).limit(1);
+    if (before.length > 0) {
+      return res.json({ message: "Pipeline stages already exist — nothing seeded.", seeded: false });
+    }
+    await seedPipelineStages();
+    const after = await db.select().from(pipelineStagesTable);
+    res.json({ message: `Seeded ${after.length} pipeline stage(s) successfully.`, seeded: true });
+  } catch (err) {
+    req.log.error({ err }, "Seed defaults error");
+    res.status(500).json({ message: "Seed failed", error: String(err) });
   }
 });
 

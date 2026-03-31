@@ -32,7 +32,7 @@ if (!process.env["JWT_SECRET"]) {
   );
 }
 
-app.listen(port, "0.0.0.0", (err) => {
+app.listen(port, "0.0.0.0", async (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
     process.exit(1);
@@ -43,14 +43,10 @@ app.listen(port, "0.0.0.0", (err) => {
   logger.info(`🔗 FRONTEND_URL: ${process.env.FRONTEND_URL || "(not set)"}`);
   logger.info(`📊 Health check: http://localhost:${port}/api/health`);
 
-  // Seed initial admin if database is empty (runs on first deploy)
-  seedInitialAdmin();
-
-  // Seed default role permissions if table is empty
-  seedDefaultPermissions();
-
-  // Seed default pipeline stages + statuses if none exist
-  seedPipelineStages();
+  // Run all seeds sequentially, awaiting each so errors appear in logs
+  await seedInitialAdmin();
+  await seedDefaultPermissions();
+  await seedPipelineStages();
 
   // Verify email service (non-blocking — warn but don't fail startup)
   verifyEmailConnection().then((ok) => {
