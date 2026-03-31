@@ -2357,6 +2357,16 @@ a:hover { opacity: 0.85; }
   font-weight: 600 !important;
 }
 .sheet-tab.is-active svg { color: var(--teal) !important; }
+.sheet-tab-ai { position: relative; }
+.sheet-tab-ai.is-active { color: var(--teal) !important; border-bottom-color: var(--teal) !important; }
+.sheet-tab-ai.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--teal), transparent);
+  filter: blur(1px);
+}
 
 /* ── Pipeline Progress Bar — dot + connector design ── */
 .pipeline-bar {
