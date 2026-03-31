@@ -84,11 +84,13 @@ export function NewLead() {
 
   const [formData, setFormData] = useState<any>({
     leadName: "",
+    company: "",
     leadType: "cold",
     contactEmail: "",
     phone: "",
     serviceId: "",
     leadOwner: "",
+    dealHandler: "",
     dealValue: "",
     nextAction: "",
     companyIds: [],
@@ -193,6 +195,16 @@ export function NewLead() {
               />
             </div>
 
+            {/* Lead Company — full width */}
+            <div>
+              <FieldLabel>Lead Company</FieldLabel>
+              <StyledInput
+                value={formData.company}
+                onChange={e => set("company", e.target.value)}
+                placeholder="e.g. Acme Corp"
+              />
+            </div>
+
             {/* 2-col: Lead Type + Deal Value */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
               <div>
@@ -252,17 +264,19 @@ export function NewLead() {
               </div>
             </div>
 
-            {/* 2-col: Service + Lead Owner */}
+            {/* Service — full width */}
+            <div>
+              <FieldLabel>Service</FieldLabel>
+              <CustomSelect
+                value={formData.serviceId || null}
+                onChange={val => set("serviceId", val)}
+                placeholder="Select service…"
+                options={(services || []).map(s => ({ value: s.id, label: s.name }))}
+              />
+            </div>
+
+            {/* 2-col: Lead Owner + Deal Handler */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
-              <div>
-                <FieldLabel>Service</FieldLabel>
-                <CustomSelect
-                  value={formData.serviceId || null}
-                  onChange={val => set("serviceId", val)}
-                  placeholder="Select service…"
-                  options={(services || []).map(s => ({ value: s.id, label: s.name }))}
-                />
-              </div>
               <div>
                 <FieldLabel>Lead Owner</FieldLabel>
                 <CustomSelect
@@ -271,6 +285,17 @@ export function NewLead() {
                   placeholder="Unassigned"
                   options={users
                     .filter(u => ["admin", "lead_owner"].includes(u.role))
+                    .map(u => ({ value: u.id, label: u.displayName || u.email }))}
+                />
+              </div>
+              <div>
+                <FieldLabel>Deal Handler</FieldLabel>
+                <CustomSelect
+                  value={formData.dealHandler || null}
+                  onChange={val => set("dealHandler", val)}
+                  placeholder="Unassigned"
+                  options={users
+                    .filter(u => ["admin", "deal_handler"].includes(u.role))
                     .map(u => ({ value: u.id, label: u.displayName || u.email }))}
                 />
               </div>

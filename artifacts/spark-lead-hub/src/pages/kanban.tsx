@@ -212,7 +212,7 @@ export function KanbanBoard() {
                                 }}
                               >
                                 {/* Card header */}
-                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-2)", marginBottom: 4 }}>
+                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-2)", marginBottom: lead.company ? 2 : 4 }}>
                                   <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3, flex: 1 }}>
                                     {lead.leadName}
                                   </span>
@@ -220,6 +220,11 @@ export function KanbanBoard() {
                                     {TYPE_EMOJI[lead.leadType || "cold"] || "🧊"}
                                   </span>
                                 </div>
+                                {lead.company && (
+                                  <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 4, lineHeight: 1.3 }}>
+                                    {lead.company}
+                                  </div>
+                                )}
 
                                 {/* Status badge */}
                                 {lead.statusName && (

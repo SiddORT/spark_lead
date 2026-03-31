@@ -334,6 +334,15 @@ function DetailsTab({
               onBlur={(e) => handleUpdate("leadName", e.target.value)}
             />
           </div>
+          <div className="form-field">
+            <label className="field-label">Lead Company</label>
+            <input
+              className="field-input"
+              defaultValue={lead.company || ""}
+              onBlur={(e) => handleUpdate("company", e.target.value)}
+              placeholder="e.g. Acme Corp"
+            />
+          </div>
           <div className="details-row">
             <div className="form-field">
               <label className="field-label">Lead Type</label>

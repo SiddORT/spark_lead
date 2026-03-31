@@ -226,6 +226,11 @@ export function Dashboard() {
             <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>
               {lead.leadName}
             </span>
+            {lead.company && (
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginTop: 1 }}>
+                {lead.company}
+              </div>
+            )}
           </td>
           <td>
             <span className={`badge ${tc.cls}`}>{tc.emoji} {tc.label}</span>
