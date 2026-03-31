@@ -1,7 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { verifyEmailConnection } from "./lib/email";
-import { seedInitialAdmin, seedDefaultPermissions } from "./lib/seed";
+import { seedInitialAdmin, seedDefaultPermissions, seedPipelineStages } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -48,6 +48,9 @@ app.listen(port, "0.0.0.0", (err) => {
 
   // Seed default role permissions if table is empty
   seedDefaultPermissions();
+
+  // Seed default pipeline stages + statuses if none exist
+  seedPipelineStages();
 
   // Verify email service (non-blocking — warn but don't fail startup)
   verifyEmailConnection().then((ok) => {
