@@ -141,13 +141,17 @@ function NotesSection({ leadId }: { leadId: string }) {
   const [newNote, setNewNote] = useState("");
 
   const addMutation = useAddLeadNote({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
-      setNewNote("");
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
+        setNewNote("");
+      },
     },
   });
   const deleteMutation = useDeleteLeadNote({
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] }),
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] }),
+    },
   });
 
   const handleAddNote = () => {
