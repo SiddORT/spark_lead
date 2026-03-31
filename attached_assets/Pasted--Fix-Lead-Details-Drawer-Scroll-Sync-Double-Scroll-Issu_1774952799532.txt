@@ -1,0 +1,183 @@
+## 🛠 Fix Lead Details Drawer Scroll Sync + Double Scroll Issue (React + Tailwind)
+
+### ❗ Problem Summary
+
+When opening the **Lead Details Drawer (right panel)**:
+
+* The drawer opens at a **scrolled position (not top)**
+* The **main page scroll position is inherited**
+* Both **main page + drawer scroll together**
+* Two scrollbars appear:
+
+  * One for the **drawer**
+  * One for the **entire page**
+* User must scroll **twice** to reach the top of the drawer → very bad UX
+
+---
+
+### 🧠 Root Cause
+
+* The drawer is rendered **inside a scrollable parent container**
+* The **body/main page scroll is not locked**
+* The drawer is not isolated (not fixed to viewport)
+* Scroll position is not reset on open
+
+---
+
+## 🎯 Goal
+
+* Drawer should:
+
+  * Always open at **top (scroll = 0)**
+  * Have **independent scroll**
+* Background (main page):
+
+  * Should **NOT scroll**
+* Only **one scrollbar visible (drawer only)**
+
+---
+
+## ✅ FIX IMPLEMENTATION
+
+---
+
+### ✅ 1. Lock Background Scroll (CRITICAL)
+
+```tsx
+useEffect(() => {
+  if (isLeadDetailsOpen) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "auto";
+  }
+
+  return () => {
+    document.body.style.overflow = "auto";
+  };
+}, [isLeadDetailsOpen]);
+```
+
+---
+
+### ✅ 2. Render Drawer Outside Scrollable Layout
+
+👉 Ensure drawer is NOT inside your main scroll container.
+
+Use a **portal (recommended)**:
+
+```tsx
+import { createPortal } from "react-dom";
+
+return createPortal(
+  <LeadDetailsDrawer />,
+  document.body
+);
+```
+
+---
+
+### ✅ 3. Make Drawer Fixed to Viewport
+
+```tsx
+<div
+  id="lead-details-drawer"
+  className="fixed top-0 right-0 h-screen w-[420px] bg-[#0B0F19] z-50 overflow-y-auto"
+>
+  {/* content */}
+</div>
+```
+
+---
+
+### ✅ 4. Reset Drawer Scroll to Top on Open
+
+```tsx
+useEffect(() => {
+  if (isLeadDetailsOpen) {
+    const el = document.getElementById("lead-details-drawer");
+    el?.scrollTo({ top: 0, behavior: "auto" });
+  }
+}, [isLeadDetailsOpen]);
+```
+
+---
+
+### ✅ 5. Prevent Scroll Propagation (IMPORTANT)
+
+```tsx
+<div
+  onWheel={(e) => e.stopPropagation()}
+  onTouchMove={(e) => e.stopPropagation()}
+  className="h-full overflow-y-auto"
+>
+  {/* content */}
+</div>
+```
+
+---
+
+### ✅ 6. Ensure Parent Layout Does NOT Interfere
+
+Remove or avoid:
+
+```tsx
+<div className="overflow-auto h-screen">
+```
+
+Replace with:
+
+```tsx
+<div className="h-screen overflow-hidden">
+```
+
+---
+
+### ✅ 7. Optional Overlay (Professional UX)
+
+```tsx
+<div className="fixed inset-0 bg-black/40 z-40"></div>
+```
+
+---
+
+## 🚀 Final Expected Behaviour
+
+* Drawer opens **from top every time**
+* Only **drawer scroll works**
+* Background is **completely frozen**
+* No double scrollbar
+* Smooth CRM-like UX (HubSpot / Salesforce style)
+
+---
+
+## 🔥 Bonus (Recommended Enhancement)
+
+Add animation:
+
+```tsx
+className="fixed top-0 right-0 h-screen w-[420px] transform transition-transform duration-300 translate-x-0"
+```
+
+---
+
+## 🧪 Edge Cases to Handle
+
+* Opening drawer from **deep scroll position**
+* Closing drawer restores body scroll
+* Mobile scroll (touch events handled)
+
+---
+
+## 📌 Summary
+
+Fix requires:
+
+1. Locking `body` scroll
+2. Using `position: fixed`
+3. Rendering drawer via **portal**
+4. Resetting scroll position
+5. Preventing scroll bubbling
+
+---
+
+Apply this fix globally for all modals/drawers in the system.

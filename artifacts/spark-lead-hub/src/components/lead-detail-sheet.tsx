@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   useGetLead, useUpdateLead, useGetLeadNotes, useAddLeadNote,
   useDeleteLeadNote, useGetLeadActivities, useDeleteLead,
@@ -511,6 +512,13 @@ export function LeadDetailSheet({
   const { data: pipelineStages = [] }  = usePipelineStages();
   const [activeTab, setActiveTab]      = useState<"details" | "notes">("details");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  // ── Reset scroll to top whenever a new lead is loaded ──
+  useEffect(() => {
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
+    setActiveTab("details");
+  }, [leadId]);
 
   // ── Local pipeline state — sync on lead change ──
   const [localStageId,    setLocalStageId]    = useState<string | null>(null);
@@ -535,6 +543,8 @@ export function LeadDetailSheet({
       document.body.style.top      = `-${scrollY}px`;
       document.body.style.width    = "100%";
       document.body.style.overflow = "hidden";
+      // Always reset the drawer's own scroll to top
+      if (bodyRef.current) bodyRef.current.scrollTop = 0;
     } else {
       setConfirmingDelete(false);
       const scrollY = document.body.style.top;
@@ -622,9 +632,9 @@ export function LeadDetailSheet({
     handleUpdate("companyIds", newIds);
   };
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined" || !document.body) return null;
 
-  return (
+  return createPortal(
     <>
       {/* ── Backdrop ── */}
       <div
@@ -745,7 +755,12 @@ export function LeadDetailSheet({
         </div>
 
         {/* ── Scrollable body ── */}
-        <div className="sheet-body">
+        <div
+          className="sheet-body"
+          ref={bodyRef}
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           {!lead ? (
             <div style={{ padding: "var(--sp-8)", textAlign: "center", color: "var(--text-muted)" }}>
               Loading…
@@ -770,6 +785,7 @@ export function LeadDetailSheet({
           )}
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
