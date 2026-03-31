@@ -1,20 +1,23 @@
 import { useState, useEffect, useRef } from "react";
-import { 
-  useGetLead, useUpdateLead, useGetLeadNotes, useAddLeadNote, 
-  useDeleteLeadNote, useGetLeadActivities, 
-  useGetServices, useGetServiceCompanies, getGetLeadsQueryKey
+import {
+  useGetLead, useUpdateLead, useGetLeadNotes, useAddLeadNote,
+  useDeleteLeadNote, useGetLeadActivities,
+  useGetServices, useGetServiceCompanies, getGetLeadsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Sheet, Tabs, TabsList, TabsTrigger, TabsContent, Badge, Button, Textarea } from "./ui";
 import { format, formatDistanceToNow } from "date-fns";
-import { Check, Lock, Send, Clock, Trash2, X, AlertCircle, ChevronDown } from "lucide-react";
+import {
+  Check, Send, Clock, Trash2, X, ChevronDown,
+  FileText, MessageSquare,
+} from "lucide-react";
 import { useUserMap } from "@/hooks/use-user-map";
-import { useAuth, PermissionCheck } from "./auth-provider";
+import { useAuth } from "./auth-provider";
 import { toast } from "sonner";
 import { usePipelineStages } from "@/hooks/use-pipeline";
-import { StageStatusSelect, PipelineProgressBar } from "./stage-status-select";
+import { PipelineProgressBar } from "./stage-status-select";
+import { CustomSelect } from "./custom-select";
 
-// ─── Currency formatter ───────────────────────────────
+// ─── Helpers ──────────────────────────────────────────
 function formatCurrency(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === "") return "—";
   const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.]/g, "")) : val;
@@ -25,7 +28,15 @@ function formatCurrency(val: string | number | null | undefined): string {
   return `₹${num.toLocaleString("en-IN")}`;
 }
 
-// ─── Chip-based company multi-select ─────────────────
+function capitalize(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+const LEAD_TYPE_EMOJI: Record<string, string> = {
+  hot: "🔥", warm: "☀️", cold: "🧊", ghosted: "👻",
+};
+
+// ─── Company chip multi-select ────────────────────────
 function CompanyChipSelect({
   serviceId,
   selectedCompanyIds,
@@ -33,22 +44,24 @@ function CompanyChipSelect({
 }: {
   serviceId: string;
   selectedCompanyIds: string[];
-  onToggle: (id: string, name: string) => void;
+  onToggle: (id: string) => void;
 }) {
-  const { data: companies = [] } = useGetServiceCompanies(serviceId, { query: { enabled: !!serviceId } });
+  const { data: companies = [] } = useGetServiceCompanies(serviceId, {
+    query: { enabled: !!serviceId },
+  });
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function handler(e: MouseEvent) {
+    const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
+    };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const selectedCompanies = companies.filter(c => selectedCompanyIds.includes(c.id));
-  const unselected = companies.filter(c => !selectedCompanyIds.includes(c.id));
+  const selectedCompanies = companies.filter((c) => selectedCompanyIds.includes(c.id));
+  const unselected = companies.filter((c) => !selectedCompanyIds.includes(c.id));
 
   if (!serviceId) {
     return (
@@ -62,19 +75,17 @@ function CompanyChipSelect({
     <div ref={ref} style={{ position: "relative" }}>
       <div
         className={`company-chip-select ${open ? "open" : ""}`}
-        onClick={() => companies.length > 0 && setOpen(v => !v)}
+        onClick={() => companies.length > 0 && setOpen((v) => !v)}
         style={{ cursor: companies.length > 0 ? "pointer" : "default" }}
       >
-        {selectedCompanies.map(c => (
+        {selectedCompanies.map((c) => (
           <span key={c.id} className="company-chip">
             {c.name}
             <button
               className="company-chip-x"
-              onClick={e => { e.stopPropagation(); onToggle(c.id, c.name); }}
+              onClick={(e) => { e.stopPropagation(); onToggle(c.id); }}
               title={`Remove ${c.name}`}
-            >
-              ×
-            </button>
+            >×</button>
           </span>
         ))}
         {selectedCompanies.length === 0 && (
@@ -85,19 +96,25 @@ function CompanyChipSelect({
         {companies.length > 0 && (
           <ChevronDown
             size={14}
-            style={{ marginLeft: "auto", color: "var(--text-muted)", flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform 150ms ease" }}
+            style={{
+              marginLeft: "auto",
+              color: "var(--text-muted)",
+              flexShrink: 0,
+              transform: open ? "rotate(180deg)" : "none",
+              transition: "transform 150ms ease",
+            }}
           />
         )}
       </div>
       {open && companies.length > 0 && (
         <div className="company-select-dropdown" style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0 }}>
-          {companies.map(c => {
+          {companies.map((c) => {
             const isSelected = selectedCompanyIds.includes(c.id);
             return (
               <button
                 key={c.id}
                 className={`company-select-option ${isSelected ? "selected" : ""}`}
-                onClick={() => onToggle(c.id, c.name)}
+                onClick={() => onToggle(c.id)}
               >
                 {c.name}
                 {isSelected && <Check size={13} style={{ marginLeft: "auto", flexShrink: 0 }} />}
@@ -115,384 +132,93 @@ function CompanyChipSelect({
   );
 }
 
-export function LeadDetailSheet({ leadId, open, onOpenChange }: { leadId: string | null, open: boolean, onOpenChange: (open: boolean) => void }) {
-  const { data: lead }           = useGetLead(leadId || "", { query: { enabled: !!leadId } });
-  const { resolveName, users }   = useUserMap();
-  const { user }                 = useAuth();
-  const queryClient              = useQueryClient();
-  const { data: pipelineStages = [] } = usePipelineStages();
-
-  const updateLeadMutation = useUpdateLead({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
-        queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}`] });
-        toast.success("Lead updated");
-      }
-    }
-  });
-
-  const handleUpdate = (field: string, value: any) => {
-    if (!lead) return;
-    if (lead[field as keyof typeof lead] === value) return;
-    updateLeadMutation.mutate({ id: lead.id, data: { [field]: value } });
-  };
-
-  const handlePipelineChange = (stageId: string, statusId: string) => {
-    if (!lead) return;
-    const updates: any = {};
-    if (stageId !== lead.pipelineStageId) updates.pipelineStageId = stageId || null;
-    if (statusId !== lead.pipelineStatusId) updates.pipelineStatusId = statusId || null;
-    if (Object.keys(updates).length > 0) {
-      updateLeadMutation.mutate({ id: lead.id, data: updates });
-    }
-  };
-
-  if (!lead) return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <div style={{ padding: "var(--sp-8)", textAlign: "center", color: "var(--text-muted)" }}>Loading…</div>
-    </Sheet>
-  );
-
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange} className="w-full sm:w-[600px] md:w-[700px] max-w-full">
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-elevated)" }}>
-
-        {/* ── Top bar ── */}
-        <div className="sheet-topbar">
-          <div>
-            <div className="sheet-lead-name">{lead.leadName}</div>
-            <div className="sheet-lead-meta">
-              {lead.stageName && (
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "2px 8px",
-                  background: `${lead.stageColor || "var(--teal)"}18`,
-                  border: `1px solid ${lead.stageColor || "var(--teal)"}30`,
-                  borderRadius: "var(--radius-full)",
-                  color: lead.stageColor || "var(--teal)",
-                  fontSize: "var(--text-xs)", fontWeight: 600,
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: lead.stageColor || "var(--teal)", flexShrink: 0 }} />
-                  {lead.stageName}
-                </span>
-              )}
-              {lead.statusName && (
-                <span style={{
-                  padding: "2px 8px",
-                  background: `${lead.statusColor || "var(--border-default)"}18`,
-                  border: `1px solid ${lead.statusColor || "var(--border-default)"}30`,
-                  borderRadius: "var(--radius-full)",
-                  color: lead.statusColor || "var(--text-muted)",
-                  fontSize: "var(--text-xs)", fontWeight: 600,
-                }}>
-                  {lead.statusName}
-                </span>
-              )}
-              {lead.leadType && (
-                <span className={`badge badge-${lead.leadType}`} style={{ textTransform: "capitalize" }}>
-                  {lead.leadType}
-                </span>
-              )}
-              {lead.dealValue && (
-                <span style={{ fontFamily: "var(--font-display)", fontSize: "var(--text-sm)", fontWeight: 700, color: "var(--teal)" }}>
-                  {formatCurrency(lead.dealValue)}
-                </span>
-              )}
-            </div>
-          </div>
-          <button className="sheet-close" onClick={() => onOpenChange(false)}>
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* ── Pipeline Progress Bar ── */}
-        {pipelineStages.length > 0 && (
-          <div style={{
-            padding: "var(--sp-4) var(--sp-6) var(--sp-5)",
-            borderBottom: "1px solid var(--border-faint)",
-            background: "var(--bg-overlay)",
-            flexShrink: 0,
-          }}>
-            <PipelineProgressBar
-              stages={pipelineStages}
-              currentStageId={lead.pipelineStageId}
-              currentStatusId={lead.pipelineStatusId}
-            />
-          </div>
-        )}
-
-        {/* ── Tabs ── */}
-        <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <Tabs defaultValue="details" style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <TabsList className="w-full flex p-0 bg-transparent border-0" style={{
-              borderBottom: "1px solid var(--border-faint)",
-              borderRadius: 0,
-              padding: "0 var(--sp-6)",
-              gap: 2,
-              flexShrink: 0,
-              background: "var(--bg-overlay)",
-            }}>
-              {["details", "notes"].map(tab => (
-                <TabsTrigger key={tab} value={tab} style={{ borderRadius: 0 }}>
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <div style={{ flex: 1, overflowY: "auto" }}>
-
-              {/* ── DETAILS TAB ── */}
-              <TabsContent value="details" style={{ margin: 0, padding: "var(--sp-6)" }}>
-                {/* Pipeline Stage + Status */}
-                <div className="form-field details-grid-full" style={{ marginBottom: "var(--sp-5)" }}>
-                  <label className="field-label">Pipeline Stage &amp; Status</label>
-                  <StageStatusSelect
-                    stageId={lead.pipelineStageId}
-                    statusId={lead.pipelineStatusId}
-                    onStageChange={(stageId) => handlePipelineChange(stageId, "")}
-                    onStatusChange={(statusId) => handlePipelineChange(lead.pipelineStageId || "", statusId)}
-                  />
-                </div>
-
-                {/* Row 1: Lead Name — full width */}
-                <div className="form-field details-grid-full">
-                  <label className="field-label">Lead Name</label>
-                  <input
-                    className="field-input"
-                    defaultValue={lead.leadName}
-                    onBlur={e => handleUpdate("leadName", e.target.value)}
-                  />
-                </div>
-
-                {/* Row 2: Lead Type | Deal Value */}
-                <div className="form-row">
-                  <div className="form-field">
-                    <label className="field-label">Lead Type</label>
-                    <select
-                      className="field-select"
-                      value={lead.leadType || ""}
-                      onChange={e => handleUpdate("leadType", e.target.value)}
-                    >
-                      <option value="">Select…</option>
-                      <option value="hot">🔥 Hot</option>
-                      <option value="warm">☀️ Warm</option>
-                      <option value="cold">🧊 Cold</option>
-                      <option value="ghosted">👻 Ghosted</option>
-                    </select>
-                  </div>
-                  <div className="form-field">
-                    <label className="field-label">Deal Value (₹)</label>
-                    <input
-                      className="field-input"
-                      type="number"
-                      defaultValue={lead.dealValue || ""}
-                      onBlur={e => handleUpdate("dealValue", e.target.value)}
-                      placeholder="e.g. 500000"
-                    />
-                  </div>
-                </div>
-
-                {/* Row 3: Contact Email | Phone */}
-                <div className="form-row">
-                  <div className="form-field">
-                    <label className="field-label">Contact Email</label>
-                    <input
-                      className="field-input"
-                      type="email"
-                      defaultValue={lead.contactEmail || ""}
-                      onBlur={e => handleUpdate("contactEmail", e.target.value)}
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="field-label">Phone</label>
-                    <input
-                      className="field-input"
-                      type="tel"
-                      defaultValue={lead.phone || ""}
-                      onBlur={e => handleUpdate("phone", e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                {/* Row 4 + 5: Service then Companies (full width) */}
-                <ServiceCompanySelectors lead={lead} handleUpdate={handleUpdate} />
-
-                {/* Row 6: Lead Owner | Deal Handler */}
-                <div className="form-row">
-                  <div className="form-field">
-                    <label className="field-label">Lead Owner</label>
-                    <select
-                      className="field-select"
-                      value={lead.leadOwner || ""}
-                      onChange={e => handleUpdate("leadOwner", e.target.value)}
-                    >
-                      <option value="">Unassigned</option>
-                      {users.filter(u => ["admin","lead_owner"].includes(u.role)).map(u => (
-                        <option key={u.id} value={u.id}>{u.displayName}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="form-field">
-                    <label className="field-label">Deal Handler</label>
-                    <select
-                      className="field-select"
-                      value={lead.dealHandler || ""}
-                      onChange={e => handleUpdate("dealHandler", e.target.value)}
-                    >
-                      <option value="">Unassigned</option>
-                      {users.filter(u => ["admin","deal_handler"].includes(u.role)).map(u => (
-                        <option key={u.id} value={u.id}>{u.displayName}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Row 7: Follow-up Date | Next Action */}
-                <div className="form-row">
-                  <div className="form-field">
-                    <label className="field-label">Follow-up Date</label>
-                    <input
-                      className="field-input"
-                      type="date"
-                      defaultValue={lead.followUpDate ? lead.followUpDate.split("T")[0] : ""}
-                      onBlur={e => e.target.value && handleUpdate("followUpDate", new Date(e.target.value).toISOString())}
-                    />
-                  </div>
-                  <div className="form-field">
-                    <label className="field-label">Next Action</label>
-                    <input
-                      className="field-input"
-                      defaultValue={lead.nextAction || ""}
-                      onBlur={e => handleUpdate("nextAction", e.target.value)}
-                      placeholder="e.g. Follow up call"
-                    />
-                  </div>
-                </div>
-
-                {/* Activity Log */}
-                <ActivityLog leadId={lead.id} />
-              </TabsContent>
-
-              {/* ── NOTES TAB ── */}
-              <TabsContent value="notes" style={{ margin: 0, padding: "var(--sp-6)" }}>
-                <NotesSection leadId={lead.id} stageContext={null} />
-              </TabsContent>
-
-            </div>
-          </Tabs>
-        </div>
-      </div>
-    </Sheet>
-  );
-}
-
-// ─── Service + Company selectors ─────────────────────
-function ServiceCompanySelectors({ lead, handleUpdate }: { lead: any; handleUpdate: any }) {
-  const { data: services = [] } = useGetServices();
-
-  const handleCompanyToggle = (companyId: string) => {
-    const currentIds: string[] = lead.companies?.map((c: any) => c.id) || [];
-    const newIds = currentIds.includes(companyId)
-      ? currentIds.filter((id: string) => id !== companyId)
-      : [...currentIds, companyId];
-    handleUpdate("companyIds", newIds);
-  };
-
-  const selectedCompanyIds = lead.companies?.map((c: any) => c.id) || [];
-
-  return (
-    <>
-      {/* Row 4: Service — full width */}
-      <div className="form-field details-grid-full">
-        <label className="field-label">Service</label>
-        <select
-          className="field-select"
-          value={lead.serviceId || ""}
-          onChange={e => {
-            handleUpdate("serviceId", e.target.value);
-            handleUpdate("companyIds", []);
-          }}
-        >
-          <option value="">Select a service…</option>
-          {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
-      </div>
-
-      {/* Row 5: Companies — full width, chip-based */}
-      <div className="form-field details-grid-full">
-        <label className="field-label">Companies</label>
-        <CompanyChipSelect
-          serviceId={lead.serviceId || ""}
-          selectedCompanyIds={selectedCompanyIds}
-          onToggle={(id) => handleCompanyToggle(id)}
-        />
-      </div>
-    </>
-  );
-}
-
 // ─── Notes section ────────────────────────────────────
-function NotesSection({ leadId, stageContext }: { leadId: string; stageContext: string | null }) {
-  const { data: notes }   = useGetLeadNotes(leadId);
-  const queryClient       = useQueryClient();
-  const { user }          = useAuth();
+function NotesSection({ leadId }: { leadId: string }) {
+  const { data: notes } = useGetLeadNotes(leadId);
+  const queryClient    = useQueryClient();
+  const { user }       = useAuth();
   const [newNote, setNewNote] = useState("");
 
-  const addMutation    = useAddLeadNote({ onSuccess: () => { queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] }); setNewNote(""); }});
-  const deleteMutation = useDeleteLeadNote({ onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] })});
+  const addMutation = useAddLeadNote({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
+      setNewNote("");
+    },
+  });
+  const deleteMutation = useDeleteLeadNote({
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] }),
+  });
 
-  const filteredNotes = notes?.filter(n => stageContext ? n.stageContext === stageContext : true) || [];
+  const handleAddNote = () => {
+    if (!newNote.trim()) return;
+    addMutation.mutate({ id: leadId, data: { content: newNote, stageContext: null } });
+  };
+
+  const allNotes = notes || [];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-      <div style={{ display: "flex", gap: "var(--sp-2)" }}>
-        <Textarea
+    <div className="notes-tab">
+      {/* Input area */}
+      <div className="notes-input-wrap">
+        <textarea
+          className="notes-textarea"
           placeholder="Type a new note…"
           value={newNote}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNewNote(e.target.value)}
-          className="min-h-[80px]"
+          onChange={(e) => setNewNote(e.target.value)}
+          rows={3}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAddNote();
+          }}
         />
-        <Button
-          style={{ height: "auto", alignSelf: "stretch" }}
-          onClick={() => { if (newNote.trim()) addMutation.mutate({ id: leadId, data: { content: newNote, stageContext } }); }}
-        >
-          <Send size={16} />
-        </Button>
+        <div className="notes-input-footer">
+          <span className="notes-hint">⌘ + Enter to submit</span>
+          <button
+            className="btn btn-primary btn-sm"
+            onClick={handleAddNote}
+            disabled={!newNote.trim()}
+            type="button"
+          >
+            <Send size={13} /> Add Note
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-3)", marginTop: "var(--sp-2)" }}>
-        {filteredNotes.length === 0 ? (
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", textAlign: "center", padding: "var(--sp-4) 0" }}>No notes yet.</p>
-        ) : filteredNotes.map(n => (
-          <div key={n.id} className="animate-slide-in" style={{
-            background: "var(--bg-overlay)", border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--r-md)", padding: "var(--sp-4)", display: "flex", flexDirection: "column", gap: "var(--sp-2)",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
-                <span style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-primary)" }}>{n.authorName}</span>
-                <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 3 }}>
-                  <Clock size={11} /> {format(new Date(n.createdAt), "MMM d, h:mm a")}
-                </span>
-              </div>
-              {n.userId === user?.id && (
-                <button
-                  onClick={() => deleteMutation.mutate({ id: leadId, noteId: n.id })}
-                  style={{ color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", padding: 2, transition: "color 120ms ease" }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "var(--danger)")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
-            <p style={{ fontSize: "var(--text-sm)", whiteSpace: "pre-wrap", color: "var(--text-secondary)", margin: 0 }}>{n.content}</p>
-            {n.stageContext && !stageContext && (
-              <span className="badge badge-muted" style={{ width: "fit-content", fontSize: 10 }}>{n.stageContext}</span>
-            )}
+      {/* Notes list */}
+      <div className="notes-list">
+        {allNotes.length === 0 ? (
+          <div className="empty-state" style={{ padding: "var(--sp-10) var(--sp-6)" }}>
+            <div className="empty-state-icon"><MessageSquare size={20} /></div>
+            <div className="empty-state-title">No notes yet</div>
+            <div className="empty-state-desc">Add context, follow-up reminders, or any notes about this lead</div>
           </div>
-        ))}
+        ) : (
+          allNotes.map((n) => (
+            <div key={n.id} className="note-item">
+              <div className="note-header">
+                <div className="note-author">
+                  <div className="avatar avatar-sm">{(n.authorName || "?")[0].toUpperCase()}</div>
+                  <span className="note-author-name">{n.authorName}</span>
+                  <span className="note-time">
+                    <Clock size={11} style={{ display: "inline", verticalAlign: "middle" }} />{" "}
+                    {format(new Date(n.createdAt), "MMM d, h:mm a")}
+                  </span>
+                </div>
+                {n.userId === user?.id && (
+                  <div className="note-actions">
+                    <button
+                      className="icon-btn"
+                      onClick={() => deleteMutation.mutate({ id: leadId, noteId: n.id })}
+                      title="Delete note"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="note-content">{n.content}</p>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
@@ -506,15 +232,17 @@ function ActivityLog({ leadId }: { leadId: string }) {
   return (
     <div className="activity-log">
       <div className="activity-log-title">Activity Log</div>
-      {activities.map(a => (
+      {activities.map((a) => (
         <div key={a.id} className="activity-item">
-          <div className="activity-avatar">
-            {(a.actorName || "?")[0].toUpperCase()}
-          </div>
+          <div className="activity-avatar">{(a.actorName || "?")[0].toUpperCase()}</div>
           <div className="activity-content">
             <div className="activity-action">
               {a.fieldName ? (
-                <>Updated <strong>{a.fieldName}</strong> from <em style={{ opacity: 0.7 }}>{a.oldValue || "none"}</em> → <span className="action-tag">{a.newValue}</span></>
+                <>
+                  Updated <strong>{a.fieldName}</strong> from{" "}
+                  <em style={{ opacity: 0.7 }}>{a.oldValue || "none"}</em> →{" "}
+                  <span className="action-tag">{a.newValue}</span>
+                </>
               ) : (
                 <><strong>{a.actorName}</strong> created this lead</>
               )}
@@ -527,5 +255,470 @@ function ActivityLog({ leadId }: { leadId: string }) {
         </div>
       ))}
     </div>
+  );
+}
+
+// ─── Details tab ──────────────────────────────────────
+function DetailsTab({
+  lead,
+  localStageId,
+  localStatusId,
+  localServiceId,
+  localCompanyIds,
+  onStageChange,
+  onStatusChange,
+  onServiceChange,
+  onCompanyToggle,
+  handleUpdate,
+  stages,
+  users,
+}: any) {
+  const { data: services = [] } = useGetServices();
+
+  const selectedStage = stages.find((s: any) => s.id === localStageId) ?? null;
+  const availableStatuses = selectedStage?.statuses?.filter((s: any) => s.isActive) ?? [];
+
+  return (
+    <div className="details-section">
+
+      {/* ── Section: Pipeline ── */}
+      <div>
+        <div className="details-section-label">Pipeline Stage &amp; Status</div>
+        <div className="details-row">
+          <div className="form-field">
+            <label className="field-label">Stage</label>
+            <CustomSelect
+              value={localStageId}
+              placeholder="Select stage…"
+              onChange={onStageChange}
+              options={stages.filter((s: any) => s.isActive).map((s: any) => ({
+                value: s.id,
+                label: s.displayName,
+                color: s.color,
+              }))}
+            />
+          </div>
+          <div className="form-field">
+            <label className="field-label">Status</label>
+            <CustomSelect
+              value={localStatusId}
+              placeholder={localStageId ? "Select status…" : "Pick stage first…"}
+              disabled={!localStageId}
+              onChange={onStatusChange}
+              options={availableStatuses.map((s: any) => ({
+                value: s.id,
+                label: s.displayName,
+                color: s.color,
+              }))}
+            />
+          </div>
+        </div>
+      </div>
+
+      <hr className="details-divider" />
+
+      {/* ── Section: Lead Info ── */}
+      <div>
+        <div className="details-section-label">Lead Information</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
+          <div className="form-field">
+            <label className="field-label">Lead Name</label>
+            <input
+              className="field-input"
+              defaultValue={lead.leadName}
+              onBlur={(e) => handleUpdate("leadName", e.target.value)}
+            />
+          </div>
+          <div className="details-row">
+            <div className="form-field">
+              <label className="field-label">Lead Type</label>
+              <CustomSelect
+                value={lead.leadType ?? null}
+                placeholder="Select type…"
+                onChange={(v) => handleUpdate("leadType", v)}
+                options={[
+                  { value: "hot",     label: "Hot",     prefix: "🔥" },
+                  { value: "warm",    label: "Warm",    prefix: "☀️" },
+                  { value: "cold",    label: "Cold",    prefix: "🧊" },
+                  { value: "ghosted", label: "Ghosted", prefix: "👻" },
+                ]}
+              />
+            </div>
+            <div className="form-field">
+              <label className="field-label">Deal Value (₹)</label>
+              <input
+                className="field-input"
+                type="number"
+                defaultValue={lead.dealValue || ""}
+                onBlur={(e) => handleUpdate("dealValue", e.target.value)}
+                placeholder="e.g. 500000"
+              />
+            </div>
+          </div>
+          <div className="details-row">
+            <div className="form-field">
+              <label className="field-label">Contact Email</label>
+              <input
+                className="field-input"
+                type="email"
+                defaultValue={lead.contactEmail || ""}
+                onBlur={(e) => handleUpdate("contactEmail", e.target.value)}
+              />
+            </div>
+            <div className="form-field">
+              <label className="field-label">Phone</label>
+              <input
+                className="field-input"
+                type="tel"
+                defaultValue={lead.phone || ""}
+                onBlur={(e) => handleUpdate("phone", e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr className="details-divider" />
+
+      {/* ── Section: Service & Companies ── */}
+      <div>
+        <div className="details-section-label">Service &amp; Companies</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
+          <div className="form-field">
+            <label className="field-label">Service</label>
+            <CustomSelect
+              value={localServiceId ?? null}
+              placeholder="Select a service…"
+              onChange={onServiceChange}
+              options={services.map((s: any) => ({ value: s.id, label: s.name }))}
+            />
+          </div>
+          <div className="form-field">
+            <label className="field-label">Companies</label>
+            <CompanyChipSelect
+              serviceId={localServiceId || ""}
+              selectedCompanyIds={localCompanyIds}
+              onToggle={onCompanyToggle}
+            />
+          </div>
+        </div>
+      </div>
+
+      <hr className="details-divider" />
+
+      {/* ── Section: Assignment ── */}
+      <div>
+        <div className="details-section-label">Assignment</div>
+        <div className="details-row">
+          <div className="form-field">
+            <label className="field-label">Lead Owner</label>
+            <CustomSelect
+              value={lead.leadOwner ?? null}
+              placeholder="Unassigned"
+              onChange={(v) => handleUpdate("leadOwner", v || null)}
+              options={[
+                { value: "", label: "Unassigned" },
+                ...users
+                  .filter((u: any) => ["admin", "lead_owner", "superadmin"].includes(u.role))
+                  .map((u: any) => ({
+                    value: u.id,
+                    label: u.displayName || u.email,
+                    prefix: (
+                      <span style={{
+                        width: 20, height: 20, borderRadius: "50%",
+                        background: "var(--teal-dim)", color: "var(--teal)",
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 700, flexShrink: 0,
+                      }}>
+                        {(u.displayName || u.email)[0].toUpperCase()}
+                      </span>
+                    ),
+                  })),
+              ]}
+            />
+          </div>
+          <div className="form-field">
+            <label className="field-label">Deal Handler</label>
+            <CustomSelect
+              value={lead.dealHandler ?? null}
+              placeholder="Unassigned"
+              onChange={(v) => handleUpdate("dealHandler", v || null)}
+              options={[
+                { value: "", label: "Unassigned" },
+                ...users
+                  .filter((u: any) => ["admin", "deal_handler", "superadmin"].includes(u.role))
+                  .map((u: any) => ({
+                    value: u.id,
+                    label: u.displayName || u.email,
+                    prefix: (
+                      <span style={{
+                        width: 20, height: 20, borderRadius: "50%",
+                        background: "var(--teal-dim)", color: "var(--teal)",
+                        display: "inline-flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 700, flexShrink: 0,
+                      }}>
+                        {(u.displayName || u.email)[0].toUpperCase()}
+                      </span>
+                    ),
+                  })),
+              ]}
+            />
+          </div>
+        </div>
+        <div className="details-row" style={{ marginTop: "var(--sp-4)" }}>
+          <div className="form-field">
+            <label className="field-label">Follow-up Date</label>
+            <input
+              className="field-input"
+              type="date"
+              defaultValue={lead.followUpDate ? lead.followUpDate.split("T")[0] : ""}
+              onBlur={(e) => e.target.value && handleUpdate("followUpDate", new Date(e.target.value).toISOString())}
+            />
+          </div>
+          <div className="form-field">
+            <label className="field-label">Next Action</label>
+            <input
+              className="field-input"
+              defaultValue={lead.nextAction || ""}
+              onBlur={(e) => handleUpdate("nextAction", e.target.value)}
+              placeholder="e.g. Follow up call"
+            />
+          </div>
+        </div>
+      </div>
+
+      <hr className="details-divider" />
+
+      {/* Activity Log */}
+      <ActivityLog leadId={lead.id} />
+    </div>
+  );
+}
+
+// ─── Main sheet component ─────────────────────────────
+export function LeadDetailSheet({
+  leadId,
+  open,
+  onOpenChange,
+}: {
+  leadId: string | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { data: lead }                 = useGetLead(leadId || "", { query: { enabled: !!leadId } });
+  const { users }                      = useUserMap();
+  const queryClient                    = useQueryClient();
+  const { data: pipelineStages = [] }  = usePipelineStages();
+  const [activeTab, setActiveTab]      = useState<"details" | "notes">("details");
+
+  // ── Local pipeline state — sync on lead change ──
+  const [localStageId,    setLocalStageId]    = useState<string | null>(null);
+  const [localStatusId,   setLocalStatusId]   = useState<string | null>(null);
+  const [localServiceId,  setLocalServiceId]  = useState<string | null>(null);
+  const [localCompanyIds, setLocalCompanyIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (lead) {
+      setLocalStageId(lead.pipelineStageId ?? null);
+      setLocalStatusId(lead.pipelineStatusId ?? null);
+      setLocalServiceId(lead.serviceId ?? null);
+      setLocalCompanyIds(lead.companies?.map((c: any) => c.id) ?? []);
+    }
+  }, [lead?.id, lead?.pipelineStageId, lead?.pipelineStatusId, lead?.serviceId]);
+
+  // ── Body scroll lock ──
+  useEffect(() => {
+    if (open) {
+      const scrollY = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top      = `-${scrollY}px`;
+      document.body.style.width    = "100%";
+      document.body.style.overflow = "hidden";
+    } else {
+      const scrollY = document.body.style.top;
+      document.body.style.position = "";
+      document.body.style.top      = "";
+      document.body.style.width    = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, parseInt(scrollY || "0") * -1);
+    }
+    return () => {
+      document.body.style.position = "";
+      document.body.style.top      = "";
+      document.body.style.width    = "";
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  const updateLeadMutation = useUpdateLead({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}`] });
+        toast.success("Lead updated");
+      },
+    },
+  });
+
+  const handleUpdate = (field: string, value: any) => {
+    if (!lead) return;
+    if (lead[field as keyof typeof lead] === value) return;
+    updateLeadMutation.mutate({ id: lead.id, data: { [field]: value } });
+  };
+
+  const handleStageChange = (stageId: string) => {
+    setLocalStageId(stageId || null);
+    setLocalStatusId(null);
+    if (!lead) return;
+    updateLeadMutation.mutate({
+      id: lead.id,
+      data: { pipelineStageId: stageId || null, pipelineStatusId: null },
+    });
+  };
+
+  const handleStatusChange = (statusId: string) => {
+    setLocalStatusId(statusId || null);
+    if (!lead) return;
+    updateLeadMutation.mutate({
+      id: lead.id,
+      data: { pipelineStatusId: statusId || null },
+    });
+  };
+
+  const handleServiceChange = (serviceId: string) => {
+    setLocalServiceId(serviceId || null);
+    setLocalCompanyIds([]);
+    handleUpdate("serviceId", serviceId || null);
+    handleUpdate("companyIds", []);
+  };
+
+  const handleCompanyToggle = (companyId: string) => {
+    const currentIds = localCompanyIds;
+    const newIds = currentIds.includes(companyId)
+      ? currentIds.filter((id) => id !== companyId)
+      : [...currentIds, companyId];
+    setLocalCompanyIds(newIds);
+    handleUpdate("companyIds", newIds);
+  };
+
+  if (!open) return null;
+
+  return (
+    <>
+      {/* ── Backdrop ── */}
+      <div
+        className="lead-sheet-backdrop"
+        onClick={() => onOpenChange(false)}
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.preventDefault()}
+      />
+
+      {/* ── Sheet panel ── */}
+      <div className="lead-sheet">
+
+        {/* ── Top bar ── */}
+        <div className="sheet-topbar">
+          <div className="sheet-lead-identity">
+            <h2 className="sheet-lead-name">
+              {lead ? lead.leadName : "Loading…"}
+            </h2>
+            {lead && (
+              <div className="sheet-lead-meta">
+                {lead.stageName && (
+                  <span
+                    className="sheet-badge sheet-badge-stage"
+                    style={{ "--c": lead.stageColor ?? "var(--teal)" } as React.CSSProperties}
+                  >
+                    <span className="sheet-badge-dot" />
+                    {lead.stageName}
+                  </span>
+                )}
+                {lead.statusName && (
+                  <span
+                    className="sheet-badge sheet-badge-status"
+                    style={{ "--c": lead.statusColor ?? "var(--text-muted)" } as React.CSSProperties}
+                  >
+                    <span className="sheet-badge-dot" />
+                    {lead.statusName}
+                  </span>
+                )}
+                {lead.leadType && (
+                  <span className="sheet-badge sheet-badge-type">
+                    {LEAD_TYPE_EMOJI[lead.leadType]} {capitalize(lead.leadType)}
+                  </span>
+                )}
+                {lead.dealValue && (
+                  <span className="sheet-value-chip">
+                    {formatCurrency(lead.dealValue)}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Single close button */}
+          <button
+            className="sheet-close-btn"
+            onClick={() => onOpenChange(false)}
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* ── Pipeline Progress Bar ── */}
+        {lead && pipelineStages.length > 0 && (
+          <PipelineProgressBar
+            stages={pipelineStages}
+            currentStageId={localStageId}
+            currentStatusId={localStatusId}
+          />
+        )}
+
+        {/* ── Tabs ── */}
+        <div className="sheet-tabs">
+          {[
+            { id: "details", label: "Details", icon: <FileText size={13} /> },
+            { id: "notes",   label: "Notes",   icon: <MessageSquare size={13} /> },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              className={`sheet-tab ${activeTab === tab.id ? "is-active" : ""}`}
+              onClick={() => setActiveTab(tab.id as "details" | "notes")}
+              type="button"
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Scrollable body ── */}
+        <div className="sheet-body">
+          {!lead ? (
+            <div style={{ padding: "var(--sp-8)", textAlign: "center", color: "var(--text-muted)" }}>
+              Loading…
+            </div>
+          ) : activeTab === "details" ? (
+            <DetailsTab
+              lead={lead}
+              localStageId={localStageId}
+              localStatusId={localStatusId}
+              localServiceId={localServiceId}
+              localCompanyIds={localCompanyIds}
+              onStageChange={handleStageChange}
+              onStatusChange={handleStatusChange}
+              onServiceChange={handleServiceChange}
+              onCompanyToggle={handleCompanyToggle}
+              handleUpdate={handleUpdate}
+              stages={pipelineStages}
+              users={users}
+            />
+          ) : (
+            <NotesSection leadId={lead.id} />
+          )}
+        </div>
+      </div>
+    </>
   );
 }

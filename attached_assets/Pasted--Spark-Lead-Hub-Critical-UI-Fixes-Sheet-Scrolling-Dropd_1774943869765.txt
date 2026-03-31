@@ -1,0 +1,1315 @@
+# 🔧 Spark Lead Hub — Critical UI Fixes: Sheet, Scrolling, Dropdowns, Chart & Pipeline
+
+Deep audit completed across all 8 screenshots. Every issue is catalogued below with an exact fix. No issue is left unaddressed.
+
+---
+
+## 🔴 COMPLETE AUDIT — Every Issue Found
+
+### Lead Detail Sheet
+1. **Two close (×) buttons** — one in the sheet header, one floating top-right. Remove the duplicate. Keep only ONE, positioned consistently top-right inside the sheet header.
+2. **Scroll bleeds through** — scrolling inside the sheet scrolls the page behind it. The sheet body must have `overflow-y: auto` and the backdrop must block scroll propagation on the underlying page.
+3. **Lead header is underwhelming** — stage badge, status badge, lead type badge, and deal value are tiny, flat, and unclear. They need visual weight — proper colored badges, clear hierarchy, readable sizes.
+4. **Stage shows "Select stage…" on existing lead** — the stage/status are not being populated from the lead's existing `pipeline_stage_id` / `pipeline_status_id`. This is a data-loading bug.
+5. **Details/Notes tabs are broken visually** — they look like plain unstyled text, no active state, no tab indicator. Must match the system tab design exactly.
+6. **Spacing/padding is completely off** — fields are either too cramped or too spaced, inconsistent throughout the sheet.
+7. **Pipeline progress bar takes up too much vertical space** and the stage labels are tiny/overlapping.
+
+### Dropdowns
+8. **Stage dropdown opens with bright blue highlight** — same blue-highlight bug. Must use teal system highlight.
+9. **All dropdowns in the sheet (Stage, Status, Lead Type, Service, Companies, Lead Owner, Deal Handler) are unstyled** — they look like default browser selects. Must match the dashboard filter dropdown style exactly (dark background, border, teal active highlight, proper animation).
+10. **"Lead Type" dropdown in sheet shows raw select** — missing the emoji prefix on the selected value display.
+
+### Pipeline Chart (Dashboard)
+11. **X-axis labels show raw snake_case** — `lead_initiation`, `qualification_analysis`, `proposal_negotiation`, `closure`. Must show display names: `Lead Initiation`, `Qualification & Analysis`, `Proposal & Negotiation`, `Closure`.
+12. **One stage missing from chart** — `qualification_analysis` bar appears but stage `qualification_analysis` shows 0 in some renders because the chart is using the `name` column instead of joining on `id` to get `display_name`. Fix the data query.
+13. **All bars are the same gray color** — bars must use per-stage colors from `pipeline_stages.color`.
+14. **Tooltip text is black on dark background** — completely invisible. Fix tooltip contentStyle to use light text on dark panel.
+15. **Tooltip label shows raw snake_case** — `lead_initiation : 2 Leads`. Must show `Lead Initiation — 2 Leads`.
+
+### Notes Tab
+16. **Notes tab send button is a teal floating pill** on the right edge — looks detached and broken. Must be a proper button inside the input area.
+17. **"No notes yet" text is centered but has no icon** — needs an empty state with icon.
+
+---
+
+## PART 1 — Fix Scroll Bleed (Body Scroll Lock)
+
+When the lead detail sheet is open, the page behind it must NOT scroll. Fix both CSS and JS:
+
+```tsx
+// In LeadDetailSheet.tsx — when sheet opens/closes:
+useEffect(() => {
+  if (isOpen) {
+    // Lock body scroll
+    const scrollY = window.scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+    document.body.style.overflow = 'hidden';
+  } else {
+    // Restore body scroll
+    const scrollY = document.body.style.top;
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflow = '';
+    window.scrollTo(0, parseInt(scrollY || '0') * -1);
+  }
+  return () => {
+    // Cleanup on unmount
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.width = '';
+    document.body.style.overflow = '';
+  };
+}, [isOpen]);
+```
+
+```css
+/* Sheet backdrop — must intercept all pointer/scroll events */
+.lead-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: hsla(222, 22%, 3%, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 99;
+  /* Prevent scroll events from passing through */
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+/* Sheet panel — its own independent scroll */
+.lead-sheet {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(680px, 96vw);
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  animation: sheet-in var(--t-slow) both;
+  overflow: hidden; /* ← sheet itself does NOT scroll */
+}
+
+/* Only the body section scrolls */
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain; /* ← KEY: prevents scroll chaining to page */
+  -webkit-overflow-scrolling: touch;
+}
+```
+
+Also add this on the backdrop's `onWheel` and `onTouchMove`:
+```tsx
+<div
+  className="lead-sheet-backdrop"
+  onClick={onClose}
+  onWheel={e => e.stopPropagation()}
+  onTouchMove={e => e.preventDefault()}
+/>
+```
+
+---
+
+## PART 2 — Fix Duplicate Close Button
+
+There must be EXACTLY ONE close button. Remove any `×` rendered outside the sheet header. The single close button lives here:
+
+```tsx
+// LeadDetailSheet.tsx — sheet structure
+
+<div className="lead-sheet">
+
+  {/* ── TOP BAR ── one close button here and ONLY here */}
+  <div className="sheet-topbar">
+    <div className="sheet-lead-identity">
+      <h2 className="sheet-lead-name">{lead.leadName}</h2>
+      <div className="sheet-lead-meta">
+        {/* Stage badge */}
+        {lead.stageName && (
+          <span className="sheet-badge sheet-badge-stage"
+            style={{ '--c': lead.stageColor ?? 'var(--teal)' } as React.CSSProperties}>
+            <span className="sheet-badge-dot" />
+            {lead.stageName}
+          </span>
+        )}
+        {/* Status badge */}
+        {lead.statusName && (
+          <span className="sheet-badge sheet-badge-status"
+            style={{ '--c': lead.statusColor ?? 'var(--text-muted)' } as React.CSSProperties}>
+            <span className="sheet-badge-dot" />
+            {lead.statusName}
+          </span>
+        )}
+        {/* Lead type badge */}
+        {lead.leadType && (
+          <span className="sheet-badge sheet-badge-type">
+            {leadTypeEmoji[lead.leadType]} {capitalize(lead.leadType)}
+          </span>
+        )}
+        {/* Deal value */}
+        {lead.dealValue && (
+          <span className="sheet-value-chip">
+            {formatCurrency(lead.dealValue)}
+          </span>
+        )}
+      </div>
+    </div>
+
+    {/* SINGLE CLOSE BUTTON — top right */}
+    <button className="sheet-close-btn" onClick={onClose} aria-label="Close">
+      <X size={16} />
+    </button>
+  </div>
+
+  {/* ── PIPELINE PROGRESS BAR ── */}
+  <PipelineProgressBar stages={stages} currentStageId={lead.pipelineStageId} currentStatus={lead.statusName} />
+
+  {/* ── TABS ── */}
+  <SheetTabs activeTab={activeTab} onTabChange={setActiveTab} />
+
+  {/* ── BODY (scrollable independently) ── */}
+  <div className="sheet-body">
+    {activeTab === 'details' && <DetailsTab lead={lead} ... />}
+    {activeTab === 'notes'   && <NotesTab   lead={lead} ... />}
+  </div>
+
+</div>
+```
+
+---
+
+## PART 3 — Rebuild Sheet Header (Lead Identity Section)
+
+```css
+/* ── Sheet Top Bar ── */
+.sheet-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-6) var(--sp-4);
+  border-bottom: 1px solid var(--border-faint);
+  flex-shrink: 0;
+  background: var(--bg-elevated);
+}
+
+.sheet-lead-identity { flex: 1; min-width: 0; }
+
+/* Lead name — big, bold, readable */
+.sheet-lead-name {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: var(--sp-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Meta row — badges and value */
+.sheet-lead-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* Stage badge — filled pill with stage color */
+.sheet-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: var(--r-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  line-height: 1;
+}
+.sheet-badge-dot {
+  width: 7px; height: 7px;
+  border-radius: var(--r-full);
+  background: var(--c);
+  flex-shrink: 0;
+}
+.sheet-badge-stage {
+  background: color-mix(in srgb, var(--c, var(--teal)) 15%, transparent);
+  color: var(--c, var(--teal));
+  border: 1px solid color-mix(in srgb, var(--c, var(--teal)) 30%, transparent);
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.sheet-badge-status {
+  background: color-mix(in srgb, var(--c, var(--text-muted)) 12%, transparent);
+  color: var(--c, var(--text-muted));
+  border: 1px solid color-mix(in srgb, var(--c, var(--text-muted)) 25%, transparent);
+  font-weight: 600;
+  font-size: var(--text-xs);
+}
+.sheet-badge-type {
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  gap: 4px;
+}
+
+/* Deal value chip — prominent teal */
+.sheet-value-chip {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--teal);
+  letter-spacing: -0.02em;
+  padding: 3px 0;
+}
+
+/* Single close button */
+.sheet-close-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--r-md);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--t-fast);
+  margin-top: 2px;
+}
+.sheet-close-btn:hover {
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+```
+
+---
+
+## PART 4 — Fix Sheet Tabs
+
+Tabs must match the system tab design. Fix alignment and active indicator:
+
+```tsx
+// SheetTabs component
+const TABS = [
+  { id: 'details', label: 'Details', icon: <FileText size={13} /> },
+  { id: 'notes',   label: 'Notes',   icon: <MessageSquare size={13} /> },
+];
+
+<div className="sheet-tabs">
+  {TABS.map(tab => (
+    <button
+      key={tab.id}
+      className={`sheet-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+      onClick={() => onTabChange(tab.id)}
+      type="button"
+    >
+      {tab.icon}
+      {tab.label}
+    </button>
+  ))}
+</div>
+```
+
+```css
+.sheet-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  padding: 0 var(--sp-6);
+  border-bottom: 1px solid var(--border-faint);
+  background: var(--bg-elevated);
+  flex-shrink: 0;
+}
+.sheet-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sp-3) var(--sp-4);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color var(--t-fast), border-color var(--t-fast);
+  outline: none;
+}
+.sheet-tab:hover { color: var(--text-secondary); }
+.sheet-tab.is-active {
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+  font-weight: 600;
+}
+.sheet-tab.is-active svg { color: var(--teal); }
+```
+
+---
+
+## PART 5 — Fix Pipeline Progress Bar (Compact, Non-Overlapping)
+
+The current progress bar is too tall and the labels overlap on smaller widths. Rebuild it compact:
+
+```tsx
+const PipelineProgressBar = ({ stages, currentStageId, currentStatus }) => {
+  const currentIndex = stages.findIndex(s => s.id === currentStageId);
+
+  return (
+    <div className="pipeline-bar" role="progressbar">
+      {stages.map((stage, i) => {
+        const isPast    = i < currentIndex;
+        const isCurrent = stage.id === currentStageId;
+        const isFuture  = i > currentIndex;
+        const isLast    = i === stages.length - 1;
+
+        return (
+          <React.Fragment key={stage.id}>
+            <div className={`pb-step ${isPast ? 'past' : ''} ${isCurrent ? 'current' : ''} ${isFuture ? 'future' : ''}`}>
+              {/* Track line before dot (except first) */}
+              {i > 0 && (
+                <div
+                  className={`pb-line ${isPast || isCurrent ? 'filled' : ''}`}
+                  style={isPast || isCurrent ? { background: stages[i - 1].color } : {}}
+                />
+              )}
+              {/* Dot */}
+              <div
+                className="pb-dot"
+                style={isCurrent || isPast ? { background: stage.color, borderColor: stage.color } : {}}
+              >
+                {isPast && <Check size={8} strokeWidth={3} />}
+              </div>
+              {/* Label */}
+              <div className="pb-label">
+                <span className="pb-stage-name">{stage.displayName}</span>
+                {isCurrent && currentStatus && (
+                  <span className="pb-status-name" style={{ color: stage.color }}>{currentStatus}</span>
+                )}
+              </div>
+            </div>
+            {/* Connector line between steps */}
+            {!isLast && (
+              <div
+                className={`pb-connector ${isPast ? 'filled' : ''}`}
+                style={isPast ? { background: stage.color } : {}}
+              />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+};
+```
+
+```css
+.pipeline-bar {
+  display: flex;
+  align-items: flex-start;
+  padding: var(--sp-3) var(--sp-6) var(--sp-4);
+  border-bottom: 1px solid var(--border-faint);
+  background: var(--bg-overlay);
+  flex-shrink: 0;
+  overflow-x: auto;
+  gap: 0;
+}
+
+.pb-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  position: relative;
+  min-width: 80px;
+}
+
+.pb-dot {
+  width: 22px; height: 22px;
+  border-radius: var(--r-full);
+  border: 2px solid var(--border-default);
+  background: var(--bg-overlay);
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  transition: all var(--t-base);
+  z-index: 1;
+  flex-shrink: 0;
+}
+.pb-step.future .pb-dot { opacity: 0.4; }
+.pb-step.current .pb-dot {
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 20%, transparent);
+}
+
+.pb-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--border-faint);
+  margin-top: 10px; /* align with dot center */
+  min-width: var(--sp-5);
+  transition: background var(--t-base);
+}
+.pb-connector.filled { /* color set inline */ }
+
+.pb-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  text-align: center;
+}
+.pb-stage-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-step.current .pb-stage-name { color: var(--text-secondary); }
+.pb-step.past .pb-stage-name    { color: var(--text-faint); }
+
+.pb-status-name {
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+```
+
+---
+
+## PART 6 — Fix Data Loading Bug (Stage/Status Not Populated)
+
+When opening a lead that has `pipeline_stage_id` set, the sheet shows "Select stage…" because the form state isn't initialized from the lead data.
+
+```tsx
+// In LeadDetailSheet.tsx — initialize local state from lead prop:
+
+const [localStageId, setLocalStageId] = useState<string | null>(lead.pipelineStageId ?? null);
+const [localStatusId, setLocalStatusId] = useState<string | null>(lead.pipelineStatusId ?? null);
+
+// CRITICAL: sync when the lead prop changes (e.g. different lead opened)
+useEffect(() => {
+  setLocalStageId(lead.pipelineStageId ?? null);
+  setLocalStatusId(lead.pipelineStatusId ?? null);
+}, [lead.id, lead.pipelineStageId, lead.pipelineStatusId]);
+
+// Also in the API response for GET /leads — make sure pipelineStageId and
+// pipelineStatusId are included in the response payload:
+// Both fields must be in the leads SELECT query as direct columns, not just joined names.
+```
+
+---
+
+## PART 7 — Rebuild ALL Dropdowns to Match Dashboard Filter Style
+
+The dashboard "All Types" filter dropdown is the reference design. ALL dropdowns across the entire system must look and behave identically.
+
+### Reference: Dashboard Filter Dropdown (what works)
+- Dark background panel
+- Teal border on trigger when open
+- Teal-tinted background on selected/hovered items
+- Emoji prefixes on lead type options
+- Smooth dropdown-in animation
+- Proper font size and spacing
+
+### Universal Custom Select Component
+
+Replace ALL native `<select>` elements in the lead sheet with this custom component:
+
+```tsx
+// components/CustomSelect.tsx
+interface Option {
+  value: string;
+  label: string;
+  prefix?: React.ReactNode;   // emoji or icon
+  color?: string;             // dot color
+  disabled?: boolean;
+}
+
+interface Props {
+  value: string | null;
+  options: Option[];
+  placeholder?: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}
+
+export const CustomSelect = ({ value, options, placeholder = 'Select…', onChange, disabled, className }: Props) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find(o => o.value === value);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // Close on Escape
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className={`cselect ${className ?? ''} ${disabled ? 'disabled' : ''}`}>
+      {/* Trigger */}
+      <div
+        className={`cselect-trigger ${open ? 'open' : ''} ${!value ? 'placeholder' : ''}`}
+        onClick={() => !disabled && setOpen(o => !o)}
+        role="combobox"
+        tabIndex={disabled ? -1 : 0}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); !disabled && setOpen(o => !o); } }}
+      >
+        <span className="cselect-value">
+          {selected ? (
+            <>
+              {selected.color && <span className="cselect-dot" style={{ background: selected.color }} />}
+              {selected.prefix && <span className="cselect-prefix">{selected.prefix}</span>}
+              {selected.label}
+            </>
+          ) : (
+            <span className="cselect-placeholder">{placeholder}</span>
+          )}
+        </span>
+        <ChevronDown
+          size={14}
+          className="cselect-chevron"
+          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 150ms ease' }}
+        />
+      </div>
+
+      {/* Dropdown panel */}
+      {open && (
+        <>
+          <div className="cselect-backdrop" onClick={() => setOpen(false)} />
+          <div className="cselect-panel">
+            {options.map(option => (
+              <div
+                key={option.value}
+                className={`cselect-option ${value === option.value ? 'is-selected' : ''} ${option.disabled ? 'is-disabled' : ''}`}
+                onClick={() => {
+                  if (!option.disabled) {
+                    onChange(option.value);
+                    setOpen(false);
+                  }
+                }}
+                role="option"
+                aria-selected={value === option.value}
+              >
+                {option.color && <span className="cselect-dot" style={{ background: option.color }} />}
+                {option.prefix && <span className="cselect-prefix">{option.prefix}</span>}
+                <span className="cselect-option-label">{option.label}</span>
+                {value === option.value && <Check size={13} className="cselect-check" />}
+              </div>
+            ))}
+            {options.length === 0 && (
+              <div className="cselect-empty">No options available</div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+```
+
+```css
+/* ── CustomSelect ── */
+.cselect { position: relative; width: 100%; user-select: none; }
+.cselect.disabled { opacity: 0.5; pointer-events: none; }
+
+/* Trigger */
+.cselect-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  height: 42px;
+  padding: 0 var(--sp-3);
+  background: var(--bg-subtle);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
+  outline: none;
+}
+.cselect-trigger:hover { border-color: var(--border-strong); }
+.cselect-trigger.open {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px hsla(172, 72%, 47%, 0.16);
+  background: var(--bg-overlay);
+}
+.cselect-trigger:focus-visible { border-color: var(--teal); box-shadow: 0 0 0 3px hsla(172, 72%, 47%, 0.16); }
+
+.cselect-value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.cselect-placeholder { color: var(--text-faint); font-weight: 400; }
+.cselect-dot {
+  width: 8px; height: 8px;
+  border-radius: var(--r-full);
+  flex-shrink: 0;
+}
+.cselect-prefix { display: flex; align-items: center; font-size: 15px; line-height: 1; }
+.cselect-chevron { color: var(--text-muted); flex-shrink: 0; }
+
+/* Backdrop (z-order management) */
+.cselect-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: transparent;
+}
+
+/* Dropdown panel */
+.cselect-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 999;
+  overflow: hidden;
+  padding: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  animation: dropdown-in 120ms ease both;
+}
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Option */
+.cselect-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast);
+  outline: none;
+}
+.cselect-option:hover { background: var(--bg-subtle); color: var(--text-primary); }
+.cselect-option.is-selected {
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-weight: 600;
+}
+.cselect-option.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.cselect-option-label { flex: 1; }
+.cselect-check { color: var(--teal); margin-left: auto; flex-shrink: 0; }
+.cselect-empty {
+  padding: var(--sp-4);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+}
+```
+
+### Wire Up All Sheet Dropdowns with CustomSelect:
+
+```tsx
+// Stage dropdown
+<CustomSelect
+  value={localStageId}
+  onChange={handleStageChange}
+  placeholder="Select stage…"
+  options={stages.map(s => ({
+    value: s.id,
+    label: s.displayName,
+    color: s.color,
+  }))}
+/>
+
+// Status dropdown (disabled until stage selected)
+<CustomSelect
+  value={localStatusId}
+  onChange={handleStatusChange}
+  placeholder={localStageId ? 'Select status…' : 'Pick stage first…'}
+  disabled={!localStageId}
+  options={(currentStage?.statuses ?? []).map(s => ({
+    value: s.id,
+    label: s.displayName,
+    color: s.color,
+  }))}
+/>
+
+// Lead Type dropdown
+<CustomSelect
+  value={lead.leadType}
+  onChange={v => updateLead({ leadType: v })}
+  options={[
+    { value: 'hot',     label: 'Hot',     prefix: '🔥' },
+    { value: 'warm',    label: 'Warm',    prefix: '☀️' },
+    { value: 'cold',    label: 'Cold',    prefix: '🧊' },
+    { value: 'ghosted', label: 'Ghosted', prefix: '👻' },
+  ]}
+/>
+
+// Service dropdown
+<CustomSelect
+  value={lead.serviceId}
+  onChange={v => handleServiceChange(v)}
+  placeholder="Select service…"
+  options={services.map(s => ({ value: s.id, label: s.name }))}
+/>
+
+// Lead Owner dropdown
+<CustomSelect
+  value={lead.leadOwner}
+  onChange={v => updateLead({ leadOwner: v })}
+  placeholder="Unassigned"
+  options={[
+    { value: '', label: 'Unassigned' },
+    ...leadOwners.map(u => ({
+      value: u.id,
+      label: u.displayName || u.email,
+      prefix: <div className="avatar avatar-sm">{(u.displayName || u.email)[0].toUpperCase()}</div>,
+    })),
+  ]}
+/>
+
+// Deal Handler dropdown — same pattern as Lead Owner
+
+// Companies — use CompaniesMultiSelect (unchanged, already custom)
+```
+
+---
+
+## PART 8 — Fix Sheet Details Layout & Spacing
+
+```css
+/* Details tab form */
+.sheet-body {
+  padding: var(--sp-5) var(--sp-6) var(--sp-8);
+}
+
+.details-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+/* Section divider inside details */
+.details-divider {
+  border: none;
+  border-top: 1px solid var(--border-faint);
+  margin: var(--sp-2) 0;
+}
+
+/* Section heading */
+.details-section-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--sp-3);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.details-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-faint);
+}
+
+/* 2-col grid for paired fields */
+.details-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+/* Full width field */
+.details-full { grid-column: 1 / -1; }
+
+/* Field label */
+.field-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 5px;
+  display: block;
+}
+```
+
+### Details tab exact layout order:
+```tsx
+<div className="details-section">
+
+  {/* Section: Pipeline */}
+  <div>
+    <div className="details-section-label">Pipeline Stage & Status</div>
+    <div className="details-row">
+      <div className="form-field">
+        <label className="field-label">Stage</label>
+        <CustomSelect value={localStageId} ... />
+      </div>
+      <div className="form-field">
+        <label className="field-label">Status</label>
+        <CustomSelect value={localStatusId} disabled={!localStageId} ... />
+      </div>
+    </div>
+  </div>
+
+  <hr className="details-divider" />
+
+  {/* Section: Lead Info */}
+  <div>
+    <div className="details-section-label">Lead Information</div>
+    <div className="details-section" style={{ gap: 'var(--sp-4)' }}>
+      <div className="form-field details-full">
+        <label className="field-label">Lead Name</label>
+        <input className="field-input" value={lead.leadName} ... />
+      </div>
+      <div className="details-row">
+        <div className="form-field">
+          <label className="field-label">Lead Type</label>
+          <CustomSelect value={lead.leadType} ... />
+        </div>
+        <div className="form-field">
+          <label className="field-label">Deal Value (₹)</label>
+          <input className="field-input" value={lead.dealValue} ... />
+        </div>
+      </div>
+      <div className="details-row">
+        <div className="form-field">
+          <label className="field-label">Contact Email</label>
+          <input className="field-input" type="email" value={lead.contactEmail} ... />
+        </div>
+        <div className="form-field">
+          <label className="field-label">Phone</label>
+          <input className="field-input" value={lead.phone} ... />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr className="details-divider" />
+
+  {/* Section: Assignment */}
+  <div>
+    <div className="details-section-label">Service & Companies</div>
+    <div className="details-section" style={{ gap: 'var(--sp-4)' }}>
+      <div className="form-field details-full">
+        <label className="field-label">Service</label>
+        <CustomSelect value={lead.serviceId} ... />
+      </div>
+      <div className="form-field details-full">
+        <label className="field-label">Companies</label>
+        <CompaniesMultiSelect serviceId={localServiceId} selectedIds={localCompanyIds} onChange={handleCompaniesChange} />
+      </div>
+    </div>
+  </div>
+
+  <hr className="details-divider" />
+
+  {/* Section: Owners */}
+  <div>
+    <div className="details-section-label">Assignment</div>
+    <div className="details-row">
+      <div className="form-field">
+        <label className="field-label">Lead Owner</label>
+        <CustomSelect value={lead.leadOwner} ... />
+      </div>
+      <div className="form-field">
+        <label className="field-label">Deal Handler</label>
+        <CustomSelect value={lead.dealHandler} ... />
+      </div>
+    </div>
+    <div className="details-row" style={{ marginTop: 'var(--sp-4)' }}>
+      <div className="form-field">
+        <label className="field-label">Deal Value (₹)</label>
+        <input className="field-input" value={lead.dealValue} ... />
+      </div>
+      <div className="form-field">
+        <label className="field-label">Follow-up Date</label>
+        <input className="field-input" type="date" value={lead.followUpDate} ... />
+      </div>
+    </div>
+    <div className="form-field details-full" style={{ marginTop: 'var(--sp-4)' }}>
+      <label className="field-label">Next Action</label>
+      <input className="field-input" value={lead.nextAction} ... />
+    </div>
+  </div>
+
+</div>
+```
+
+---
+
+## PART 9 — Fix Notes Tab
+
+```tsx
+// NotesTab.tsx
+<div className="notes-tab">
+  {/* Input area */}
+  <div className="notes-input-wrap">
+    <textarea
+      className="field-textarea notes-textarea"
+      placeholder="Type a new note…"
+      value={newNote}
+      onChange={e => setNewNote(e.target.value)}
+      rows={3}
+      onKeyDown={e => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAddNote();
+      }}
+    />
+    <div className="notes-input-footer">
+      <span className="notes-hint">⌘ + Enter to submit</span>
+      <button
+        className="btn btn-primary btn-sm"
+        onClick={handleAddNote}
+        disabled={!newNote.trim()}
+        type="button"
+      >
+        <Send size={13} /> Add Note
+      </button>
+    </div>
+  </div>
+
+  {/* Notes list */}
+  <div className="notes-list">
+    {notes.length === 0 ? (
+      <div className="empty-state" style={{ padding: 'var(--sp-10) var(--sp-6)' }}>
+        <div className="empty-state-icon"><MessageSquare size={20} /></div>
+        <div className="empty-state-title">No notes yet</div>
+        <div className="empty-state-desc">Add context, follow-up reminders, or any notes about this lead</div>
+      </div>
+    ) : (
+      notes.map(note => <NoteItem key={note.id} note={note} onEdit={handleEdit} onDelete={handleDelete} />)
+    )}
+  </div>
+</div>
+```
+
+```css
+.notes-tab { display: flex; flex-direction: column; gap: var(--sp-5); }
+
+.notes-input-wrap {
+  background: var(--bg-overlay);
+  border: 1.5px solid var(--border-default);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  transition: border-color var(--t-fast);
+}
+.notes-input-wrap:focus-within {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px hsla(172, 72%, 47%, 0.12);
+}
+
+.notes-textarea {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: var(--sp-4) !important;
+  resize: none !important;
+  font-size: var(--text-sm) !important;
+  min-height: 80px;
+}
+
+.notes-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+  border-top: 1px solid var(--border-faint);
+}
+.notes-hint { font-size: var(--text-xs); color: var(--text-faint); }
+
+.notes-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+.note-item {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-faint);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  transition: border-color var(--t-fast);
+}
+.note-item:hover { border-color: var(--border-subtle); }
+
+.note-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+.note-author { display: flex; align-items: center; gap: var(--sp-2); }
+.note-author-name { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); }
+.note-time { font-size: var(--text-xs); color: var(--text-faint); }
+.note-actions { display: flex; gap: 2px; opacity: 0; transition: opacity var(--t-fast); }
+.note-item:hover .note-actions { opacity: 1; }
+.note-content { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.65; white-space: pre-wrap; }
+```
+
+---
+
+## PART 10 — Fix Dashboard Pipeline Chart
+
+### Fix 1: Use display_name not name column for X-axis
+
+```tsx
+// The chart data must use displayName (from the joined pipeline_stages table)
+// NOT the internal name column (snake_case)
+
+const chartData = stages.map(stage => ({
+  // Use displayName — this is what gets shown on X-axis
+  stage: stage.displayName,   // "Lead Initiation", "Qualification & Analysis", etc.
+  count: leads.filter(l => l.pipelineStageId === stage.id).length,
+  fill:  stage.color,
+}));
+```
+
+### Fix 2: Missing stage bar — chart is filtering by `lead.stage` (old column) instead of `lead.pipelineStageId`
+
+```ts
+// WRONG — old column:
+count: leads.filter(l => l.stage === stage.name).length
+
+// CORRECT — new column:
+count: leads.filter(l => l.pipelineStageId === stage.id).length
+```
+
+### Fix 3: All bars same gray — Cell fill not applied correctly
+
+```tsx
+import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+<ResponsiveContainer width="100%" height={220}>
+  <BarChart data={chartData} margin={{ top: 10, right: 16, left: -10, bottom: 0 }}>
+    <CartesianGrid
+      strokeDasharray="3 3"
+      stroke="hsl(222, 15%, 20%)"
+      vertical={false}
+    />
+    <XAxis
+      dataKey="stage"
+      tick={{ fill: 'hsl(210, 18%, 55%)', fontSize: 12, fontFamily: 'DM Sans, sans-serif' }}
+      axisLine={false}
+      tickLine={false}
+      interval={0}
+      // Wrap long labels
+      tickFormatter={(val) => val.length > 14 ? val.slice(0, 13) + '…' : val}
+    />
+    <YAxis
+      tick={{ fill: 'hsl(210, 14%, 45%)', fontSize: 11 }}
+      axisLine={false}
+      tickLine={false}
+      allowDecimals={false}
+      width={28}
+    />
+    <Tooltip
+      cursor={{ fill: 'hsla(222, 15%, 25%, 0.4)' }}
+      content={<CustomPipelineTooltip />}
+    />
+    <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={60}>
+      {chartData.map((entry, index) => (
+        <Cell
+          key={`cell-${index}`}
+          fill={entry.fill}
+          fillOpacity={0.9}
+        />
+      ))}
+    </Bar>
+  </BarChart>
+</ResponsiveContainer>
+```
+
+### Fix 4: Custom Tooltip (fix black text on dark background)
+
+```tsx
+// CustomPipelineTooltip.tsx
+const CustomPipelineTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const count = payload[0]?.value ?? 0;
+  const color = payload[0]?.payload?.fill ?? 'var(--teal)';
+
+  return (
+    <div style={{
+      background: 'hsl(222, 20%, 11%)',           // dark panel
+      border: `1px solid hsl(222, 15%, 26%)`,
+      borderRadius: 10,
+      padding: '8px 14px',
+      boxShadow: '0 8px 32px hsla(222, 22%, 2%, 0.65)',
+      fontFamily: 'DM Sans, sans-serif',
+      minWidth: 140,
+    }}>
+      <div style={{
+        fontSize: 13,
+        fontWeight: 700,
+        color: 'hsl(210, 30%, 92%)',              // ← light text on dark bg
+        marginBottom: 4,
+      }}>
+        {label}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+        <span style={{
+          fontSize: 13,
+          color: 'hsl(210, 20%, 68%)',             // ← readable secondary text
+          fontWeight: 500,
+        }}>
+          {count} {count === 1 ? 'Lead' : 'Leads'}
+        </span>
+      </div>
+    </div>
+  );
+};
+```
+
+Apply same custom tooltip to ALL charts in the system (Lead Generation area chart, Analytics charts):
+```tsx
+// For area chart / line chart tooltips — same pattern:
+const CustomAreaTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: 'hsl(222, 20%, 11%)',
+      border: '1px solid hsl(222, 15%, 26%)',
+      borderRadius: 10,
+      padding: '8px 14px',
+      boxShadow: '0 8px 32px hsla(222, 22%, 2%, 0.65)',
+      fontFamily: 'DM Sans, sans-serif',
+    }}>
+      <div style={{ fontSize: 12, color: 'hsl(210, 14%, 50%)', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: 'hsl(172, 72%, 50%)' }}>
+        {payload[0]?.value} Leads
+      </div>
+    </div>
+  );
+};
+```
+
+---
+
+## PART 11 — Complete Test Checklist
+
+Run every single item. Do not skip any:
+
+### Sheet Scroll Isolation
+- [ ] Open any lead → scroll inside the sheet → page behind does NOT scroll
+- [ ] Open lead on mobile → touch-scroll sheet body → page behind doesn't move
+- [ ] Close sheet → page behind's scroll position is restored exactly
+
+### Duplicate Close Button
+- [ ] Open any lead → EXACTLY ONE ×/close button visible, top-right of sheet topbar
+- [ ] No second X visible floating anywhere else
+- [ ] Click X → sheet closes with animation
+
+### Lead Header Badges
+- [ ] Lead name is large, bold, readable (font-display, 24px+)
+- [ ] Stage badge shows correct stage name with colored dot and colored text/bg
+- [ ] Status badge shows correct status name with colored dot
+- [ ] Lead type badge shows emoji + type name
+- [ ] Deal value shows formatted ₹ value (not raw 200000 → shows ₹2.00L)
+- [ ] All badges visible without horizontal scroll on standard screen
+
+### Stage & Status Populated on Open
+- [ ] Open a lead that has stage set → Stage dropdown shows correct stage (not "Select stage…")
+- [ ] Status dropdown shows correct status for that stage
+- [ ] Open a different lead → stage and status update to the new lead's values
+- [ ] Close and reopen same lead → stage/status still correct
+
+### Pipeline Progress Bar
+- [ ] 4 stages shown in correct order
+- [ ] Past stages: colored dot + filled connector line
+- [ ] Current stage: colored dot with glow + current status shown below
+- [ ] Future stages: gray dot, gray connector
+- [ ] Does not overflow or wrap awkwardly
+- [ ] Fits in horizontal space, no overlap
+
+### Sheet Tabs
+- [ ] "Details" and "Notes" tabs visible
+- [ ] Active tab has teal bottom-border indicator and teal text
+- [ ] Inactive tab has muted text
+- [ ] Clicking each tab switches content correctly
+
+### All Dropdowns (CustomSelect)
+- [ ] Stage dropdown: opens with animation, dark panel, teal-tinted selected item
+- [ ] Status dropdown: disabled when no stage selected, enabled and filtered when stage set
+- [ ] Lead Type dropdown: shows emoji prefix (🔥☀️🧊👻) for each option
+- [ ] Service dropdown: lists all services, teal highlight on selected
+- [ ] Lead Owner dropdown: shows user initials avatar + name for each user
+- [ ] Deal Handler dropdown: same as Lead Owner
+- [ ] ALL dropdowns — zero bright blue (#0052cc) highlight anywhere
+- [ ] ALL dropdowns — clicking outside closes the panel
+- [ ] ALL dropdowns — Escape key closes the panel
+- [ ] ALL dropdowns — trigger gets teal border + focus ring when open
+
+### Notes Tab
+- [ ] Notes textarea is inside a bordered container (not a floating raw textarea)
+- [ ] "Add Note" button is inside the input area footer (not floating on the side)
+- [ ] ⌘+Enter submits the note
+- [ ] Empty state shows icon + "No notes yet" + description
+- [ ] Added notes appear in list with author, time, content
+- [ ] Hover on note reveals edit/delete buttons
+- [ ] Own notes are editable/deletable, others' notes are read-only
+
+### Dashboard Pipeline Chart
+- [ ] Chart shows ALL 4 stages as bars (no missing bar)
+- [ ] X-axis labels: "Lead Initiation", "Qualification & Analysis", "Proposal & Negotiation", "Closure" (Title Case, NO snake_case)
+- [ ] Each bar has correct per-stage color (blue/amber/purple/green)
+- [ ] Tooltip: dark background panel, white text, "N Leads" label
+- [ ] Tooltip: stage name in white/light text, count readable
+- [ ] Hovering each bar shows correct stage name and count
+- [ ] Zero bars are gray/same color
+
+### All Other Charts
+- [ ] Lead Generation area chart tooltip: dark bg, light text
+- [ ] Analytics conversion chart tooltip: dark bg, light text
+- [ ] Kill reasons / closure chart: same tooltip fix

@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   useGetLeads, useGetAnalyticsStats, useGetLeadTrend,
-  useGetStageDistribution, useGetServices, useGetCompanies,
+  useGetServices, useGetCompanies,
 } from "@workspace/api-client-react";
+import { usePipelineStages } from "@/hooks/use-pipeline";
 import { StatCardSkeleton, TableRowSkeleton } from "@/components/skeleton";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -69,13 +70,74 @@ const STAGE_LABELS: Record<string, string> = {
   resolution:    "Resolution",
 };
 
+// ─── Custom Pipeline Tooltip ──────────────────────────
+function PipelineTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const count = payload[0]?.value ?? 0;
+  const color = payload[0]?.payload?.fill ?? "var(--teal)";
+  return (
+    <div style={{
+      background: "hsl(222, 20%, 11%)",
+      border: "1px solid hsl(222, 15%, 26%)",
+      borderRadius: 10,
+      padding: "8px 14px",
+      boxShadow: "0 8px 32px hsla(222, 22%, 2%, 0.65)",
+      fontFamily: "DM Sans, sans-serif",
+      minWidth: 140,
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "hsl(210, 30%, 92%)", marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0, display: "inline-block" }} />
+        <span style={{ fontSize: 13, color: "hsl(210, 20%, 68%)", fontWeight: 500 }}>
+          {count} {count === 1 ? "Lead" : "Leads"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Custom Area Tooltip ──────────────────────────────
+function AreaTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{
+      background: "hsl(222, 20%, 11%)",
+      border: "1px solid hsl(222, 15%, 26%)",
+      borderRadius: 10,
+      padding: "8px 14px",
+      boxShadow: "0 8px 32px hsla(222, 22%, 2%, 0.65)",
+      fontFamily: "DM Sans, sans-serif",
+    }}>
+      <div style={{ fontSize: 12, color: "hsl(210, 14%, 50%)", marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "hsl(172, 72%, 50%)" }}>
+        {payload[0]?.value} Leads
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard() {
   const { data: leads = [], isLoading: leadsLoading } = useGetLeads();
   const { data: trendData = [] } = useGetLeadTrend();
-  const { data: stageDist = [] } = useGetStageDistribution();
+  const { data: pipelineStages = [] } = usePipelineStages();
   const { data: services = [] } = useGetServices();
   const { data: allCompanies = [] } = useGetCompanies();
   const { resolveName } = useUserMap();
+
+  // Compute chart data from pipeline stages + leads
+  const stageChartData = useMemo(() =>
+    pipelineStages
+      .filter((s) => s.isActive)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((stage) => ({
+        stage: stage.displayName,
+        count: leads.filter((l: any) => l.pipelineStageId === stage.id).length,
+        fill: stage.color,
+      })),
+    [pipelineStages, leads]
+  );
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
@@ -329,10 +391,8 @@ export function Dashboard() {
               <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)} />
               <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
               <Tooltip
-                contentStyle={tooltipStyle}
                 cursor={{ stroke: "var(--border-default)" }}
-                formatter={(value: any) => [value, "Leads Created"]}
-                labelFormatter={(label: string) => `Date: ${label}`}
+                content={<AreaTooltip />}
               />
               <Area type="monotone" dataKey="count" stroke="hsl(172 75% 48%)" strokeWidth={2.5} fillOpacity={1} fill="url(#tealGrad)" />
             </AreaChart>
@@ -342,36 +402,36 @@ export function Dashboard() {
           <div className="chart-title">Pipeline by Stage</div>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={stageDist.map((d: any) => ({
-                ...d,
-                label: d.stageName || STAGE_LABELS[d.stage] || d.stage,
-                color: d.stageColor || STAGE_COLORS[d.stage] || "var(--border-strong)",
-              }))}
-              margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+              data={stageChartData}
+              margin={{ top: 10, right: 16, left: -10, bottom: 0 }}
             >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 18%)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 20%)" vertical={false} />
               <XAxis
-                dataKey="label"
-                tick={{ fill: "hsl(210, 14%, 48%)", fontSize: 12, fontFamily: "DM Sans" }}
-                tickLine={false}
+                dataKey="stage"
+                tick={{ fill: "hsl(210, 18%, 55%)", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}
                 axisLine={false}
+                tickLine={false}
+                interval={0}
+                tickFormatter={(val: string) => val.length > 14 ? val.slice(0, 13) + "…" : val}
               />
               <YAxis
-                tick={{ fill: "hsl(210, 14%, 48%)", fontSize: 11, fontFamily: "DM Sans" }}
-                tickLine={false}
+                tick={{ fill: "hsl(210, 14%, 45%)", fontSize: 11 }}
                 axisLine={false}
+                tickLine={false}
                 allowDecimals={false}
                 width={28}
               />
               <Tooltip
-                contentStyle={tooltipStyle}
-                cursor={{ fill: "hsla(222, 15%, 22%, 0.5)" }}
-                formatter={(value: any) => [`${value} Lead${value !== 1 ? "s" : ""}`, ""]}
-                labelStyle={{ color: "hsl(210, 30%, 95%)", fontWeight: 600, marginBottom: 2 }}
+                cursor={{ fill: "hsla(222, 15%, 25%, 0.4)" }}
+                content={<PipelineTooltip />}
               />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={56}>
-                {stageDist.map((entry: any, i: number) => (
-                  <Cell key={i} fill={entry.stageColor || STAGE_COLORS[entry.stage] || "var(--border-strong)"} />
+              <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={60}>
+                {stageChartData.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.fill}
+                    fillOpacity={0.9}
+                  />
                 ))}
               </Bar>
             </BarChart>
