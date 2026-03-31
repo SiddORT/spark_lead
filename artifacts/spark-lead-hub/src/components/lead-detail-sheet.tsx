@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   useGetLead, useUpdateLead, useGetLeadNotes, useAddLeadNote,
-  useDeleteLeadNote, useGetLeadActivities,
+  useDeleteLeadNote, useGetLeadActivities, useDeleteLead,
   useGetServices, useGetServiceCompanies, getGetLeadsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -510,6 +510,7 @@ export function LeadDetailSheet({
   const queryClient                    = useQueryClient();
   const { data: pipelineStages = [] }  = usePipelineStages();
   const [activeTab, setActiveTab]      = useState<"details" | "notes">("details");
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // ── Local pipeline state — sync on lead change ──
   const [localStageId,    setLocalStageId]    = useState<string | null>(null);
@@ -526,7 +527,7 @@ export function LeadDetailSheet({
     }
   }, [lead?.id, lead?.pipelineStageId, lead?.pipelineStatusId, lead?.serviceId]);
 
-  // ── Body scroll lock ──
+  // ── Body scroll lock + reset confirmation on close ──
   useEffect(() => {
     if (open) {
       const scrollY = window.scrollY;
@@ -535,6 +536,7 @@ export function LeadDetailSheet({
       document.body.style.width    = "100%";
       document.body.style.overflow = "hidden";
     } else {
+      setConfirmingDelete(false);
       const scrollY = document.body.style.top;
       document.body.style.position = "";
       document.body.style.top      = "";
@@ -559,6 +561,25 @@ export function LeadDetailSheet({
       },
     },
   });
+
+  const deleteLeadMutation = useDeleteLead({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
+        toast.success("Lead deleted");
+        onOpenChange(false);
+      },
+      onError: () => {
+        toast.error("Failed to delete lead");
+        setConfirmingDelete(false);
+      },
+    },
+  });
+
+  const handleDeleteConfirm = () => {
+    if (!lead) return;
+    deleteLeadMutation.mutate({ id: lead.id });
+  };
 
   const handleUpdate = (field: string, value: any) => {
     if (!lead) return;
@@ -656,14 +677,44 @@ export function LeadDetailSheet({
             )}
           </div>
 
-          {/* Single close button */}
-          <button
-            className="sheet-close-btn"
-            onClick={() => onOpenChange(false)}
-            aria-label="Close"
-          >
-            <X size={16} />
-          </button>
+          {/* Actions: delete + close */}
+          <div className="sheet-topbar-actions">
+            {confirmingDelete ? (
+              <>
+                <span className="sheet-delete-confirm-label">Delete this lead?</span>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={handleDeleteConfirm}
+                  disabled={deleteLeadMutation.isPending}
+                >
+                  {deleteLeadMutation.isPending ? "Deleting…" : "Yes, delete"}
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setConfirmingDelete(false)}
+                  disabled={deleteLeadMutation.isPending}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                className="sheet-delete-btn"
+                onClick={() => setConfirmingDelete(true)}
+                aria-label="Delete lead"
+                title="Delete lead"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+            <button
+              className="sheet-close-btn"
+              onClick={() => onOpenChange(false)}
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* ── Pipeline Progress Bar ── */}

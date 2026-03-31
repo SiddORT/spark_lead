@@ -2217,6 +2217,41 @@ a:hover { opacity: 0.85; }
   border-color: var(--border-default);
 }
 
+/* Topbar actions cluster (delete + close) */
+.sheet-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Delete icon button */
+.sheet-delete-btn {
+  width: 32px; height: 32px;
+  border-radius: var(--r-md);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.sheet-delete-btn:hover {
+  background: var(--danger-dim);
+  border-color: hsla(4, 68%, 58%, 0.35);
+  color: var(--danger);
+}
+
+/* Inline delete confirmation label */
+.sheet-delete-confirm-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--danger);
+  white-space: nowrap;
+  padding: 0 var(--sp-1);
+}
+
 /* ── Sheet Tabs ── */
 .sheet-tabs {
   display: flex !important;
