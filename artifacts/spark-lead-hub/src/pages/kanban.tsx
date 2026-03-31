@@ -191,7 +191,7 @@ export function KanbanBoard() {
                                   background: snapshot.isDragging ? "var(--bg-overlay)" : "var(--bg-subtle)",
                                   border: `1px solid ${snapshot.isDragging ? stage.color : "var(--border-subtle)"}`,
                                   borderRadius: "var(--radius-md)",
-                                  padding: "var(--space-3)",
+                                  padding: "12px 14px",
                                   cursor: "grab",
                                   transition: snapshot.isDragging ? "none" : "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
                                   boxShadow: snapshot.isDragging
@@ -212,16 +212,16 @@ export function KanbanBoard() {
                                 }}
                               >
                                 {/* Card header */}
-                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-2)", marginBottom: lead.company ? 2 : 4 }}>
-                                  <span style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-primary)", lineHeight: 1.3, flex: 1 }}>
+                                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-2)", marginBottom: lead.company ? 3 : 6 }}>
+                                  <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.35, flex: 1 }}>
                                     {lead.leadName}
                                   </span>
-                                  <span style={{ fontSize: "var(--text-base)", flexShrink: 0 }}>
+                                  <span style={{ fontSize: 16, flexShrink: 0 }}>
                                     {TYPE_EMOJI[lead.leadType || "cold"] || "🧊"}
                                   </span>
                                 </div>
                                 {lead.company && (
-                                  <div style={{ fontSize: 10, color: "var(--text-muted)", marginBottom: 4, lineHeight: 1.3 }}>
+                                  <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 6, lineHeight: 1.3, fontWeight: 500 }}>
                                     {lead.company}
                                   </div>
                                 )}
@@ -231,12 +231,12 @@ export function KanbanBoard() {
                                   <div style={{ marginBottom: "var(--space-2)" }}>
                                     <span style={{
                                       display: "inline-block",
-                                      padding: "1px 6px",
-                                      background: `${lead.statusColor || stage.color}18`,
-                                      border: `1px solid ${lead.statusColor || stage.color}30`,
+                                      padding: "2px 8px",
+                                      background: `${lead.statusColor || stage.color}22`,
+                                      border: `1px solid ${lead.statusColor || stage.color}45`,
                                       borderRadius: "var(--radius-full)",
                                       color: lead.statusColor || stage.color,
-                                      fontSize: 9,
+                                      fontSize: 11,
                                       fontWeight: 600,
                                       lineHeight: 1.7,
                                     }}>
@@ -246,21 +246,21 @@ export function KanbanBoard() {
                                 )}
 
                                 {lead.companies && lead.companies.length > 0 && (
-                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: "var(--space-2)" }}>
+                                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: "var(--space-2)" }}>
                                     {(lead.companies as any[]).slice(0, 2).map((c: any) => (
                                       <span key={c.id} style={{
-                                        display: "inline-block", padding: "1px 5px",
-                                        background: "hsl(172 75% 48% / 0.08)", border: "1px solid hsl(172 75% 48% / 0.18)",
+                                        display: "inline-block", padding: "2px 7px",
+                                        background: "hsl(172 75% 48% / 0.1)", border: "1px solid hsl(172 75% 48% / 0.25)",
                                         borderRadius: "var(--radius-full)", color: "var(--teal)",
-                                        fontSize: 9, fontWeight: 500, lineHeight: 1.7, whiteSpace: "nowrap",
+                                        fontSize: 11, fontWeight: 500, lineHeight: 1.6, whiteSpace: "nowrap",
                                       }}>{c.name}</span>
                                     ))}
                                     {lead.companies.length > 2 && (
                                       <span style={{
-                                        display: "inline-block", padding: "1px 5px",
+                                        display: "inline-block", padding: "2px 7px",
                                         background: "var(--bg-muted)", border: "1px solid var(--border-subtle)",
-                                        borderRadius: "var(--radius-full)", color: "var(--text-muted)",
-                                        fontSize: 9, fontWeight: 500, lineHeight: 1.7,
+                                        borderRadius: "var(--radius-full)", color: "var(--text-secondary)",
+                                        fontSize: 11, fontWeight: 500, lineHeight: 1.6,
                                       }}>+{lead.companies.length - 2}</span>
                                     )}
                                   </div>
@@ -297,7 +297,7 @@ export function KanbanBoard() {
                                     )}
                                   </div>
                                   {lead.dealValue && (
-                                    <span style={{ fontSize: "var(--text-xs)", fontWeight: 700, color: "var(--teal)", fontFamily: "monospace" }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", fontFamily: "monospace" }}>
                                       {formatValue(Number(lead.dealValue))}
                                     </span>
                                   )}
