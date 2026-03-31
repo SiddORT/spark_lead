@@ -10,7 +10,6 @@ import permissionsRouter from "./permissions";
 import auditRouter from "./audit";
 import analyticsRouter from "./analytics";
 import pipelineRouter from "./pipeline";
-import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -18,7 +17,6 @@ router.use(healthRouter);
 router.use("/auth", authRouter);
 router.use("/access-requests", accessRouter);
 router.use("/leads", leadsRouter);
-router.use("/leads", aiRouter);
 router.use("/companies", companiesRouter);
 router.use("/services", servicesRouter);
 router.use("/team", teamRouter);

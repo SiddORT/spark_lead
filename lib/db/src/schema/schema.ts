@@ -217,9 +217,6 @@ export const leadsTable = pgTable("leads", {
   internalRating: integer("internal_rating"),
   resolvedAt: timestamp("resolved_at"),
   frictionPoint: frictionPointEnum("friction_point"),
-  aiNotes: text("ai_notes"),
-  nextActions: jsonb("next_actions").$type<string[]>(),
-  lastAiGeneratedAt: timestamp("last_ai_generated_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

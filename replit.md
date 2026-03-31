@@ -35,7 +35,7 @@ Custom CSS design tokens — NOT relying on shadcn defaults for layout:
 
 1. **Dashboard** — Stats, area/bar charts, leads table with dynamic pipeline stage badges; lead company shown as subtitle under lead name
 2. **Kanban Board** — Dynamic pipeline columns from DB-driven stages (usePipelineStages hook), status badges on cards; lead company shown under lead name
-3. **Lead Detail Sheet** — 4 tabs: Details, Notes, Timeline, AI Insights; Pipeline progress bar, StageStatusSelect, Lead Company editable field
+3. **Lead Detail Sheet** — 3 tabs: Details, Notes, Timeline; Pipeline progress bar, StageStatusSelect, Lead Company editable field
 4. **Analytics** — Win rate, conversion trends, weekly charts, kill reasons, closure breakdown pie chart
 5. **Team Management** — Invite users, set roles, approve/reject access requests
 6. **Permissions** — Granular RBAC per resource/action per role

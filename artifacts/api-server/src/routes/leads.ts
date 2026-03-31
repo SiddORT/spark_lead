@@ -109,9 +109,6 @@ function formatLead(lead: any) {
       createdBy: c?.createdBy || null,
       createdAt: c?.createdAt?.toISOString?.() || new Date().toISOString(),
     })),
-    aiNotes: lead.aiNotes || null,
-    nextActions: (lead.nextActions as string[] | null) || null,
-    lastAiGeneratedAt: lead.lastAiGeneratedAt?.toISOString?.() || lead.lastAiGeneratedAt || null,
     createdAt: lead.createdAt?.toISOString?.() || lead.createdAt,
     updatedAt: lead.updatedAt?.toISOString?.() || lead.updatedAt,
   };

@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
-  FileText, MessageSquare, History, Sparkles, RefreshCw, Zap,
+  FileText, MessageSquare, History,
 } from "lucide-react";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useAuth } from "./auth-provider";
@@ -555,228 +555,6 @@ function TimelineTab({ leadId }: { leadId: string }) {
   );
 }
 
-// ─── AI Insights Tab ──────────────────────────────────
-function AiInsightsTab({ lead }: { lead: any }) {
-  const queryClient = useQueryClient();
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [localAiNotes, setLocalAiNotes] = useState<string | null>(lead.aiNotes || null);
-  const [localNextActions, setLocalNextActions] = useState<string[] | null>(lead.nextActions || null);
-  const [localGeneratedAt, setLocalGeneratedAt] = useState<string | null>(lead.lastAiGeneratedAt || null);
-
-  useEffect(() => {
-    setLocalAiNotes(lead.aiNotes || null);
-    setLocalNextActions(lead.nextActions || null);
-    setLocalGeneratedAt(lead.lastAiGeneratedAt || null);
-  }, [lead.id, lead.aiNotes, lead.nextActions, lead.lastAiGeneratedAt]);
-
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    try {
-      const token = localStorage.getItem("slh_token");
-      const res = await fetch(`/api/leads/${lead.id}/generate-notes`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) throw new Error("Generation failed");
-      const data = await res.json();
-      setLocalAiNotes(data.aiNotes);
-      setLocalNextActions(data.nextActions);
-      setLocalGeneratedAt(data.lastAiGeneratedAt);
-      queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
-      queryClient.invalidateQueries({ queryKey: [`/api/leads/${lead.id}`] });
-      toast.success("AI notes generated");
-    } catch {
-      toast.error("Failed to generate AI notes");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  return (
-    <div style={{ padding: "var(--sp-5)", display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
-      {/* Generate button header */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "var(--sp-4)",
-        background: "linear-gradient(135deg, rgba(0,255,200,0.06) 0%, rgba(0,200,255,0.04) 100%)",
-        border: "1px solid rgba(0,255,200,0.15)",
-        borderRadius: "var(--r-lg)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-3)" }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: "var(--r-md)",
-            background: "linear-gradient(135deg, rgba(0,255,200,0.2), rgba(0,200,255,0.2))",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            border: "1px solid rgba(0,255,200,0.3)",
-          }}>
-            <Sparkles size={16} style={{ color: "var(--teal)" }} />
-          </div>
-          <div>
-            <div style={{ fontSize: "var(--t-sm)", fontWeight: 700, color: "var(--text-primary)" }}>AI Insights</div>
-            {localGeneratedAt ? (
-              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>
-                Last generated {formatDistanceToNow(new Date(localGeneratedAt), { addSuffix: true })}
-              </div>
-            ) : (
-              <div style={{ fontSize: 10, color: "var(--text-muted)", marginTop: 1 }}>No notes generated yet</div>
-            )}
-          </div>
-        </div>
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "6px 14px",
-            background: isGenerating ? "rgba(0,255,200,0.08)" : "linear-gradient(135deg, rgba(0,255,200,0.15), rgba(0,200,255,0.12))",
-            border: "1px solid rgba(0,255,200,0.3)",
-            borderRadius: "var(--r-full)",
-            color: "var(--teal)",
-            fontSize: "var(--t-xs)", fontWeight: 600,
-            cursor: isGenerating ? "not-allowed" : "pointer",
-            transition: "all 0.2s",
-            opacity: isGenerating ? 0.7 : 1,
-          }}
-        >
-          <RefreshCw size={12} style={{ animation: isGenerating ? "spin 1s linear infinite" : undefined }} />
-          {isGenerating ? "Generating…" : localGeneratedAt ? "Regenerate" : "Generate"}
-        </button>
-      </div>
-
-      {/* AI Notes */}
-      {localAiNotes ? (
-        <div style={{
-          background: "rgba(10,15,25,0.8)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          borderRadius: "var(--r-lg)",
-          overflow: "hidden",
-        }}>
-          <div style={{
-            padding: "var(--sp-3) var(--sp-4)",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
-            display: "flex", alignItems: "center", gap: "var(--sp-2)",
-            background: "rgba(255,255,255,0.02)",
-          }}>
-            <FileText size={12} style={{ color: "var(--teal)", flexShrink: 0 }} />
-            <span style={{ fontSize: "var(--t-xs)", fontWeight: 700, color: "var(--text-secondary)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              AI Generated Notes
-            </span>
-          </div>
-          <div style={{ padding: "var(--sp-4)" }}>
-            {localAiNotes.split("\n").map((line, i) => {
-              if (!line.trim()) return <div key={i} style={{ height: "var(--sp-2)" }} />;
-              const isBold = line.startsWith("**") && line.endsWith("**");
-              const isBullet = line.startsWith("- ") || line.startsWith("• ");
-              const text = isBold ? line.replace(/\*\*/g, "") : isBullet ? line.slice(2) : line;
-              if (isBold) return (
-                <div key={i} style={{ fontSize: "var(--t-xs)", fontWeight: 700, color: "var(--teal)", marginBottom: "var(--sp-1)", marginTop: i > 0 ? "var(--sp-2)" : 0 }}>
-                  {text}
-                </div>
-              );
-              if (isBullet) return (
-                <div key={i} style={{ display: "flex", gap: "var(--sp-2)", fontSize: "var(--t-xs)", color: "var(--text-secondary)", lineHeight: 1.6, marginLeft: "var(--sp-2)" }}>
-                  <span style={{ color: "var(--teal)", flexShrink: 0, marginTop: 1 }}>›</span>
-                  <span>{text}</span>
-                </div>
-              );
-              return (
-                <div key={i} style={{ fontSize: "var(--t-xs)", color: "var(--text-muted)", lineHeight: 1.6 }}>
-                  {text}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ) : !isGenerating && (
-        <div style={{
-          padding: "var(--sp-8) var(--sp-4)",
-          textAlign: "center",
-          background: "rgba(10,15,25,0.5)",
-          border: "1px dashed rgba(255,255,255,0.08)",
-          borderRadius: "var(--r-lg)",
-        }}>
-          <Sparkles size={22} style={{ color: "rgba(0,255,200,0.25)", marginBottom: "var(--sp-2)" }} />
-          <div style={{ fontSize: "var(--t-sm)", color: "var(--text-muted)", marginBottom: 4 }}>No AI notes yet</div>
-          <div style={{ fontSize: "var(--t-xs)", color: "rgba(255,255,255,0.25)" }}>
-            Click "Generate" to create professional sales notes for this lead
-          </div>
-        </div>
-      )}
-
-      {isGenerating && (
-        <div style={{
-          padding: "var(--sp-8) var(--sp-4)",
-          textAlign: "center",
-          background: "rgba(10,15,25,0.5)",
-          border: "1px solid rgba(0,255,200,0.1)",
-          borderRadius: "var(--r-lg)",
-        }}>
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: "var(--sp-3)" }}>
-            {[0, 1, 2].map(i => (
-              <div key={i} style={{
-                width: 6, height: 6, borderRadius: "50%",
-                background: "var(--teal)",
-                animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-              }} />
-            ))}
-          </div>
-          <div style={{ fontSize: "var(--t-xs)", color: "var(--text-muted)" }}>Generating AI insights…</div>
-        </div>
-      )}
-
-      {/* Suggested Actions */}
-      {localNextActions && localNextActions.length > 0 && (
-        <div style={{
-          background: "rgba(10,15,25,0.8)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          borderRadius: "var(--r-lg)",
-          overflow: "hidden",
-        }}>
-          <div style={{
-            padding: "var(--sp-3) var(--sp-4)",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
-            display: "flex", alignItems: "center", gap: "var(--sp-2)",
-            background: "rgba(255,255,255,0.02)",
-          }}>
-            <Zap size={12} style={{ color: "#f59e0b", flexShrink: 0 }} />
-            <span style={{ fontSize: "var(--t-xs)", fontWeight: 700, color: "var(--text-secondary)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Suggested Next Actions
-            </span>
-          </div>
-          <div style={{ padding: "var(--sp-3) var(--sp-4)", display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
-            {localNextActions.map((action: string, i: number) => (
-              <div key={i} style={{
-                display: "flex", alignItems: "center", gap: "var(--sp-3)",
-                padding: "var(--sp-2) var(--sp-3)",
-                background: "rgba(245,158,11,0.06)",
-                border: "1px solid rgba(245,158,11,0.15)",
-                borderRadius: "var(--r-md)",
-                cursor: "default",
-                transition: "all 0.15s",
-              }}>
-                <div style={{
-                  width: 18, height: 18, borderRadius: "50%",
-                  background: "rgba(245,158,11,0.15)",
-                  border: "1px solid rgba(245,158,11,0.25)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0,
-                  fontSize: 9, fontWeight: 700, color: "#f59e0b",
-                }}>
-                  {i + 1}
-                </div>
-                <span style={{ fontSize: "var(--t-xs)", color: "var(--text-secondary)", flex: 1 }}>{action}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Main sheet component ─────────────────────────────
 export function LeadDetailSheet({
   leadId,
@@ -791,7 +569,7 @@ export function LeadDetailSheet({
   const { users }                      = useUserMap();
   const queryClient                    = useQueryClient();
   const { data: pipelineStages = [] }  = usePipelineStages();
-  const [activeTab, setActiveTab]      = useState<"details" | "notes" | "timeline" | "ai">("details");
+  const [activeTab, setActiveTab]      = useState<"details" | "notes" | "timeline">("details");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -1023,12 +801,11 @@ export function LeadDetailSheet({
             { id: "details",  label: "Details",       icon: <FileText size={13} /> },
             { id: "notes",    label: "Notes",          icon: <MessageSquare size={13} /> },
             { id: "timeline", label: "Timeline",       icon: <History size={13} /> },
-            { id: "ai",       label: "AI Insights",    icon: <Sparkles size={13} /> },
           ].map((tab) => (
             <button
               key={tab.id}
-              className={`sheet-tab ${activeTab === tab.id ? "is-active" : ""}${tab.id === "ai" ? " sheet-tab-ai" : ""}`}
-              onClick={() => setActiveTab(tab.id as "details" | "notes" | "timeline" | "ai")}
+              className={`sheet-tab ${activeTab === tab.id ? "is-active" : ""}`}
+              onClick={() => setActiveTab(tab.id as "details" | "notes" | "timeline")}
               type="button"
             >
               {tab.icon}
@@ -1065,8 +842,6 @@ export function LeadDetailSheet({
             />
           ) : activeTab === "timeline" ? (
             <TimelineTab leadId={lead.id} />
-          ) : activeTab === "ai" ? (
-            <AiInsightsTab lead={lead} />
           ) : (
             <NotesSection leadId={lead.id} />
           )}
