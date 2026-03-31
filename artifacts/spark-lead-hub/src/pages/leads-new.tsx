@@ -5,6 +5,7 @@ import { useUserMap } from "@/hooks/use-user-map";
 import { toast } from "sonner";
 import { PlusCircle, ArrowLeft } from "lucide-react";
 import { StageStatusSelect } from "@/components/stage-status-select";
+import { CustomSelect } from "@/components/custom-select";
 
 const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
   <label style={{
@@ -54,27 +55,6 @@ function StyledInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   );
 }
 
-function StyledSelect(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <select
-      {...props}
-      style={{
-        ...fieldStyle,
-        appearance: "none",
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' viewBox='0 0 24 24'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "right 12px center",
-        paddingRight: 32,
-        cursor: "pointer",
-        ...(focused ? focusStyle : {}),
-        ...props.style,
-      }}
-      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
-      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
-    />
-  );
-}
 
 function StyledTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const [focused, setFocused] = useState(false);
@@ -217,12 +197,16 @@ export function NewLead() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
               <div>
                 <FieldLabel>Lead Type</FieldLabel>
-                <StyledSelect value={formData.leadType} onChange={e => set("leadType", e.target.value)}>
-                  <option value="hot">🔥 Hot</option>
-                  <option value="warm">☀️ Warm</option>
-                  <option value="cold">🧊 Cold</option>
-                  <option value="ghosted">👻 Ghosted</option>
-                </StyledSelect>
+                <CustomSelect
+                  value={formData.leadType}
+                  onChange={val => set("leadType", val)}
+                  options={[
+                    { value: "hot",     label: "Hot",     prefix: "🔥" },
+                    { value: "warm",    label: "Warm",    prefix: "☀️" },
+                    { value: "cold",    label: "Cold",    prefix: "🧊" },
+                    { value: "ghosted", label: "Ghosted", prefix: "👻" },
+                  ]}
+                />
               </div>
               <div>
                 <FieldLabel>Deal Value (₹)</FieldLabel>
@@ -272,22 +256,23 @@ export function NewLead() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
               <div>
                 <FieldLabel>Service</FieldLabel>
-                <StyledSelect
-                  value={formData.serviceId}
-                  onChange={e => set("serviceId", e.target.value)}
-                >
-                  <option value="">Select service…</option>
-                  {services?.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </StyledSelect>
+                <CustomSelect
+                  value={formData.serviceId || null}
+                  onChange={val => set("serviceId", val)}
+                  placeholder="Select service…"
+                  options={(services || []).map(s => ({ value: s.id, label: s.name }))}
+                />
               </div>
               <div>
                 <FieldLabel>Lead Owner</FieldLabel>
-                <StyledSelect value={formData.leadOwner} onChange={e => set("leadOwner", e.target.value)}>
-                  <option value="">Unassigned</option>
-                  {users.filter(u => ["admin", "lead_owner"].includes(u.role)).map(u => (
-                    <option key={u.id} value={u.id}>{u.displayName}</option>
-                  ))}
-                </StyledSelect>
+                <CustomSelect
+                  value={formData.leadOwner || null}
+                  onChange={val => set("leadOwner", val)}
+                  placeholder="Unassigned"
+                  options={users
+                    .filter(u => ["admin", "lead_owner"].includes(u.role))
+                    .map(u => ({ value: u.id, label: u.displayName || u.email }))}
+                />
               </div>
             </div>
 

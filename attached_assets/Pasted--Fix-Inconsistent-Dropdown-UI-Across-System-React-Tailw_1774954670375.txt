@@ -1,0 +1,179 @@
+## 🎯 Fix Inconsistent Dropdown UI Across System (React + Tailwind)
+
+### ❗ Problem
+
+Currently, dropdowns in the system are inconsistent:
+
+* Some dropdowns (like **Pipeline Stage**) look **premium and styled correctly**
+* Others (Lead Type, Service, Lead Owner) look:
+
+  * Plain / default
+  * Different background
+  * Different hover/active styles
+  * Not matching dark theme
+* UX feels **unpolished and inconsistent**
+
+---
+
+### 🎯 Goal
+
+Make **ALL dropdowns look like the Pipeline Stage dropdown**
+
+✅ Same:
+
+* Background color
+* Border + glow
+* Rounded corners
+* Hover state
+* Selected state
+* Font + spacing
+* Dropdown panel styling
+
+---
+
+## 🧠 Root Cause
+
+* Mixing:
+
+  * Native `<select>`
+  * Custom dropdown components
+* No shared reusable dropdown component
+* Inconsistent Tailwind classes
+
+---
+
+## ✅ SOLUTION (Create Reusable Dropdown Component)
+
+### 1. Create Global Component
+
+```tsx
+// components/ui/CustomSelect.tsx
+
+import { Listbox } from "@headlessui/react";
+import { ChevronDown } from "lucide-react";
+
+export default function CustomSelect({ value, onChange, options, placeholder }) {
+  return (
+    <Listbox value={value} onChange={onChange}>
+      <div className="relative">
+        
+        {/* Button */}
+        <Listbox.Button className="w-full bg-[#111827] border border-teal-500/30 text-white px-4 py-2 rounded-xl flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-teal-500">
+          <span>{value?.label || placeholder}</span>
+          <ChevronDown size={16} />
+        </Listbox.Button>
+
+        {/* Dropdown */}
+        <Listbox.Options className="absolute z-50 mt-2 w-full bg-[#0B0F19] border border-white/10 rounded-xl shadow-lg max-h-60 overflow-auto">
+          
+          {options.map((option) => (
+            <Listbox.Option
+              key={option.value}
+              value={option}
+              className={({ active }) =>
+                `cursor-pointer px-4 py-2 flex items-center gap-2 ${
+                  active ? "bg-blue-600 text-white" : "text-gray-300"
+                }`
+              }
+            >
+              {option.icon && <span>{option.icon}</span>}
+              {option.label}
+            </Listbox.Option>
+          ))}
+
+        </Listbox.Options>
+      </div>
+    </Listbox>
+  );
+}
+```
+
+---
+
+### 2. Replace ALL Existing Dropdowns
+
+❌ Remove:
+
+```html
+<select>...</select>
+```
+
+✅ Replace with:
+
+```tsx
+<CustomSelect
+  value={leadType}
+  onChange={setLeadType}
+  options={[
+    { label: "Cold", value: "cold", icon: "🧊" },
+    { label: "Warm", value: "warm", icon: "🌞" },
+    { label: "Hot", value: "hot", icon: "🔥" },
+    { label: "Ghosted", value: "ghosted", icon: "👻" },
+  ]}
+  placeholder="Select lead type"
+/>
+```
+
+---
+
+### 3. Match Pipeline Dropdown Styling EXACTLY
+
+Ensure:
+
+* Background: `bg-[#0B0F19]`
+* Border: `border-white/10`
+* Hover: `bg-blue-600`
+* Rounded: `rounded-xl`
+* Focus ring: `teal-500`
+
+---
+
+### 4. Fix Z-Index & Overlay Issues
+
+```tsx
+className="absolute z-50"
+```
+
+👉 Prevent dropdown getting hidden behind other elements
+
+---
+
+### 5. Ensure Consistent Width & Alignment
+
+```tsx
+className="w-full"
+```
+
+---
+
+## 🚀 Expected Result
+
+* All dropdowns look **identical**
+* Clean dark theme UI
+* Smooth hover + selection
+* Professional CRM-grade design
+
+---
+
+## 🔥 Bonus Enhancements
+
+* Add **search inside dropdown**
+* Add **keyboard navigation**
+* Add **multi-select (future)**
+
+---
+
+## 📌 Final Instruction
+
+Refactor ALL dropdowns across:
+
+* Lead Type
+* Service
+* Lead Owner
+* Pipeline Stage
+
+Use ONLY the reusable `CustomSelect` component.
+
+---
+
+Consistency = Professional Product 🚀

@@ -5,6 +5,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch, Dialog } from "@/components/ui";
+import { CustomSelect } from "@/components/custom-select";
 import { TablePagination } from "@/components/table-pagination";
 import { useDebounce } from "@/hooks/use-debounce";
 import { format } from "date-fns";
@@ -16,6 +17,13 @@ import { useAuth, PermissionCheck } from "@/components/auth-provider";
 import { toast } from "sonner";
 
 const PAGE_SIZE = 10;
+
+const ROLE_OPTIONS = [
+  { value: "admin",        label: "Admin" },
+  { value: "lead_owner",   label: "Lead Owner" },
+  { value: "deal_handler", label: "Deal Handler" },
+  { value: "member",       label: "Member" },
+];
 
 const ROLE_BADGE: Record<string, string> = {
   admin:        "badge-admin",
@@ -179,18 +187,13 @@ export function Team() {
                 onChange={e => setSearchRaw(e.target.value)}
               />
             </div>
-            <select
-              className="input select-field"
-              style={{ width: 170 }}
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value)}
-            >
-              <option value="">All Roles</option>
-              <option value="admin">Admin</option>
-              <option value="lead_owner">Lead Owner</option>
-              <option value="deal_handler">Deal Handler</option>
-              <option value="member">Member</option>
-            </select>
+            <CustomSelect
+              value={roleFilter || null}
+              onChange={val => setRoleFilter(val)}
+              placeholder="All Roles"
+              options={ROLE_OPTIONS}
+              className="cselect-filter"
+            />
             {hasFilters && (
               <button
                 className="btn btn-ghost btn-sm"
@@ -228,17 +231,12 @@ export function Team() {
                   </td>
                   <td>
                     {isAdmin && m.id !== user?.id ? (
-                      <select
-                        className="input"
-                        style={{ height: 30, fontSize: "var(--text-xs)", width: 140 }}
+                      <CustomSelect
                         value={m.role}
-                        onChange={e => handleRoleChange(m.id, e.target.value)}
-                      >
-                        <option value="admin">Admin</option>
-                        <option value="lead_owner">Lead Owner</option>
-                        <option value="deal_handler">Deal Handler</option>
-                        <option value="member">Member</option>
-                      </select>
+                        onChange={val => handleRoleChange(m.id, val)}
+                        options={ROLE_OPTIONS}
+                        className="cselect-sm"
+                      />
                     ) : (
                       <span className={`badge ${ROLE_BADGE[m.role] || "badge-muted"}`}>
                         {m.role.replace("_", " ")}
@@ -390,16 +388,11 @@ export function Team() {
             </div>
             <div className="form-field" style={{ marginBottom: 0 }}>
               <label className="field-label">Initial Role</label>
-              <select
-                className="field-select"
+              <CustomSelect
                 value={inviteData.role}
-                onChange={e => setInviteData({ ...inviteData, role: e.target.value })}
-              >
-                <option value="admin">Admin</option>
-                <option value="lead_owner">Lead Owner</option>
-                <option value="deal_handler">Deal Handler</option>
-                <option value="member">Member</option>
-              </select>
+                onChange={val => setInviteData({ ...inviteData, role: val })}
+                options={ROLE_OPTIONS}
+              />
               <span className="field-helper">This can be changed later from Team Management</span>
             </div>
           </div>

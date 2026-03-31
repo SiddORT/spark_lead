@@ -2443,6 +2443,15 @@ a:hover { opacity: 0.85; }
 .cselect { position: relative; width: 100%; user-select: none; }
 .cselect.disabled { opacity: 0.5; pointer-events: none; }
 
+/* Compact size — for inline table cells */
+.cselect-sm { width: 148px; }
+.cselect-sm .cselect-trigger { height: 32px; padding: 0 var(--sp-3); }
+.cselect-sm .cselect-value { font-size: var(--text-xs); }
+
+/* Filter size — for toolbar filter chips */
+.cselect-filter { width: 160px; }
+.cselect-filter .cselect-trigger { height: 36px; }
+
 .cselect-trigger {
   display: flex;
   align-items: center;
