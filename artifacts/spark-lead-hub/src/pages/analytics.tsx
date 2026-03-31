@@ -1,11 +1,12 @@
 import {
   useGetAnalyticsStats, useGetLeadTrend, useGetKillReasons, useGetWeeklyConversion
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
   ResponsiveContainer, Cell, PieChart, Pie, Legend
 } from "recharts";
-import { BarChart3, Target, Clock, Layers, XCircle } from "lucide-react";
+import { BarChart3, Target, Clock, Layers, XCircle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 function useClosureBreakdown() {
@@ -16,6 +17,19 @@ function useClosureBreakdown() {
       const res = await fetch("/api/analytics/closure-breakdown", { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<Array<{ status: string; color: string; isWon: boolean; isLost: boolean; count: number }>>;
+    },
+    staleTime: 30_000,
+  });
+}
+
+function useStageDistribution() {
+  return useQuery({
+    queryKey: ["analytics", "stage-distribution"],
+    queryFn: async () => {
+      const token = localStorage.getItem("slh_token");
+      const res = await fetch("/api/analytics/stage-distribution", { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<Array<{ stage: string; stageName: string; color: string; count: number }>>;
     },
     staleTime: 30_000,
   });
@@ -36,11 +50,23 @@ const tooltipStyle = {
 };
 
 export function Analytics() {
+  const queryClient = useQueryClient();
   const { data: stats } = useGetAnalyticsStats();
   const { data: trendData = [] } = useGetLeadTrend();
   const { data: killReasons = [] } = useGetKillReasons();
   const { data: weeklyConversion = [] } = useGetWeeklyConversion();
   const { data: closureBreakdown = [] } = useClosureBreakdown();
+  const { data: stageDistribution = [] } = useStageDistribution();
+
+  const totalLeadsInPipeline = stageDistribution.reduce((sum, s) => sum + s.count, 0);
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["getAnalyticsStats"] });
+    queryClient.invalidateQueries({ queryKey: ["getLeadTrend"] });
+    queryClient.invalidateQueries({ queryKey: ["getKillReasons"] });
+    queryClient.invalidateQueries({ queryKey: ["getWeeklyConversion"] });
+    queryClient.invalidateQueries({ queryKey: ["analytics"] });
+  };
 
   const avgDays = stats?.avgConversionDays;
   const avgDisplay = (avgDays != null && avgDays > 0) ? Math.round(avgDays) : "N/A";
@@ -60,14 +86,22 @@ export function Analytics() {
           </h1>
           <p className="page-subtitle">Pipeline performance and conversion insights</p>
         </div>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={handleRefresh}
+          style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}
+        >
+          <RefreshCw size={13} />
+          Refresh
+        </button>
       </div>
 
       {/* Stat cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
-        <AnalyticStatCard label="Win Rate" value={`${Math.round(stats?.winRate || 0)}%`} sub="Closed / Total leads" icon={<Target size={16} />} iconClass="stat-icon-success" />
-        <AnalyticStatCard label="Avg Conversion" value={typeof avgDisplay === "number" ? `${avgDisplay}d` : avgDisplay} sub="Days to close" icon={<Clock size={16} />} iconClass="stat-icon-teal" />
-        <AnalyticStatCard label="Active Pipeline" value={stats?.activePipelineCount ?? 0} sub="Leads in progress" icon={<Layers size={16} />} iconClass="stat-icon-purple" />
-        <AnalyticStatCard label="Lost Deals" value={stats?.lostCount ?? 0} sub="Missed opportunities" icon={<XCircle size={16} />} iconClass="stat-icon-danger" />
+        <AnalyticStatCard label="Win Rate" value={`${Math.round(stats?.winRate || 0)}%`} sub="Leads marked Won / Total" icon={<Target size={16} />} iconClass="stat-icon-success" />
+        <AnalyticStatCard label="Avg Conversion" value={typeof avgDisplay === "number" ? `${avgDisplay}d` : avgDisplay} sub="Avg days to Won status" icon={<Clock size={16} />} iconClass="stat-icon-teal" />
+        <AnalyticStatCard label="Active Pipeline" value={stats?.activePipelineCount ?? 0} sub="Leads without Won/Lost status" icon={<Layers size={16} />} iconClass="stat-icon-purple" />
+        <AnalyticStatCard label="Lost Deals" value={stats?.lostCount ?? 0} sub="Leads marked Lost" icon={<XCircle size={16} />} iconClass="stat-icon-danger" />
       </div>
 
       {/* Charts grid */}
@@ -107,6 +141,52 @@ export function Analytics() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+      </div>
+
+      {/* Pipeline Stage Distribution — full width */}
+      <div className="chart-card" style={{ marginBottom: "var(--space-4)", padding: "var(--space-5)" }}>
+        <div className="chart-title" style={{ marginBottom: "var(--space-4)" }}>Pipeline Stage Distribution</div>
+        {totalLeadsInPipeline === 0 ? (
+          <div style={{ textAlign: "center", padding: "var(--space-8) 0", color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>
+            No leads in the pipeline yet
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+            {stageDistribution.map((stage) => {
+              const pct = totalLeadsInPipeline > 0 ? (stage.count / totalLeadsInPipeline) * 100 : 0;
+              return (
+                <div key={stage.stageName} style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+                  <div style={{ width: 130, flexShrink: 0, fontSize: "var(--text-xs)", color: "var(--text-secondary)", fontWeight: 600 }}>
+                    {stage.stage}
+                  </div>
+                  <div style={{ flex: 1, height: 24, background: "var(--bg-subtle)", borderRadius: "var(--radius-full)", overflow: "hidden", position: "relative" }}>
+                    <div style={{
+                      height: "100%",
+                      width: `${Math.max(pct, 0)}%`,
+                      background: `linear-gradient(90deg, ${stage.color}cc, ${stage.color}88)`,
+                      borderRadius: "var(--radius-full)",
+                      transition: "width 0.6s ease",
+                      minWidth: stage.count > 0 ? 8 : 0,
+                    }} />
+                  </div>
+                  <div style={{
+                    width: 60, flexShrink: 0, textAlign: "right",
+                    fontSize: "var(--text-xs)", color: stage.count > 0 ? "var(--text-primary)" : "var(--text-muted)",
+                    fontWeight: stage.count > 0 ? 700 : 400,
+                  }}>
+                    {stage.count} lead{stage.count !== 1 ? "s" : ""}
+                  </div>
+                  <div style={{
+                    width: 42, flexShrink: 0, textAlign: "right",
+                    fontSize: 10, color: "var(--text-muted)",
+                  }}>
+                    {pct > 0 ? `${Math.round(pct)}%` : "—"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
