@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
-  FileText, MessageSquare,
+  FileText, MessageSquare, History,
 } from "lucide-react";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useAuth } from "./auth-provider";
@@ -487,11 +487,57 @@ function DetailsTab({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      <hr className="details-divider" />
+// ─── Timeline tab ─────────────────────────────────────
+function TimelineTab({ leadId }: { leadId: string }) {
+  const { data: activities } = useGetLeadActivities(leadId);
 
-      {/* Activity Log */}
-      <ActivityLog leadId={lead.id} />
+  if (!activities?.length) {
+    return (
+      <div className="timeline-tab timeline-empty">
+        <History size={32} style={{ opacity: 0.25 }} />
+        <p>No activity recorded yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="timeline-tab">
+      {activities.map((a, idx) => (
+        <div key={a.id} className="timeline-entry">
+          <div className="timeline-left">
+            <div className="timeline-avatar">{(a.actorName || "?")[0].toUpperCase()}</div>
+            {idx < activities.length - 1 && <div className="timeline-line" />}
+          </div>
+          <div className="timeline-body">
+            <div className="timeline-action">
+              {a.fieldName ? (
+                <>
+                  <strong>{a.actorName}</strong> updated{" "}
+                  <span className="timeline-field">{a.fieldName}</span>
+                  <span className="timeline-arrow"> → </span>
+                  <span className="timeline-new-val">{a.newValue}</span>
+                  {a.oldValue && (
+                    <span className="timeline-old-val"> (was: {a.oldValue})</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <strong>{a.actorName}</strong>
+                  <span className="timeline-created"> created this lead</span>
+                </>
+              )}
+            </div>
+            <div className="timeline-time">
+              <Clock size={10} style={{ display: "inline", marginRight: 3, verticalAlign: "middle" }} />
+              {formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -510,7 +556,7 @@ export function LeadDetailSheet({
   const { users }                      = useUserMap();
   const queryClient                    = useQueryClient();
   const { data: pipelineStages = [] }  = usePipelineStages();
-  const [activeTab, setActiveTab]      = useState<"details" | "notes">("details");
+  const [activeTab, setActiveTab]      = useState<"details" | "notes" | "timeline">("details");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -739,13 +785,14 @@ export function LeadDetailSheet({
         {/* ── Tabs ── */}
         <div className="sheet-tabs">
           {[
-            { id: "details", label: "Details", icon: <FileText size={13} /> },
-            { id: "notes",   label: "Notes",   icon: <MessageSquare size={13} /> },
+            { id: "details",  label: "Details",       icon: <FileText size={13} /> },
+            { id: "notes",    label: "Notes",          icon: <MessageSquare size={13} /> },
+            { id: "timeline", label: "Lead Timeline",  icon: <History size={13} /> },
           ].map((tab) => (
             <button
               key={tab.id}
               className={`sheet-tab ${activeTab === tab.id ? "is-active" : ""}`}
-              onClick={() => setActiveTab(tab.id as "details" | "notes")}
+              onClick={() => setActiveTab(tab.id as "details" | "notes" | "timeline")}
               type="button"
             >
               {tab.icon}
@@ -780,6 +827,8 @@ export function LeadDetailSheet({
               stages={pipelineStages}
               users={users}
             />
+          ) : activeTab === "timeline" ? (
+            <TimelineTab leadId={lead.id} />
           ) : (
             <NotesSection leadId={lead.id} />
           )}

@@ -1936,6 +1936,76 @@ a:hover { opacity: 0.85; }
 .activity-time { font-size: var(--text-xs); color: var(--text-faint); margin-top: 2px; }
 
 /* ============================================
+   TIMELINE TAB
+   ============================================ */
+.timeline-tab {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-5) var(--sp-6);
+}
+.timeline-tab.timeline-empty {
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  min-height: 180px;
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+.timeline-entry {
+  display: flex;
+  gap: var(--sp-3);
+  position: relative;
+}
+.timeline-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 28px;
+}
+.timeline-avatar {
+  width: 28px; height: 28px;
+  border-radius: var(--r-full);
+  background: var(--teal-dim);
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  z-index: 1;
+}
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  min-height: 16px;
+  background: var(--border-faint);
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.timeline-body {
+  flex: 1;
+  padding-bottom: var(--sp-4);
+  padding-top: 4px;
+}
+.timeline-action {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.timeline-action strong { color: var(--text-primary); font-weight: 600; }
+.timeline-field { color: var(--text-primary); font-style: italic; }
+.timeline-arrow { color: var(--text-faint); margin: 0 2px; }
+.timeline-new-val { color: var(--teal); font-weight: 500; }
+.timeline-old-val { color: var(--text-faint); font-size: var(--text-xs); }
+.timeline-created { color: var(--text-secondary); }
+.timeline-time {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  margin-top: 3px;
+}
+
+/* ============================================
    SPINNER
    ============================================ */
 .spinner-sm {
