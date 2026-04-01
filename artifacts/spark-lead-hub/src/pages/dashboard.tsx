@@ -141,6 +141,23 @@ export function Dashboard() {
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
+  const handleExportCsv = async () => {
+    const token = localStorage.getItem("slh_token");
+    const res = await fetch("/api/leads/export/csv", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Filter state
   const [searchRaw, setSearchRaw] = useState("");
   const [serviceFilter, setServiceFilter] = useState("");
@@ -354,7 +371,7 @@ export function Dashboard() {
         </div>
         <div className="page-actions">
           <PermissionCheck resource="leads" action="export">
-            <button className="btn btn-secondary" onClick={() => window.open("/api/leads/export/csv", "_blank")}>
+            <button className="btn btn-secondary" onClick={handleExportCsv}>
               <Download size={15} /> Export CSV
             </button>
           </PermissionCheck>
