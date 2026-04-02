@@ -5,7 +5,7 @@ import {
   pipelineStagesTable,
   pipelineStatusesTable,
 } from "@workspace/db";
-import { asc } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { subDays, format, startOfWeek, endOfWeek, subWeeks } from "date-fns";
@@ -36,7 +36,9 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
 
     const winRate = totalLeads > 0 ? (wonLeads.length / totalLeads) * 100 : 0;
 
-    const resolvedLeads = leads.filter((l) => l.resolvedAt);
+    const resolvedLeads = leads.filter(
+      (l) => l.resolvedAt && l.resolvedAt.getTime() > l.createdAt.getTime()
+    );
     let avgConversionDays: number | null = null;
     if (resolvedLeads.length > 0) {
       const totalDays = resolvedLeads.reduce((acc, l) => {
@@ -91,7 +93,7 @@ router.get("/stage-distribution", requireAuth, async (req: AuthRequest, res) => 
     const stages = await db
       .select()
       .from(pipelineStagesTable)
-      .where((t: any) => t.isActive)
+      .where(eq(pipelineStagesTable.isActive, true))
       .orderBy(asc(pipelineStagesTable.sortOrder));
     const leads = await db.select().from(leadsTable);
 
