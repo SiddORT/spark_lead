@@ -343,43 +343,11 @@ export function NewLead() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
               <div>
                 <FieldLabel>Follow-Up Date</FieldLabel>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <StyledInput
-                    type="date"
-                    value={formData.followUpDate}
-                    onChange={e => set("followUpDate", e.target.value)}
-                    style={{ flex: 1 }}
-                  />
-                  <button
-                    type="button"
-                    title="Set to today + 2 days"
-                    onClick={() => set("followUpDate", getDefaultFollowUpDate())}
-                    style={{
-                      flexShrink: 0,
-                      height: 42,
-                      padding: "0 10px",
-                      background: "var(--bg-subtle)",
-                      border: "1px solid var(--border-default)",
-                      borderRadius: "var(--radius-md)",
-                      color: "var(--teal)",
-                      fontSize: "var(--text-xs)",
-                      fontWeight: 600,
-                      fontFamily: "var(--font-sans)",
-                      cursor: "pointer",
-                      whiteSpace: "nowrap",
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.borderColor = "var(--teal)";
-                      e.currentTarget.style.background = "var(--teal-dim)";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.borderColor = "var(--border-default)";
-                      e.currentTarget.style.background = "var(--bg-subtle)";
-                    }}
-                  >
-                    +2 Days
-                  </button>
-                </div>
+                <StyledInput
+                  type="date"
+                  value={formData.followUpDate}
+                  onChange={e => set("followUpDate", e.target.value)}
+                />
                 <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--text-muted)" }}>
                   Default: 2 days from today
                 </p>

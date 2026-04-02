@@ -500,50 +500,13 @@ function DetailsTab({
         <div className="details-row" style={{ marginTop: "var(--sp-4)" }}>
           <div className="form-field">
             <label className="field-label">Follow-up Date</label>
-            <div style={{ display: "flex", gap: "var(--sp-2)", alignItems: "center" }}>
-              <input
-                className="field-input"
-                type="date"
-                value={followUpDate}
-                onChange={(e) => setFollowUpDate(e.target.value)}
-                onBlur={(e) => e.target.value && handleUpdate("followUpDate", e.target.value)}
-                style={{ flex: 1 }}
-              />
-              <button
-                type="button"
-                title="Set to today + 2 days"
-                onClick={() => {
-                  const d = getDefaultFollowUpDate();
-                  setFollowUpDate(d);
-                  handleUpdate("followUpDate", d);
-                }}
-                style={{
-                  flexShrink: 0,
-                  height: 36,
-                  padding: "0 10px",
-                  background: "var(--bg-subtle)",
-                  border: "1px solid var(--border-default)",
-                  borderRadius: "var(--radius-md)",
-                  color: "var(--teal)",
-                  fontSize: "var(--text-xs)",
-                  fontWeight: 600,
-                  fontFamily: "var(--font-sans)",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  transition: "border-color 150ms ease, background 150ms ease",
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = "var(--teal)";
-                  e.currentTarget.style.background = "var(--teal-dim)";
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = "var(--border-default)";
-                  e.currentTarget.style.background = "var(--bg-subtle)";
-                }}
-              >
-                +2 Days
-              </button>
-            </div>
+            <input
+              className="field-input"
+              type="date"
+              value={followUpDate}
+              onChange={(e) => setFollowUpDate(e.target.value)}
+              onBlur={(e) => e.target.value && handleUpdate("followUpDate", e.target.value)}
+            />
             <p style={{ margin: "4px 0 0", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
               Default: 2 days from today
             </p>
