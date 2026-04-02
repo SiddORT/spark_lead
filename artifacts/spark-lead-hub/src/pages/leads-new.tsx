@@ -7,6 +7,12 @@ import { PlusCircle, ArrowLeft } from "lucide-react";
 import { StageStatusSelect } from "@/components/stage-status-select";
 import { CustomSelect } from "@/components/custom-select";
 
+function getDefaultFollowUpDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  return d.toISOString().split("T")[0];
+}
+
 const FieldLabel = ({ children, required }: { children: React.ReactNode; required?: boolean }) => (
   <label style={{
     display: "block",
@@ -93,6 +99,7 @@ export function NewLead() {
     dealHandler: "",
     dealValue: "",
     nextAction: "",
+    followUpDate: getDefaultFollowUpDate(),
     companyIds: [],
     pipelineStageId: "",
     pipelineStatusId: "",
@@ -332,15 +339,61 @@ export function NewLead() {
               </div>
             )}
 
-            {/* Notes — full width */}
-            <div>
-              <FieldLabel>Next Action / Notes</FieldLabel>
-              <StyledTextarea
-                value={formData.nextAction}
-                onChange={e => set("nextAction", e.target.value)}
-                placeholder="Describe the next steps or initial context for this lead…"
-                rows={4}
-              />
+            {/* 2-col: Follow-Up Date + Next Action / Notes header */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)" }}>
+              <div>
+                <FieldLabel>Follow-Up Date</FieldLabel>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <StyledInput
+                    type="date"
+                    value={formData.followUpDate}
+                    onChange={e => set("followUpDate", e.target.value)}
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    title="Set to today + 2 days"
+                    onClick={() => set("followUpDate", getDefaultFollowUpDate())}
+                    style={{
+                      flexShrink: 0,
+                      height: 42,
+                      padding: "0 10px",
+                      background: "var(--bg-subtle)",
+                      border: "1px solid var(--border-default)",
+                      borderRadius: "var(--radius-md)",
+                      color: "var(--teal)",
+                      fontSize: "var(--text-xs)",
+                      fontWeight: 600,
+                      fontFamily: "var(--font-sans)",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.borderColor = "var(--teal)";
+                      e.currentTarget.style.background = "var(--teal-dim)";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.borderColor = "var(--border-default)";
+                      e.currentTarget.style.background = "var(--bg-subtle)";
+                    }}
+                  >
+                    +2 Days
+                  </button>
+                </div>
+                <p style={{ margin: "4px 0 0", fontSize: 11, color: "var(--text-muted)" }}>
+                  Default: 2 days from today
+                </p>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <FieldLabel>Next Action / Notes</FieldLabel>
+                <StyledTextarea
+                  value={formData.nextAction}
+                  onChange={e => set("nextAction", e.target.value)}
+                  placeholder="Next steps or initial context…"
+                  rows={3}
+                  style={{ flex: 1 }}
+                />
+              </div>
             </div>
           </div>
 

@@ -19,6 +19,12 @@ import { PipelineProgressBar } from "./stage-status-select";
 import { CustomSelect } from "./custom-select";
 
 // ─── Helpers ──────────────────────────────────────────
+function getDefaultFollowUpDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 2);
+  return d.toISOString().split("T")[0];
+}
+
 function formatCurrency(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === "") return "—";
   const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.]/g, "")) : val;
@@ -280,6 +286,18 @@ function DetailsTab({
 }: any) {
   const { data: services = [] } = useGetServices();
 
+  const [followUpDate, setFollowUpDate] = useState<string>("");
+
+  useEffect(() => {
+    if (lead?.followUpDate) {
+      setFollowUpDate(lead.followUpDate.split("T")[0]);
+    } else {
+      const defaultDate = getDefaultFollowUpDate();
+      setFollowUpDate(defaultDate);
+      handleUpdate("followUpDate", defaultDate);
+    }
+  }, [lead?.id]);
+
   const selectedStage = stages.find((s: any) => s.id === localStageId) ?? null;
   const availableStatuses = selectedStage?.statuses?.filter((s: any) => s.isActive) ?? [];
 
@@ -482,12 +500,53 @@ function DetailsTab({
         <div className="details-row" style={{ marginTop: "var(--sp-4)" }}>
           <div className="form-field">
             <label className="field-label">Follow-up Date</label>
-            <input
-              className="field-input"
-              type="date"
-              defaultValue={lead.followUpDate ? lead.followUpDate.split("T")[0] : ""}
-              onBlur={(e) => e.target.value && handleUpdate("followUpDate", new Date(e.target.value).toISOString())}
-            />
+            <div style={{ display: "flex", gap: "var(--sp-2)", alignItems: "center" }}>
+              <input
+                className="field-input"
+                type="date"
+                value={followUpDate}
+                onChange={(e) => setFollowUpDate(e.target.value)}
+                onBlur={(e) => e.target.value && handleUpdate("followUpDate", e.target.value)}
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                title="Set to today + 2 days"
+                onClick={() => {
+                  const d = getDefaultFollowUpDate();
+                  setFollowUpDate(d);
+                  handleUpdate("followUpDate", d);
+                }}
+                style={{
+                  flexShrink: 0,
+                  height: 36,
+                  padding: "0 10px",
+                  background: "var(--bg-subtle)",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: "var(--radius-md)",
+                  color: "var(--teal)",
+                  fontSize: "var(--text-xs)",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-sans)",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "border-color 150ms ease, background 150ms ease",
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = "var(--teal)";
+                  e.currentTarget.style.background = "var(--teal-dim)";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "var(--border-default)";
+                  e.currentTarget.style.background = "var(--bg-subtle)";
+                }}
+              >
+                +2 Days
+              </button>
+            </div>
+            <p style={{ margin: "4px 0 0", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
+              Default: 2 days from today
+            </p>
           </div>
           <div className="form-field">
             <label className="field-label">Next Action</label>

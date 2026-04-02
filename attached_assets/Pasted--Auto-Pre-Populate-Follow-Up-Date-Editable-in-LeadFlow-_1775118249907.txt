@@ -1,0 +1,160 @@
+## 📅 Auto Pre-Populate Follow-Up Date (+ Editable) in LeadFlow
+
+### 🎯 Objective
+
+Enhance the **Follow-Up Date field** so that:
+
+* ✅ Automatically sets default date = **Today + 2 days**
+* ✅ Works when:
+
+  * Creating a new lead
+  * Opening lead details (if no date exists)
+* ✅ User can **edit/change the date anytime**
+* ✅ Does NOT override if user already selected a date
+
+---
+
+## ❗ Current Problem
+
+* Follow-up date is empty or manually entered
+* No default value → slows down workflow
+
+---
+
+## ✅ EXPECTED BEHAVIOUR
+
+| Scenario                 | Behaviour                  |
+| ------------------------ | -------------------------- |
+| New Lead                 | Auto set to Today + 2 days |
+| Existing Lead (no date)  | Auto set to Today + 2 days |
+| Existing Lead (has date) | Keep saved value           |
+| User edits date          | Respect user input         |
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Utility Function (Get Date +2 Days)
+
+```ts
+function getDefaultFollowUpDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 2);
+
+  return date.toISOString().split("T")[0]; // YYYY-MM-DD
+}
+```
+
+---
+
+## ✅ 2. State Initialization (React)
+
+```ts
+const [followUpDate, setFollowUpDate] = useState("");
+```
+
+---
+
+## ✅ 3. Set Default on Load (Create + Edit Case)
+
+```ts
+useEffect(() => {
+  if (!lead?.follow_up_date) {
+    setFollowUpDate(getDefaultFollowUpDate());
+  } else {
+    setFollowUpDate(lead.follow_up_date);
+  }
+}, [lead]);
+```
+
+---
+
+## ✅ 4. Input Field (Editable)
+
+```tsx
+<input
+  type="date"
+  value={followUpDate}
+  onChange={(e) => setFollowUpDate(e.target.value)}
+  className="w-full bg-[#0B0F19] border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
+/>
+```
+
+---
+
+## ✅ 5. Save in Database
+
+Ensure on save:
+
+```ts
+follow_up_date: followUpDate
+```
+
+---
+
+## ⚠️ IMPORTANT CONDITIONS
+
+### ❌ Do NOT override if user already selected date
+
+Handled by:
+
+```ts
+if (!lead?.follow_up_date)
+```
+
+---
+
+### ❌ Do NOT reset on every re-render
+
+Use `useEffect` only once per lead change
+
+---
+
+## 🔥 OPTIONAL (Better UX)
+
+### Show helper text:
+
+```tsx
+<p className="text-xs text-gray-400 mt-1">
+  Default set to 2 days from today
+</p>
+```
+
+---
+
+### Add quick buttons:
+
+```tsx
+<button onClick={() => setFollowUpDate(getDefaultFollowUpDate())}>
+  +2 Days
+</button>
+```
+
+---
+
+## 🚀 FINAL RESULT
+
+* Follow-up date auto-filled intelligently
+* User can modify anytime
+* Faster lead creation
+* Better task tracking
+
+---
+
+## 📌 FINAL INSTRUCTION
+
+Implement this consistently across:
+
+* Lead Details Page
+
+Ensure:
+
+* No UI break
+* Dark theme maintained
+* Date format consistent (YYYY-MM-DD)
+
+---
+
+This improves **sales discipline + follow-up tracking instantly** 📈
