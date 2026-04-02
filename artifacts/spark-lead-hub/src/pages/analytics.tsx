@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import { BarChart3, Target, Clock, Layers, XCircle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 function useClosureBreakdown() {
   return useQuery({
@@ -18,7 +19,7 @@ function useClosureBreakdown() {
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<Array<{ status: string; color: string; isWon: boolean; isLost: boolean; count: number }>>;
     },
-    staleTime: 30_000,
+    staleTime: 0,
   });
 }
 
@@ -31,7 +32,7 @@ function useStageDistribution() {
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<Array<{ stage: string; stageName: string; color: string; count: number }>>;
     },
-    staleTime: 30_000,
+    staleTime: 0,
   });
 }
 
@@ -59,6 +60,15 @@ export function Analytics() {
   const { data: stageDistribution = [] } = useStageDistribution();
 
   const totalLeadsInPipeline = stageDistribution.reduce((sum, s) => sum + s.count, 0);
+
+  // Always fetch fresh data when the analytics page is opened
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ["getAnalyticsStats"] });
+    queryClient.invalidateQueries({ queryKey: ["getLeadTrend"] });
+    queryClient.invalidateQueries({ queryKey: ["getKillReasons"] });
+    queryClient.invalidateQueries({ queryKey: ["getWeeklyConversion"] });
+    queryClient.invalidateQueries({ queryKey: ["analytics"] });
+  }, []);
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["getAnalyticsStats"] });

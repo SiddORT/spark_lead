@@ -351,6 +351,10 @@ export function KanbanBoard() {
     updateLead.mutate(
       { id: draggableId, data: { pipelineStageId: newStageId, pipelineStatusId: firstStatus?.id ?? null } },
       {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: ["analytics"] });
+        },
         onError: () => {
           toast.error("Failed to move lead");
           queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
