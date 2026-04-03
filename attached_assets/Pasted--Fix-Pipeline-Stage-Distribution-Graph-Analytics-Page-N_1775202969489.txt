@@ -1,0 +1,180 @@
+## 🛠 Fix Pipeline Stage Distribution Graph (Analytics Page – No Filters)
+
+---
+
+# 🎯 Objective
+
+Fix the **Pipeline Stage Distribution** section so that:
+
+* ✅ Graph bars are visible (not blank)
+* ✅ Correctly represent lead distribution
+* ✅ Uses **all leads data (no filters)**
+* ✅ Shows accurate counts + percentages
+
+---
+
+# ❗ Current Problem
+
+* Graph is blank (no visual bars)
+* Only numbers are visible
+* Analytics page does NOT use filters → but still not working
+
+---
+
+# 🧠 Root Cause
+
+* Bar width not calculated properly
+* Missing percentage calculation
+* CSS width not applied dynamically
+* Possible stage name mismatch
+* Using incorrect dataset
+
+---
+
+# ✅ IMPLEMENTATION
+
+---
+
+## ✅ 1. Use Full Leads Data
+
+```ts
+const dataSource = leads; // IMPORTANT: no filters on analytics page
+```
+
+---
+
+## ✅ 2. Define Pipeline Stages
+
+```ts
+const stages = [
+  "Lead Initiation",
+  "Qualification & Analysis",
+  "Proposal & Negotiation",
+  "Closure",
+];
+```
+
+---
+
+## ✅ 3. Calculate Stage Counts
+
+```ts
+const stageCounts = stages.map((stage) => {
+  const count = dataSource.filter((lead) => lead.stage === stage).length;
+
+  return {
+    stage,
+    count,
+  };
+});
+```
+
+---
+
+## ✅ 4. Calculate Total Leads
+
+```ts
+const totalLeads = dataSource.length;
+```
+
+---
+
+## ✅ 5. Calculate Percentages
+
+```ts
+const stageData = stageCounts.map((item) => ({
+  ...item,
+  percentage: totalLeads > 0 ? (item.count / totalLeads) * 100 : 0,
+}));
+```
+
+---
+
+## ✅ 6. Render Proper Graph (Progress Bars)
+
+```tsx
+{stageData.map((item) => (
+  <div key={item.stage} className="mb-4">
+    
+    <div className="flex justify-between text-sm text-gray-400 mb-1">
+      <span>{item.stage}</span>
+      <span>
+        {item.count} {item.count === 1 ? "lead" : "leads"} ({Math.round(item.percentage)}%)
+      </span>
+    </div>
+
+    <div className="w-full h-2 bg-gray-800 rounded-full overflow-hidden">
+      <div
+        className="h-full bg-teal-500 transition-all duration-500"
+        style={{ width: `${item.percentage}%` }}
+      />
+    </div>
+
+  </div>
+))}
+```
+
+---
+
+## ✅ 7. Handle Empty State
+
+```tsx
+{totalLeads === 0 && (
+  <p className="text-gray-500 text-sm">
+    No leads available
+  </p>
+)}
+```
+
+---
+
+## ✅ 8. Debug (IMPORTANT)
+
+```ts
+console.log("Leads:", leads);
+console.log("Stage Data:", stageData);
+```
+
+👉 Verify:
+
+* `lead.stage` matches EXACT stage names
+* No spelling mismatch like:
+
+  * "Lead initiation" ❌
+  * "Lead Initiation" ✅
+
+---
+
+# 🚀 FINAL RESULT
+
+* Graph bars visible and accurate
+* Reflects real pipeline distribution
+* Smooth animation
+* Clean analytics UI
+
+---
+
+# ⚠️ COMMON MISTAKES
+
+❌ Using filteredLeads (not applicable here)
+❌ Missing width style
+❌ Stage name mismatch
+❌ Division by zero
+
+---
+
+# 🔥 BONUS (Optional Enhancement)
+
+Add colors per stage as defined in the master
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Use ONLY `leads` data
+* Ensure dynamic width is applied
+* Maintain dark theme UI consistency
+
+---
+
+This will fix your **blank graph issue completely** 📊

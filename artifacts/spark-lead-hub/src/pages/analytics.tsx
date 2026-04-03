@@ -173,7 +173,7 @@ export function Analytics() {
                     <div style={{
                       height: "100%",
                       width: `${Math.max(pct, 0)}%`,
-                      background: `linear-gradient(90deg, ${stage.color}cc, ${stage.color}88)`,
+                      background: `linear-gradient(90deg, ${stage.color.replace("hsl(", "hsla(").replace(")", ", 0.9)")}, ${stage.color.replace("hsl(", "hsla(").replace(")", ", 0.55)")})`,
                       borderRadius: "var(--radius-full)",
                       transition: "width 0.6s ease",
                       minWidth: stage.count > 0 ? 8 : 0,
