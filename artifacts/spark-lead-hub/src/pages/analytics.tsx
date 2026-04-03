@@ -216,33 +216,80 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
+        <div className="chart-card" style={{ display: "flex", flexDirection: "column" }}>
           <div className="chart-title">Closure Breakdown</div>
-          {closureBreakdown.filter(c => c.count > 0).length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={closureBreakdown.filter(c => c.count > 0)}
-                  dataKey="count"
-                  nameKey="status"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={90}
-                  label={({ name, percent }: any) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  labelLine={false}
-                >
-                  {closureBreakdown.filter(c => c.count > 0).map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [v, "Leads"]} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>
-              No closed deals yet
-            </div>
-          )}
+          {(() => {
+            const total = closureBreakdown.reduce((s, c) => s + c.count, 0);
+            const pieData = closureBreakdown.filter(c => c.count > 0);
+            if (total === 0) {
+              return (
+                <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-muted)", fontSize: "var(--text-sm)", padding: "var(--space-8) 0" }}>
+                  No closed deals yet
+                </div>
+              );
+            }
+            return (
+              <>
+                {/* Donut chart */}
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="count"
+                      nameKey="status"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      innerRadius={46}
+                      paddingAngle={pieData.length > 1 ? 3 : 0}
+                      strokeWidth={0}
+                    >
+                      {pieData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={tooltipStyle}
+                      formatter={(v: any, name: any) => {
+                        const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+                        return [`${v} lead${v !== 1 ? "s" : ""} (${pct}%)`, name];
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+
+                {/* Legend */}
+                <div style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "var(--space-2)",
+                  padding: "var(--space-3) var(--space-1) var(--space-1)",
+                  borderTop: "1px solid var(--border-subtle)",
+                  marginTop: "var(--space-2)",
+                }}>
+                  {closureBreakdown.map((entry, i) => {
+                    const pct = total > 0 ? Math.round((entry.count / total) * 100) : 0;
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", fontSize: "var(--text-xs)" }}>
+                        <span style={{
+                          width: 10, height: 10, borderRadius: "50%",
+                          background: entry.color, flexShrink: 0,
+                          boxShadow: `0 0 6px ${entry.color.replace("hsl(", "hsla(").replace(")", ", 0.4)")}`,
+                        }} />
+                        <span style={{ color: "var(--text-secondary)", flex: 1 }}>{entry.status}</span>
+                        <span style={{ color: entry.count > 0 ? "var(--text-primary)" : "var(--text-muted)", fontWeight: entry.count > 0 ? 700 : 400 }}>
+                          {entry.count} lead{entry.count !== 1 ? "s" : ""}
+                        </span>
+                        <span style={{ color: "var(--text-muted)", width: 36, textAlign: "right" }}>
+                          {entry.count > 0 ? `${pct}%` : "—"}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
         </div>
       </div>
     </div>
