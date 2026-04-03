@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useCreateLead, useGetServices, useGetServiceCompanies } from "@workspace/api-client-react";
+import { useCreateLead, useGetServices, useGetServiceCompanies, useGetTeamMembers } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
-import { useUserMap } from "@/hooks/use-user-map";
 import { toast } from "sonner";
 import { PlusCircle, ArrowLeft } from "lucide-react";
 import { StageStatusSelect } from "@/components/stage-status-select";
@@ -84,7 +83,8 @@ function StyledTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>
 export function NewLead() {
   const [, setLocation] = useLocation();
   const createLead = useCreateLead();
-  const { users } = useUserMap();
+  const { data: teamMembers = [] } = useGetTeamMembers();
+  const whitelistedUsers = (teamMembers as any[]).filter((m: any) => m.whitelistStatus === "active");
   const { data: services } = useGetServices();
   const [primaryHover, setPrimaryHover] = useState(false);
 
@@ -290,9 +290,8 @@ export function NewLead() {
                   value={formData.leadOwner || null}
                   onChange={val => set("leadOwner", val)}
                   placeholder="Unassigned"
-                  options={users
-                    .filter(u => ["admin", "lead_owner"].includes(u.role))
-                    .map(u => ({ value: u.id, label: u.displayName || u.email }))}
+                  options={whitelistedUsers
+                    .map((u: any) => ({ value: u.id, label: u.displayName || u.email }))}
                 />
               </div>
               <div>
@@ -301,9 +300,8 @@ export function NewLead() {
                   value={formData.dealHandler || null}
                   onChange={val => set("dealHandler", val)}
                   placeholder="Unassigned"
-                  options={users
-                    .filter(u => ["admin", "deal_handler"].includes(u.role))
-                    .map(u => ({ value: u.id, label: u.displayName || u.email }))}
+                  options={whitelistedUsers
+                    .map((u: any) => ({ value: u.id, label: u.displayName || u.email }))}
                 />
               </div>
             </div>

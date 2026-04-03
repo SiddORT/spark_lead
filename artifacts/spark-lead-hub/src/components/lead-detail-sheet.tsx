@@ -4,6 +4,7 @@ import {
   useGetLead, useUpdateLead, useGetLeadNotes, useAddLeadNote,
   useDeleteLeadNote, useGetLeadActivities, useDeleteLead,
   useGetServices, useGetServiceCompanies, getGetLeadsQueryKey,
+  useGetTeamMembers,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
@@ -451,7 +452,6 @@ function DetailsTab({
               options={[
                 { value: "", label: "Unassigned" },
                 ...users
-                  .filter((u: any) => ["admin", "lead_owner", "superadmin"].includes(u.role))
                   .map((u: any) => ({
                     value: u.id,
                     label: u.displayName || u.email,
@@ -478,7 +478,6 @@ function DetailsTab({
               options={[
                 { value: "", label: "Unassigned" },
                 ...users
-                  .filter((u: any) => ["admin", "deal_handler", "superadmin"].includes(u.role))
                   .map((u: any) => ({
                     value: u.id,
                     label: u.displayName || u.email,
@@ -589,6 +588,8 @@ export function LeadDetailSheet({
 }) {
   const { data: lead }                 = useGetLead(leadId || "", { query: { enabled: !!leadId } });
   const { users }                      = useUserMap();
+  const { data: teamMembers = [] }     = useGetTeamMembers();
+  const whitelistedUsers               = (teamMembers as any[]).filter((m: any) => m.whitelistStatus === "active");
   const queryClient                    = useQueryClient();
   const { data: pipelineStages = [] }  = usePipelineStages();
   const [activeTab, setActiveTab]      = useState<"details" | "notes" | "timeline">("details");
@@ -860,7 +861,7 @@ export function LeadDetailSheet({
               onCompanyToggle={handleCompanyToggle}
               handleUpdate={handleUpdate}
               stages={pipelineStages}
-              users={users}
+              users={whitelistedUsers}
             />
           ) : activeTab === "timeline" ? (
             <TimelineTab leadId={lead.id} />
