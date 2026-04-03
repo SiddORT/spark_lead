@@ -1,0 +1,223 @@
+## 🛠 Fix Session Timeout + Add “Stay Logged In” Popup (React + Tailwind)
+
+---
+
+# 🎯 Objective
+
+Implement a **smart session timeout system**:
+
+### ✅ Requirements
+
+* Logout ONLY after **15 minutes of inactivity**
+* Detect real activity:
+
+  * Typing
+  * Mouse movement
+  * Scroll
+  * Click
+* ❌ Do NOT logout during active usage
+* ✅ Show warning popup **1 minute before logout**
+* ✅ User can:
+
+  * Stay Logged In (reset timer)
+  * Logout manually
+
+---
+
+# ❗ Current Problem
+
+* Session expires even when user is active
+* No warning before logout
+* Poor UX
+
+---
+
+# 🧠 EXPECTED FLOW
+
+1. User inactive → 14 minutes pass
+2. Show popup:
+   👉 “Session expiring in 1 minute”
+3. User clicks:
+
+   * **Stay Logged In** → reset timer
+   * OR ignore → auto logout
+
+---
+
+# ✅ IMPLEMENTATION
+
+---
+
+## ✅ 1. Idle Timer Setup
+
+```ts
+const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 min
+const WARNING_TIME = 14 * 60 * 1000; // show popup at 14 min
+
+let idleTimer;
+let warningTimer;
+```
+
+---
+
+## ✅ 2. State for Popup
+
+```ts
+const [showSessionPopup, setShowSessionPopup] = useState(false);
+```
+
+---
+
+## ✅ 3. Reset Timer Function
+
+```ts
+const resetTimer = () => {
+  clearTimeout(idleTimer);
+  clearTimeout(warningTimer);
+
+  setShowSessionPopup(false);
+
+  // Show warning popup
+  warningTimer = setTimeout(() => {
+    setShowSessionPopup(true);
+  }, WARNING_TIME);
+
+  // Logout timer
+  idleTimer = setTimeout(() => {
+    handleLogout();
+  }, IDLE_TIMEOUT);
+};
+```
+
+---
+
+## ✅ 4. Track User Activity
+
+```ts
+useEffect(() => {
+  const events = ["mousemove", "keydown", "click", "scroll"];
+
+  const activityHandler = () => {
+    resetTimer();
+  };
+
+  events.forEach((event) => {
+    window.addEventListener(event, activityHandler);
+  });
+
+  resetTimer();
+
+  return () => {
+    events.forEach((event) => {
+      window.removeEventListener(event, activityHandler);
+    });
+    clearTimeout(idleTimer);
+    clearTimeout(warningTimer);
+  };
+}, []);
+```
+
+---
+
+## ✅ 5. Logout Function
+
+```ts
+const handleLogout = () => {
+  localStorage.removeItem("authToken");
+  window.location.href = "/login";
+};
+```
+
+---
+
+## ✅ 6. Stay Logged In Handler
+
+```ts
+const handleStayLoggedIn = () => {
+  resetTimer();
+};
+```
+
+---
+
+## ✅ 7. Session Timeout Popup UI
+
+```tsx
+{showSessionPopup && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="bg-[#0B0F19] border border-white/10 rounded-xl p-6 w-[350px] text-center">
+      
+      <h2 className="text-white text-lg font-semibold mb-2">
+        Session Expiring Soon
+      </h2>
+
+      <p className="text-gray-400 text-sm mb-4">
+        You will be logged out in 1 minute due to inactivity.
+      </p>
+
+      <div className="flex justify-center gap-3">
+        
+        <button
+          onClick={handleStayLoggedIn}
+          className="px-4 py-2 bg-teal-500 text-black rounded-lg hover:bg-teal-400"
+        >
+          Stay Logged In
+        </button>
+
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/20"
+        >
+          Logout
+        </button>
+
+      </div>
+    </div>
+  </div>
+)}
+```
+
+---
+
+## ✅ 8. Handle Background Tab
+
+```ts
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    resetTimer();
+  }
+});
+```
+
+---
+
+# 🚀 FINAL RESULT
+
+* Session stays active during real usage
+* Popup appears before timeout
+* User can extend session
+* Auto logout after inactivity
+* Clean, enterprise-level UX
+
+---
+
+# 🔥 BONUS (Recommended Enhancements)
+
+* Add countdown timer in popup (60s → 0s)
+* Refresh auth token on “Stay Logged In”
+* Track last activity timestamp in localStorage
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Implement at **App / Root level**
+* Ensure:
+
+  * No duplicate timers
+  * Clean unmount
+  * Dark theme consistency
+
+---
+
+This should behave like **banking apps / enterprise SaaS systems** 🔐
