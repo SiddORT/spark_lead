@@ -163,23 +163,25 @@ export function Dashboard() {
   const [serviceFilter, setServiceFilter] = useState("");
   const [companyFilter, setCompanyFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [stageFilter, setStageFilter] = useState("");
   const [page, setPage] = useState(1);
 
   const search = useDebounce(searchRaw, 300);
   const isDebouncing = searchRaw !== search;
-  const hasFilters = !!(searchRaw || serviceFilter || companyFilter || typeFilter);
-  const activeFilterCount = [searchRaw, serviceFilter, companyFilter, typeFilter].filter(Boolean).length;
+  const hasFilters = !!(searchRaw || serviceFilter || companyFilter || typeFilter || stageFilter);
+  const activeFilterCount = [searchRaw, serviceFilter, companyFilter, typeFilter, stageFilter].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchRaw("");
     setServiceFilter("");
     setCompanyFilter("");
     setTypeFilter("");
+    setStageFilter("");
     setPage(1);
   };
 
   // Reset page on filter change
-  useEffect(() => { setPage(1); }, [search, serviceFilter, companyFilter, typeFilter]);
+  useEffect(() => { setPage(1); }, [search, serviceFilter, companyFilter, typeFilter, stageFilter]);
 
   // Cascade: clear invalid company when service changes
   useEffect(() => {
@@ -212,9 +214,10 @@ export function Dashboard() {
       const matchService = !serviceFilter || l.serviceId === serviceFilter;
       const matchCompany = !companyFilter || companyNames.some(n => n === companyFilter);
       const matchType = !typeFilter || l.leadType === typeFilter;
-      return matchSearch && matchService && matchCompany && matchType;
+      const matchStage = !stageFilter || l.pipelineStageId === stageFilter;
+      return matchSearch && matchService && matchCompany && matchType && matchStage;
     });
-  }, [leads, search, serviceFilter, companyFilter, typeFilter]);
+  }, [leads, search, serviceFilter, companyFilter, typeFilter, stageFilter]);
 
   // Stats from filtered data
   const hotCount       = filteredLeads.filter((l: any) => l.leadType === "hot").length;
@@ -557,6 +560,16 @@ export function Dashboard() {
           options={LEAD_TYPE_OPTIONS}
           placeholder="All Types"
           width={145}
+        />
+        <FilterSelect
+          value={stageFilter}
+          onChange={setStageFilter}
+          options={(pipelineStages as any[])
+            .filter((s: any) => s.isActive)
+            .sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+            .map((s: any) => ({ value: s.id, label: s.displayName }))}
+          placeholder="All Stages"
+          width={175}
         />
 
         {/* Clear button + active count */}

@@ -1,0 +1,179 @@
+## 🚀 Add Pipeline Stage Filter to Dashboard (Works with Existing Filters)
+
+---
+
+# 🎯 Objective
+
+Add a new filter on the dashboard:
+
+👉 **Pipeline Stage Filter**
+
+### Requirements:
+
+* User can select a **pipeline stage**
+* Leads displayed should be filtered by:
+
+  * Selected stage
+  * AND existing filters (Services, Companies, Types, Search)
+* Should behave exactly like existing filters (consistent UX)
+
+---
+
+# ❗ Current State
+
+Existing filters:
+
+* Search (lead/company)
+* Service filter
+* Company filter
+* Lead Type filter
+
+🚫 Missing:
+
+* Pipeline Stage filter
+
+---
+
+# ✅ EXPECTED BEHAVIOUR
+
+| Filter Applied         | Result                       |
+| ---------------------- | ---------------------------- |
+| Stage only             | Show leads of that stage     |
+| Stage + Service        | Combined filtering           |
+| Stage + Company + Type | All filters applied together |
+| No filter              | Show all leads               |
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Add State for Stage Filter
+
+```ts id="s2j9k1"
+const [selectedStage, setSelectedStage] = useState("");
+```
+
+---
+
+## ✅ 2. Add Filter Dropdown UI
+
+👉 Place next to existing filters (All Services / All Companies / All Types)
+
+```tsx id="v8m2qp"
+<CustomSelect
+  value={selectedStage}
+  onChange={(val) => setSelectedStage(val)}
+  options={[
+    { label: "All Stages", value: "" },
+    { label: "Lead Initiation", value: "Lead Initiation" },
+    { label: "Qualification & Analysis", value: "Qualification & Analysis" },
+    { label: "Proposal & Negotiation", value: "Proposal & Negotiation" },
+    { label: "Closure", value: "Closure" },
+  ]}
+  placeholder="All Stages"
+/>
+```
+
+---
+
+## ✅ 3. Update Filtering Logic
+
+Modify your lead filtering function:
+
+```ts id="x7p4mn"
+const filteredLeads = leads.filter((lead) => {
+  const matchesSearch =
+    !search ||
+    lead.name.toLowerCase().includes(search.toLowerCase()) ||
+    lead.company.toLowerCase().includes(search.toLowerCase());
+
+  const matchesService =
+    !selectedService || lead.service === selectedService;
+
+  const matchesCompany =
+    !selectedCompany || lead.company === selectedCompany;
+
+  const matchesType =
+    !selectedType || lead.type === selectedType;
+
+  const matchesStage =
+    !selectedStage || lead.stage === selectedStage;
+
+  return (
+    matchesSearch &&
+    matchesService &&
+    matchesCompany &&
+    matchesType &&
+    matchesStage
+  );
+});
+```
+
+---
+
+## ✅ 4. Ensure Consistent UI Behaviour
+
+* Default = **All Stages**
+* Clear filter → resets to all leads
+* Matches styling of other filters
+
+---
+
+## ✅ 5. Optional (Recommended UX)
+
+### Add Clear Filters Button
+
+```tsx id="n9kd2l"
+<button onClick={resetFilters}>
+  Clear Filters
+</button>
+```
+
+```ts id="r7x2mp"
+const resetFilters = () => {
+  setSearch("");
+  setSelectedService("");
+  setSelectedCompany("");
+  setSelectedType("");
+  setSelectedStage("");
+};
+```
+
+---
+
+## 🚀 FINAL RESULT
+
+* New **Pipeline Stage filter added**
+* Works seamlessly with:
+
+  * Search
+  * Service
+  * Company
+  * Lead Type
+* Clean, consistent UI
+* Real-time filtering
+
+---
+
+## 🔥 BONUS (Future Upgrade)
+
+* Multi-select stage filter
+* Stage-wise analytics integration
+* Save filter presets
+
+---
+
+## 📌 FINAL INSTRUCTION
+
+Ensure:
+
+* No UI break
+* Same dropdown style as other filters
+* Fast filtering (no lag)
+* Works in real-time
+
+---
+
+This makes your dashboard **much more powerful + CRM-grade** 📊
