@@ -113,7 +113,7 @@ router.get("/me", requireAuth, async (req: AuthRequest, res) => {
 });
 
 router.post("/set-password", async (req, res) => {
-  const { token, password } = req.body;
+  const { token, password, displayName } = req.body;
   if (!token || !password) {
     res.status(400).json({ message: "Token and password required" });
     return;
@@ -139,9 +139,14 @@ router.post("/set-password", async (req, res) => {
 
     const hash = await bcrypt.hash(password, 12);
 
+    const updateFields: Record<string, any> = { passwordHash: hash, updatedAt: new Date() };
+    if (displayName && typeof displayName === "string" && displayName.trim()) {
+      updateFields.displayName = displayName.trim();
+    }
+
     await db
       .update(usersTable)
-      .set({ passwordHash: hash, updatedAt: new Date() })
+      .set(updateFields)
       .where(eq(usersTable.id, tokenRows[0].userId));
 
     await db
@@ -152,6 +157,45 @@ router.post("/set-password", async (req, res) => {
     res.json({ success: true, message: "Password set successfully" });
   } catch (err) {
     req.log.error({ err }, "Set password error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.patch("/profile", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const { displayName, avatarUrl } = req.body;
+    const updates: Record<string, any> = { updatedAt: new Date() };
+
+    if (displayName !== undefined) {
+      if (typeof displayName !== "string" || !displayName.trim()) {
+        res.status(400).json({ message: "Display name cannot be empty" });
+        return;
+      }
+      updates.displayName = displayName.trim();
+    }
+
+    if (avatarUrl !== undefined) {
+      updates.avatarUrl = avatarUrl || null;
+    }
+
+    if (Object.keys(updates).length === 1) {
+      res.status(400).json({ message: "No fields to update" });
+      return;
+    }
+
+    await db.update(usersTable).set(updates).where(eq(usersTable.id, req.user!.userId));
+
+    const rows = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+    if (!rows[0]) { res.status(404).json({ message: "User not found" }); return; }
+
+    res.json({
+      id: rows[0].id,
+      email: rows[0].email,
+      displayName: rows[0].displayName,
+      avatarUrl: rows[0].avatarUrl,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Update profile error");
     res.status(500).json({ message: "Internal server error" });
   }
 });

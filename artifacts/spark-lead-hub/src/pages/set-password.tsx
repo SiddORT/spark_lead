@@ -18,6 +18,7 @@ function getPasswordStrength(pw: string): { score: number; label: string } {
 const SEG_CLASSES = ["", "s-weak", "s-fair", "s-good", "s-strong"];
 
 export function SetPassword() {
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm]   = useState("");
   const [showPw, setShowPw]     = useState(false);
@@ -34,7 +35,7 @@ export function SetPassword() {
   const { score, label } = getPasswordStrength(password);
   const passwordsMatch   = password.length > 0 && confirm.length > 0 && password === confirm;
   const confirmMismatch  = confirm.length > 0 && password !== confirm;
-  const canSubmit        = !!token && password.length >= 8 && passwordsMatch && !loading;
+  const canSubmit        = !!token && displayName.trim().length >= 2 && password.length >= 8 && passwordsMatch && !loading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +50,7 @@ export function SetPassword() {
       const res  = await fetch("/api/auth/set-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ token, password, displayName: displayName.trim() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message);
@@ -90,8 +91,8 @@ export function SetPassword() {
           </div>
         ) : (
           <>
-            <div className="auth-title">Set Your Password</div>
-            <p className="auth-subtitle">Create a secure password to activate your account</p>
+            <div className="auth-title">Activate Your Account</div>
+            <p className="auth-subtitle">Choose a display name and create a secure password</p>
 
             {error && (
               <div style={{
@@ -115,6 +116,28 @@ export function SetPassword() {
             )}
 
             <form onSubmit={handleSubmit}>
+              {/* Display Name */}
+              <div className="form-field">
+                <label className="field-label">Display Name <span className="req">*</span></label>
+                <input
+                  className="field-input"
+                  type="text"
+                  required
+                  minLength={2}
+                  maxLength={60}
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  placeholder="How you'll appear to your team"
+                  autoComplete="name"
+                  autoFocus
+                />
+                {displayName.trim().length > 0 && displayName.trim().length < 2 && (
+                  <div style={{ fontSize: 11, color: "var(--danger)", marginTop: 4 }}>
+                    At least 2 characters required
+                  </div>
+                )}
+              </div>
+
               {/* New Password */}
               <div className="form-field">
                 <label className="field-label">New Password <span className="req">*</span></label>

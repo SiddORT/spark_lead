@@ -1,0 +1,255 @@
+## 🚀 Add User Display Name + Profile Management (End-to-End Implementation)
+
+---
+
+# 🎯 Objective
+
+Enhance user system to support:
+
+### ✅ Display Name
+
+* User sets **Display Name during password setup**
+* Used across entire system (dropdowns, assignments, UI)
+
+### ✅ Profile Management
+
+* User can:
+
+  * Upload profile photo
+  * Edit display name anytime
+
+### ✅ System Consistency
+
+* Replace email/username with **display name everywhere**
+
+---
+
+# ❗ Current Problem
+
+* No display name concept
+* Email/username shown in dropdowns
+* No profile photo support
+* No user profile edit option
+
+---
+
+# ✅ EXPECTED FLOW
+
+---
+
+## 🧩 1. During Password Setup
+
+When user receives invite link:
+
+👉 Add fields:
+
+* Display Name (Required)
+* Password
+* Confirm Password
+
+---
+
+## 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Update Database (Supabase)
+
+```sql
+alter table users
+add column display_name text,
+add column avatar_url text;
+```
+
+---
+
+## ✅ 2. Update Password Setup Page
+
+```tsx
+<input
+  type="text"
+  placeholder="Enter Display Name"
+  value={displayName}
+  onChange={(e) => setDisplayName(e.target.value)}
+  required
+/>
+```
+
+---
+
+### Save on Submit:
+
+```ts
+await supabase.auth.updateUser({
+  password,
+  data: {
+    display_name: displayName,
+  },
+});
+```
+
+---
+
+## ✅ 3. Create Profile Page (User Settings)
+
+👉 Route: `/profile`
+
+---
+
+### UI Fields:
+
+```tsx
+- Profile Photo Upload
+- Display Name (editable)
+- Email (read-only)
+```
+
+---
+
+### Profile Image Upload
+
+```ts
+const uploadAvatar = async (file) => {
+  const { data } = await supabase.storage
+    .from("avatars")
+    .upload(`user-${user.id}`, file, {
+      upsert: true,
+    });
+
+  const publicUrl = supabase.storage
+    .from("avatars")
+    .getPublicUrl(data.path).data.publicUrl;
+
+  await supabase.from("users").update({
+    avatar_url: publicUrl,
+  }).eq("id", user.id);
+};
+```
+
+---
+
+### Update Display Name
+
+```ts
+await supabase.auth.updateUser({
+  data: {
+    display_name: newDisplayName,
+  },
+});
+```
+
+---
+
+## ✅ 4. Update Sidebar Profile Click
+
+```tsx
+onClick={() => navigate("/profile")}
+```
+
+---
+
+## ✅ 5. Replace User Display Everywhere (CRITICAL)
+
+👉 Replace:
+
+```ts
+user.email ❌
+user.username ❌
+```
+
+👉 With:
+
+```ts
+user.user_metadata.display_name || user.email ✅
+```
+
+---
+
+## ✅ 6. Update Dropdowns (Lead Owner, Deal Handler, etc.)
+
+```ts
+const formattedUsers = users.map((user) => ({
+  label: user.display_name || user.email,
+  value: user.id,
+}));
+```
+
+---
+
+## ✅ 7. Show Avatar + Name in UI
+
+```tsx
+<img src={user.avatar_url} className="w-8 h-8 rounded-full" />
+
+<span>{user.display_name}</span>
+```
+
+---
+
+## 🧪 TESTING (MANDATORY)
+
+---
+
+### ✅ Functional Testing
+
+* Display name saved during password setup
+* Profile page loads correctly
+* Avatar upload works
+* Display name updates instantly
+
+---
+
+### ✅ UI Testing
+
+* Sidebar shows correct name
+* Dropdowns show display name
+* Avatar visible across system
+
+---
+
+### ✅ Edge Cases
+
+* No display name → fallback to email
+* Invalid image upload
+* Network failure during upload
+* Duplicate display names (allowed or restricted based on decision)
+
+---
+
+### ✅ Integration Testing
+
+* Lead Owner dropdown
+* Deal Handler dropdown
+* Team page
+* Audit logs
+
+---
+
+## 🚀 FINAL RESULT
+
+* Personalized user identity
+* Clean UI (no emails everywhere)
+* Profile management enabled
+* Professional CRM experience
+
+---
+
+## 🔥 BONUS (Recommended Enhancements)
+
+* Add initials fallback if no avatar
+* Add “Remove photo” option
+* Add role display in profile
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Ensure backward compatibility
+* No breaking changes
+* Proper fallback handling
+* Full system consistency
+* Thorough testing before deploy
+
+---
+
+This upgrade makes your system **enterprise-grade and user-friendly** 👤🚀

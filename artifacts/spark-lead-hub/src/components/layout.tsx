@@ -185,13 +185,27 @@ export function Layout({ children }: { children: React.ReactNode }) {
         }}>
           {!collapsed ? (
             <>
-              <div style={{
+              <Link href="/profile" style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "var(--space-2)",
                 marginBottom: "var(--space-2)",
-              }}>
-                <div className="avatar" style={{ flexShrink: 0 }}>{initials(user?.displayName)}</div>
+                textDecoration: "none",
+                borderRadius: "var(--radius-sm)",
+                padding: "4px",
+                margin: "-4px -4px var(--space-2) -4px",
+                transition: "background 150ms ease",
+              }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(172 75% 48% / 0.06)"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+                title="View profile"
+              >
+                <div className="avatar" style={{ flexShrink: 0 }}>
+                  {user?.avatarUrl
+                    ? <img src={user.avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+                    : initials(user?.displayName)
+                  }
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: "var(--text-xs)",
@@ -213,7 +227,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     {user?.email}
                   </div>
                 </div>
-              </div>
+              </Link>
               <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
                 <span className={`badge badge-admin`} style={{ textTransform: "none", flex: 1, justifyContent: "center" }}>
                   {user?.role?.replace("_", " ")}
@@ -238,7 +252,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-2)" }}>
-              <div className="avatar avatar-sm">{initials(user?.displayName)}</div>
+              <Link href="/profile" title="View profile" style={{ textDecoration: "none" }}>
+                <div className="avatar avatar-sm" style={{ cursor: "pointer", transition: "box-shadow 150ms ease" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 2px hsl(172 75% 48% / 0.5)"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = "none"}
+                >
+                  {user?.avatarUrl
+                    ? <img src={user.avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+                    : initials(user?.displayName)
+                  }
+                </div>
+              </Link>
               <button
                 onClick={() => setCollapsed(false)}
                 className="btn btn-ghost btn-icon"

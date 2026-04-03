@@ -17,6 +17,7 @@ import { AuthPage } from "@/pages/auth";
 import { RequestAccess } from "@/pages/request-access";
 import { AccessDenied } from "@/pages/access-denied";
 import { SetPassword } from "@/pages/set-password";
+import { Profile } from "@/pages/profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,9 @@ function Router() {
       <Route path="/request-access" component={RequestAccess} />
       <Route path="/access-denied" component={AccessDenied} />
       <Route path="/set-password" component={SetPassword} />
+      <Route path="/profile">
+        <ProtectedLayout><Profile /></ProtectedLayout>
+      </Route>
 
       <Route path="/">
         <ProtectedLayout><Dashboard /></ProtectedLayout>

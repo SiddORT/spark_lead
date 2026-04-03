@@ -4,6 +4,18 @@
 
 Production-grade closed-circuit CRM system built as a pnpm monorepo. Features a dark cyberpunk/neon theme with full-stack TypeScript.
 
+## Key Features
+
+- **JWT auth** with whitelist gating, 15-min idle timeout + warning modal
+- **4-stage Kanban pipeline** (DB-driven stages, drag-and-drop)
+- **Lead management** with new lead form, service on-the-fly creation
+- **Analytics** — closure performance trend chart (7d/30d), pipeline funnel, win-rate widgets
+- **Team management** — invite flow with email/copy-link, role assignment, RBAC
+- **Profile management** — display name edit, avatar upload (canvas-resized, base64 JPEG), clickable sidebar user section
+- **Master data** — companies, services, pipeline stage configuration
+- **Admin** — granular permissions, full audit trail
+- **Set-password flow** — collects display name + password on first activation
+
 ## Admin Credentials (Seeded)
 
 - **Email**: admin@sparkleadhub.com
