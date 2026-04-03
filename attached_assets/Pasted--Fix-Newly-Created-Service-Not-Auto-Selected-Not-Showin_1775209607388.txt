@@ -1,0 +1,214 @@
+## 🛠 Fix: Newly Created Service Not Auto-Selected & Not Showing in Dropdown
+
+---
+
+# 🎯 Objective
+
+After creating a new service from the **Create Lead form**:
+
+### ✅ Must happen:
+
+* Service should be:
+
+  * Added to dropdown options instantly
+  * Auto-selected in the form
+* Company dropdown should update based on new service
+* No page refresh required
+
+---
+
+# ❗ Current Issue
+
+* Service is created in DB ✅
+* Service-company mapping works ✅
+* BUT:
+
+  * ❌ Not visible in dropdown
+  * ❌ Not auto-selected
+  * ❌ Form state not updated
+
+---
+
+# 🧠 Root Cause
+
+* Local `services` state is not updated properly
+* Dropdown uses stale state
+* Selected value not matching option format
+* Async state update not handled correctly
+
+---
+
+# ✅ FIX IMPLEMENTATION
+
+---
+
+## ✅ 1. Ensure Correct Service Object Format
+
+👉 Your dropdown likely expects:
+
+```ts
+{
+  label: "CRM Implementation",
+  value: "crm_implementation"
+}
+```
+
+### FIX: Normalize new service
+
+```ts id="fix1"
+const formattedService = {
+  label: newService.name,
+  value: newService.id, // IMPORTANT: use id (not name)
+};
+```
+
+---
+
+## ✅ 2. Update Services State Properly
+
+```ts id="fix2"
+setServices((prev) => {
+  const updated = [...prev, formattedService];
+  return updated;
+});
+```
+
+---
+
+## ✅ 3. Immediately Select New Service (CRITICAL)
+
+```ts id="fix3"
+setSelectedService(formattedService.value);
+```
+
+👉 NOT:
+
+```ts
+setSelectedService(newService.name) ❌
+```
+
+---
+
+## ✅ 4. Ensure Dropdown Uses SAME Value Key
+
+```tsx
+<CustomSelect
+  value={selectedService}
+  onChange={handleServiceChange}
+  options={services}
+/>
+```
+
+👉 Matching must be:
+
+* `value` === `selectedService`
+
+---
+
+## ✅ 5. Fix Async Timing Issue (IMPORTANT)
+
+React state updates are async → ensure selection happens AFTER state update:
+
+```ts id="fix4"
+const handleCreateService = async () => {
+  const newService = await createService(...);
+
+  const formattedService = {
+    label: newService.name,
+    value: newService.id,
+  };
+
+  setServices((prev) => [...prev, formattedService]);
+
+  // Force next tick selection
+  setTimeout(() => {
+    setSelectedService(formattedService.value);
+  }, 0);
+
+  setShowServiceModal(false);
+};
+```
+
+---
+
+## ✅ 6. Ensure Dropdown Re-Renders
+
+If still not updating:
+
+```tsx id="fix5"
+<CustomSelect
+  key={services.length} // force re-render
+  value={selectedService}
+  options={services}
+/>
+```
+
+---
+
+## ✅ 7. Update Company Dropdown Based on New Service
+
+```ts id="fix6"
+useEffect(() => {
+  if (selectedService) {
+    const linkedCompanies =
+      serviceCompanyMap[selectedService] || [];
+
+    setFilteredCompanies(
+      companies.filter((c) => linkedCompanies.includes(c.id))
+    );
+  }
+}, [selectedService]);
+```
+
+---
+
+## 🧪 TEST CASES
+
+---
+
+### ✅ Must Work
+
+* Add new service → appears instantly in dropdown
+* Service auto-selected
+* Company list updates
+* No page refresh
+
+---
+
+### ❌ Must NOT Happen
+
+* Service missing in dropdown
+* Wrong value selected
+* Form reset
+* Duplicate entries
+
+---
+
+## 🚀 FINAL RESULT
+
+* Seamless service creation
+* Instant UI update
+* Auto-selection working
+* Perfect UX
+
+---
+
+## ⚠️ COMMON MISTAKES
+
+❌ Using `name` instead of `id` as value
+❌ Not updating state immutably
+❌ Dropdown expecting different format
+❌ Async state race condition
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Ensure dropdown uses consistent `{label, value}` format
+* Always use `id` as value
+* Update state BEFORE selecting
+* Handle async properly
+
+---
+
+This will fix your issue **100% reliably** 🚀

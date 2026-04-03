@@ -126,9 +126,27 @@ export function NewLead() {
     try {
       const newSvc = await createService.mutateAsync({ data: { name: trimmed } });
       await linkServiceCompanies.mutateAsync({ id: (newSvc as any).id, data: { companyIds: newServiceCompanyIds } });
-      queryClient.invalidateQueries({ queryKey: ["getServices"] });
+
+      // 1. Optimistically add the new service into the React Query cache so
+      //    the dropdown option exists BEFORE we update selectedService.
+      const linkedCompanyObjs = (allCompanies as any[]).filter((c: any) => newServiceCompanyIds.includes(c.id));
+      const newSvcEntry = { ...(newSvc as any), companies: linkedCompanyObjs };
+      queryClient.setQueryData(["/api/services"], (old: any) =>
+        Array.isArray(old) ? [...old, newSvcEntry] : [newSvcEntry]
+      );
+
+      // 2. Also trigger a background refetch for eventual consistency.
+      queryClient.invalidateQueries({ queryKey: ["/api/services"] });
+
+      // 3. Also invalidate service-companies cache for the new id (used by
+      //    the Link Companies section below the dropdown).
+      queryClient.invalidateQueries({ queryKey: [`/api/services/${(newSvc as any).id}/companies`] });
+
+      // 4. Update form: select the new service and clear companyIds (the
+      //    company checkboxes will re-render once useGetServiceCompanies resolves).
       set("serviceId", (newSvc as any).id);
       set("companyIds", []);
+
       setShowServiceModal(false);
       toast.success(`Service "${trimmed}" created and selected`);
     } catch (err: any) {
