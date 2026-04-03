@@ -1,8 +1,13 @@
 import { useState } from "react";
-import { useCreateLead, useGetServices, useGetServiceCompanies, useGetTeamMembers } from "@workspace/api-client-react";
+import {
+  useCreateLead, useGetServices, useGetServiceCompanies,
+  useGetTeamMembers, useCreateService, useLinkServiceCompanies,
+  useGetCompanies,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
-import { PlusCircle, ArrowLeft } from "lucide-react";
+import { PlusCircle, ArrowLeft, X, Building2 } from "lucide-react";
 import { StageStatusSelect } from "@/components/stage-status-select";
 import { CustomSelect } from "@/components/custom-select";
 
@@ -82,11 +87,56 @@ function StyledTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>
 
 export function NewLead() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const createLead = useCreateLead();
+  const createService = useCreateService();
+  const linkServiceCompanies = useLinkServiceCompanies();
   const { data: teamMembers = [] } = useGetTeamMembers();
   const whitelistedUsers = (teamMembers as any[]).filter((m: any) => m.whitelistStatus === "active");
-  const { data: services } = useGetServices();
+  const { data: services = [] } = useGetServices();
+  const { data: allCompanies = [] } = useGetCompanies();
   const [primaryHover, setPrimaryHover] = useState(false);
+
+  // "Add New Service" modal state
+  const [showServiceModal, setShowServiceModal] = useState(false);
+  const [newServiceName, setNewServiceName] = useState("");
+  const [newServiceCompanyIds, setNewServiceCompanyIds] = useState<string[]>([]);
+  const [savingService, setSavingService] = useState(false);
+
+  const handleServiceChange = (val: string) => {
+    if (val === "__add_new__") {
+      setNewServiceName("");
+      setNewServiceCompanyIds([]);
+      setShowServiceModal(true);
+    } else {
+      set("serviceId", val);
+      set("companyIds", []);
+    }
+  };
+
+  const handleCreateService = async () => {
+    const trimmed = newServiceName.trim();
+    if (!trimmed) { toast.error("Service name is required"); return; }
+    if ((services as any[]).some((s: any) => s.name.toLowerCase() === trimmed.toLowerCase())) {
+      toast.error("A service with this name already exists"); return;
+    }
+    if (newServiceCompanyIds.length === 0) { toast.error("Select at least one company"); return; }
+
+    setSavingService(true);
+    try {
+      const newSvc = await createService.mutateAsync({ data: { name: trimmed } });
+      await linkServiceCompanies.mutateAsync({ id: (newSvc as any).id, data: { companyIds: newServiceCompanyIds } });
+      queryClient.invalidateQueries({ queryKey: ["getServices"] });
+      set("serviceId", (newSvc as any).id);
+      set("companyIds", []);
+      setShowServiceModal(false);
+      toast.success(`Service "${trimmed}" created and selected`);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create service");
+    } finally {
+      setSavingService(false);
+    }
+  };
 
   const [formData, setFormData] = useState<any>({
     leadName: "",
@@ -276,9 +326,12 @@ export function NewLead() {
               <FieldLabel>Service</FieldLabel>
               <CustomSelect
                 value={formData.serviceId || null}
-                onChange={val => set("serviceId", val)}
+                onChange={handleServiceChange}
                 placeholder="Select service…"
-                options={(services || []).map(s => ({ value: s.id, label: s.name }))}
+                options={[
+                  ...(services as any[]).map((s: any) => ({ value: s.id, label: s.name })),
+                  { value: "__add_new__", label: "+ Add New Service", prefix: "✦" },
+                ]}
               />
             </div>
 
@@ -430,6 +483,176 @@ export function NewLead() {
           </div>
         </form>
       </div>
+
+      {/* ── Add New Service Modal ── */}
+      {showServiceModal && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) setShowServiceModal(false); }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "hsl(222 22% 3% / 0.75)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "var(--space-4)",
+          }}
+        >
+          <div style={{
+            width: "100%", maxWidth: 480,
+            background: "var(--bg-elevated)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-xl)",
+            boxShadow: "0 32px 64px hsl(222 22% 3% / 0.6), 0 0 0 1px hsl(172 75% 48% / 0.08)",
+            overflow: "hidden",
+          }}>
+            {/* Modal header */}
+            <div style={{
+              padding: "var(--space-5) var(--space-6)",
+              borderBottom: "1px solid var(--border-subtle)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: "var(--radius-md)",
+                  background: "hsl(172 75% 48% / 0.12)",
+                  border: "1px solid hsl(172 75% 48% / 0.25)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Building2 size={15} style={{ color: "var(--teal)" }} />
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: "var(--text-base)", color: "var(--text-primary)", fontFamily: "var(--font-display)" }}>
+                    Add New Service
+                  </div>
+                  <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginTop: 1 }}>
+                    Create and link to companies in one step
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowServiceModal(false)}
+                style={{
+                  width: 30, height: 30, borderRadius: "var(--radius-sm)",
+                  background: "transparent", border: "1px solid var(--border-default)",
+                  color: "var(--text-muted)", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  transition: "background 150ms ease, color 150ms ease",
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--bg-subtle)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; }}
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ padding: "var(--space-6)" }}>
+              {/* Service Name */}
+              <div style={{ marginBottom: "var(--space-5)" }}>
+                <FieldLabel required>Service Name</FieldLabel>
+                <StyledInput
+                  value={newServiceName}
+                  onChange={e => setNewServiceName(e.target.value)}
+                  placeholder="e.g. Cloud Migration"
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleCreateService(); } }}
+                  autoFocus
+                />
+              </div>
+
+              {/* Link Companies */}
+              <div>
+                <FieldLabel required>Link to Companies</FieldLabel>
+                <p style={{ margin: "0 0 10px", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
+                  Select at least one company this service applies to
+                </p>
+                {(allCompanies as any[]).length === 0 ? (
+                  <div style={{ padding: "var(--space-4)", textAlign: "center", color: "var(--text-muted)", fontSize: "var(--text-sm)", background: "var(--bg-subtle)", borderRadius: "var(--radius-md)" }}>
+                    No companies found — add companies first
+                  </div>
+                ) : (
+                  <div style={{
+                    maxHeight: 220, overflowY: "auto",
+                    background: "var(--bg-subtle)",
+                    border: "1px solid var(--border-default)",
+                    borderRadius: "var(--radius-md)",
+                    padding: "var(--space-2)",
+                  }}>
+                    {(allCompanies as any[]).map((c: any) => {
+                      const checked = newServiceCompanyIds.includes(c.id);
+                      return (
+                        <label
+                          key={c.id}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "var(--space-3)",
+                            padding: "8px 10px", borderRadius: "var(--radius-sm)",
+                            cursor: "pointer", transition: "background 120ms ease",
+                            background: checked ? "hsl(172 75% 48% / 0.08)" : "transparent",
+                          }}
+                          onMouseEnter={e => { if (!checked) e.currentTarget.style.background = "var(--bg-elevated)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = checked ? "hsl(172 75% 48% / 0.08)" : "transparent"; }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={e => setNewServiceCompanyIds(prev =>
+                              e.target.checked ? [...prev, c.id] : prev.filter(id => id !== c.id)
+                            )}
+                            style={{ accentColor: "var(--teal)", width: 15, height: 15, flexShrink: 0 }}
+                          />
+                          <span style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>{c.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+                {newServiceCompanyIds.length > 0 && (
+                  <p style={{ margin: "6px 0 0", fontSize: 11, color: "var(--teal)" }}>
+                    {newServiceCompanyIds.length} {newServiceCompanyIds.length === 1 ? "company" : "companies"} selected
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div style={{
+              padding: "var(--space-4) var(--space-6)",
+              borderTop: "1px solid var(--border-subtle)",
+              display: "flex", justifyContent: "flex-end", gap: "var(--space-3)",
+            }}>
+              <button
+                type="button"
+                onClick={() => setShowServiceModal(false)}
+                disabled={savingService}
+                style={{
+                  height: 38, padding: "0 18px",
+                  background: "transparent", border: "1px solid var(--border-default)",
+                  borderRadius: "var(--radius-md)", color: "var(--text-secondary)",
+                  fontSize: "var(--text-sm)", fontWeight: 500, fontFamily: "var(--font-sans)",
+                  cursor: savingService ? "not-allowed" : "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateService}
+                disabled={savingService}
+                style={{
+                  height: 38, padding: "0 24px",
+                  background: savingService ? "hsl(172 75% 48% / 0.6)" : "var(--teal)",
+                  color: "hsl(222 22% 6%)", border: "none",
+                  borderRadius: "var(--radius-md)", fontSize: "var(--text-sm)",
+                  fontWeight: 700, fontFamily: "var(--font-sans)",
+                  cursor: savingService ? "not-allowed" : "pointer",
+                  display: "flex", alignItems: "center", gap: "var(--space-2)",
+                }}
+              >
+                <PlusCircle size={14} />
+                {savingService ? "Saving…" : "Save Service"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

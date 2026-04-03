@@ -1,0 +1,274 @@
+## 🚀 Add “Create Service On-The-Fly + Link to Company” in Create Lead Form
+
+---
+
+# 🎯 Objective
+
+Enhance **Create New Lead** form to allow:
+
+### ✅ User can:
+
+* Add a **new Service directly from dropdown**
+* Link that service to one or more **Companies**
+* Automatically:
+
+  * Select the newly created service in form
+  * Update company dropdown accordingly
+* Continue lead creation without losing form state
+
+---
+
+# ❗ Problem Today
+
+* Service must exist beforehand
+* Breaks flow if missing
+* No quick way to add + link service
+
+---
+
+# ✅ EXPECTED UX FLOW
+
+1. User opens **Service dropdown**
+2. If service not found → clicks:
+
+👉 **“+ Add New Service”**
+
+3. Modal opens:
+
+   * Enter Service Name
+   * Select Companies to link
+
+4. Click **Save**
+
+5. System:
+
+   * Saves new service
+   * Links it with selected companies
+   * Auto-selects it in form
+   * Updates Company dropdown
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Update Service Dropdown UI
+
+```tsx id="svc1"
+<CustomSelect
+  value={selectedService}
+  onChange={setSelectedService}
+  options={[
+    ...services,
+    { label: "+ Add New Service", value: "__add_new__" },
+  ]}
+/>
+```
+
+---
+
+## ✅ 2. Handle “Add New” Click
+
+```ts id="svc2"
+const handleServiceChange = (value) => {
+  if (value === "__add_new__") {
+    setShowServiceModal(true);
+  } else {
+    setSelectedService(value);
+  }
+};
+```
+
+---
+
+## ✅ 3. Create Modal UI
+
+```tsx id="svc3"
+{showServiceModal && (
+  <Modal onClose={() => setShowServiceModal(false)}>
+    
+    <h2 className="text-white mb-4">Add New Service</h2>
+
+    <input
+      type="text"
+      placeholder="Service Name"
+      value={newServiceName}
+      onChange={(e) => setNewServiceName(e.target.value)}
+      className="input"
+    />
+
+    <MultiSelect
+      options={companies}
+      value={selectedCompanies}
+      onChange={setSelectedCompanies}
+      placeholder="Select Companies"
+    />
+
+    <button onClick={handleCreateService}>
+      Save Service
+    </button>
+
+  </Modal>
+)}
+```
+
+---
+
+## ✅ 4. Backend: Create Service + Link Companies
+
+### DB Structure:
+
+```sql
+services (id, name)
+companies (id, name)
+service_company_map (service_id, company_id)
+```
+
+---
+
+### API: `/api/create-service`
+
+```ts id="svc4"
+export async function createService(data) {
+  const { name, companyIds } = data;
+
+  // Insert service
+  const { data: service } = await supabase
+    .from("services")
+    .insert({ name })
+    .select()
+    .single();
+
+  // Link companies
+  const mappings = companyIds.map((id) => ({
+    service_id: service.id,
+    company_id: id,
+  }));
+
+  await supabase.from("service_company_map").insert(mappings);
+
+  return service;
+}
+```
+
+---
+
+## ✅ 5. Handle Save in Frontend
+
+```ts id="svc5"
+const handleCreateService = async () => {
+  const newService = await createService({
+    name: newServiceName,
+    companyIds: selectedCompanies,
+  });
+
+  // Update services list
+  setServices((prev) => [...prev, newService]);
+
+  // Auto select new service
+  setSelectedService(newService.name);
+
+  // Update company dropdown
+  setSelectedCompany("");
+
+  setShowServiceModal(false);
+};
+```
+
+---
+
+## ✅ 6. Filter Company Dropdown Based on Service
+
+```ts id="svc6"
+const filteredCompanies = companies.filter((company) =>
+  serviceCompanyMap[selectedService]?.includes(company.id)
+);
+```
+
+---
+
+# ⚠️ VALIDATIONS (CRITICAL)
+
+### Prevent duplicates:
+
+```ts id="svc7"
+if (services.some(s => s.name === newServiceName)) {
+  alert("Service already exists");
+  return;
+}
+```
+
+---
+
+### Ensure at least 1 company selected:
+
+```ts id="svc8"
+if (selectedCompanies.length === 0) {
+  alert("Select at least one company");
+  return;
+}
+```
+
+---
+
+# 🧪 TEST CASES (MANDATORY)
+
+---
+
+## ✅ Functional Tests
+
+* Add new service → appears in dropdown
+* Auto-selected after creation
+* Linked companies appear correctly
+* Existing form data NOT lost
+* Works with multiple companies
+
+---
+
+## ✅ Edge Cases
+
+* Duplicate service name ❌ blocked
+* No company selected ❌ blocked
+* API failure → show error
+* Modal close without save → no changes
+
+---
+
+## ✅ Integration Tests
+
+* Service + Company linkage works across:
+
+  * Create Lead
+  * Edit Lead
+  * Filters (if used)
+
+---
+
+## ✅ UX Tests
+
+* Smooth modal open/close
+* No page reload
+* Dropdown updates instantly
+
+---
+
+# 🚀 FINAL RESULT
+
+* Seamless service creation flow
+* No interruption in lead creation
+* Smart linking between service & company
+* Fully dynamic system
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Ensure NO state loss in form
+* Maintain dark theme UI
+* Handle async errors properly
+* Keep logic clean and reusable
+
+---
+
+This feature will make your CRM **extremely powerful & user-friendly** 🚀
