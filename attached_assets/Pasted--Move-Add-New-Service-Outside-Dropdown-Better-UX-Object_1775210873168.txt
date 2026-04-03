@@ -1,0 +1,186 @@
+## 🚀 Move “Add New Service” Outside Dropdown (Better UX)
+
+---
+
+# 🎯 Objective
+
+Improve UX of **Service selection in Create Lead form**:
+
+### ❌ Current
+
+* “+ Add New Service” inside dropdown
+* Feels cluttered and hidden
+
+### ✅ New Approach
+
+* Add **“+ Add Service” button beside the Service field**
+* Keep dropdown clean
+* Open modal directly from button
+
+---
+
+# ✅ EXPECTED UI
+
+```plaintext
+SERVICE
+[ Select service...             ]  [+ Add Service]
+```
+
+* Input = dropdown
+* Button = inline (right side)
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Update Layout (Service Field + Button)
+
+```tsx
+<div className="flex items-center gap-2">
+  
+  <div className="flex-1">
+    <CustomSelect
+      value={selectedService}
+      onChange={handleServiceChange}
+      options={services}
+      placeholder="Select service..."
+    />
+  </div>
+
+  <button
+    onClick={() => setShowServiceModal(true)}
+    className="px-3 py-2 bg-teal-500/10 border border-teal-500/30 text-teal-400 rounded-lg hover:bg-teal-500/20 text-sm"
+  >
+    + Add
+  </button>
+
+</div>
+```
+
+---
+
+## ✅ 2. Remove “Add New Service” from Dropdown
+
+❌ Remove this:
+
+```ts
+{ label: "+ Add New Service", value: "__add_new__" }
+```
+
+---
+
+## ✅ 3. Keep Modal Logic Same
+
+```ts
+const handleCreateService = async () => {
+  const newService = await createService(...);
+
+  const formattedService = {
+    label: newService.name,
+    value: newService.id,
+  };
+
+  // Update dropdown
+  setServices((prev) => [...prev, formattedService]);
+
+  // Auto-select new service
+  setSelectedService(formattedService.value);
+
+  setShowServiceModal(false);
+};
+```
+
+---
+
+## ✅ 4. Ensure Immediate UI Sync (CRITICAL)
+
+If dropdown still doesn’t update:
+
+```tsx
+<CustomSelect
+  key={services.length}
+  value={selectedService}
+  options={services}
+/>
+```
+
+---
+
+## ✅ 5. UX Enhancements (IMPORTANT)
+
+### Add Tooltip:
+
+```tsx
+title="Add new service"
+```
+
+---
+
+### Add Icon (Optional):
+
+```tsx
+<span>＋</span>
+```
+
+---
+
+### Disable button while saving:
+
+```tsx
+disabled={loading}
+```
+
+---
+
+## 🧪 TEST CASES
+
+---
+
+### ✅ Must Work
+
+* Click “+ Add” → modal opens
+* Create service → appears in dropdown instantly
+* Service auto-selected
+* Form state preserved
+
+---
+
+### ❌ Must NOT Happen
+
+* Dropdown not updating
+* Service not selected
+* Form reset
+* Duplicate service
+
+---
+
+## 🚀 FINAL RESULT
+
+* Cleaner UI ✅
+* Faster workflow ✅
+* Better discoverability ✅
+* Scalable pattern (can reuse for company, owner, etc.) ✅
+
+---
+
+## 🔥 BONUS (Next Level)
+
+Apply same pattern to:
+
+* Company field → “+ Add Company”
+* Lead Owner → “+ Add User”
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Keep dropdown simple
+* Keep actions outside
+* Ensure instant state sync
+* Maintain dark theme consistency
+
+---
+
+This makes your CRM feel **premium and intuitive** 🚀

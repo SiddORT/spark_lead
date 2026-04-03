@@ -103,17 +103,6 @@ export function NewLead() {
   const [newServiceCompanyIds, setNewServiceCompanyIds] = useState<string[]>([]);
   const [savingService, setSavingService] = useState(false);
 
-  const handleServiceChange = (val: string) => {
-    if (val === "__add_new__") {
-      setNewServiceName("");
-      setNewServiceCompanyIds([]);
-      setShowServiceModal(true);
-    } else {
-      set("serviceId", val);
-      set("companyIds", []);
-    }
-  };
-
   const handleCreateService = async () => {
     const trimmed = newServiceName.trim();
     if (!trimmed) { toast.error("Service name is required"); return; }
@@ -339,18 +328,39 @@ export function NewLead() {
               </div>
             </div>
 
-            {/* Service — full width */}
+            {/* Service — full width with inline "Add" button */}
             <div>
               <FieldLabel>Service</FieldLabel>
-              <CustomSelect
-                value={formData.serviceId || null}
-                onChange={handleServiceChange}
-                placeholder="Select service…"
-                options={[
-                  ...(services as any[]).map((s: any) => ({ value: s.id, label: s.name })),
-                  { value: "__add_new__", label: "+ Add New Service", prefix: "✦" },
-                ]}
-              />
+              <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "flex-start" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <CustomSelect
+                    value={formData.serviceId || null}
+                    onChange={val => { set("serviceId", val); set("companyIds", []); }}
+                    placeholder="Select service…"
+                    options={(services as any[]).map((s: any) => ({ value: s.id, label: s.name }))}
+                  />
+                </div>
+                <button
+                  type="button"
+                  title="Add new service"
+                  onClick={() => { setNewServiceName(""); setNewServiceCompanyIds([]); setShowServiceModal(true); }}
+                  style={{
+                    height: 42, padding: "0 14px", flexShrink: 0,
+                    background: "hsl(172 75% 48% / 0.08)",
+                    border: "1px solid hsl(172 75% 48% / 0.3)",
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--teal)",
+                    fontSize: "var(--text-sm)", fontWeight: 600,
+                    fontFamily: "var(--font-sans)",
+                    cursor: "pointer", whiteSpace: "nowrap",
+                    transition: "background 150ms ease, border-color 150ms ease",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "hsl(172 75% 48% / 0.15)"; e.currentTarget.style.borderColor = "hsl(172 75% 48% / 0.5)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "hsl(172 75% 48% / 0.08)"; e.currentTarget.style.borderColor = "hsl(172 75% 48% / 0.3)"; }}
+                >
+                  + Add
+                </button>
+              </div>
             </div>
 
             {/* 2-col: Lead Owner + Deal Handler */}
