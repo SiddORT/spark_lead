@@ -3,12 +3,12 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, Cell, PieChart, Pie, Legend
+  AreaChart, Area, BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend
 } from "recharts";
 import { BarChart3, Target, Clock, Layers, XCircle, RefreshCw } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 function useClosureBreakdown() {
   return useQuery({
@@ -31,6 +31,19 @@ function useStageDistribution() {
       const res = await fetch("/api/analytics/stage-distribution", { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error("Failed");
       return res.json() as Promise<Array<{ stage: string; stageName: string; color: string; count: number }>>;
+    },
+    staleTime: 0,
+  });
+}
+
+function useClosureTrend(range: number) {
+  return useQuery({
+    queryKey: ["analytics", "closure-trend", range],
+    queryFn: async () => {
+      const token = localStorage.getItem("slh_token");
+      const res = await fetch(`/api/analytics/closure-trend?range=${range}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Failed");
+      return res.json() as Promise<Array<{ date: string; won: number; lost: number; postponed: number }>>;
     },
     staleTime: 0,
   });
@@ -61,6 +74,8 @@ export function Analytics() {
   const { data: weeklyConversion = [] } = useGetWeeklyConversion();
   const { data: closureBreakdown = [] } = useClosureBreakdown();
   const { data: stageDistribution = [] } = useStageDistribution();
+  const [trendRange, setTrendRange] = useState<7 | 30>(30);
+  const { data: closureTrend = [] } = useClosureTrend(trendRange);
 
   const totalLeadsInPipeline = stageDistribution.reduce((sum, s) => sum + s.count, 0);
 
@@ -80,6 +95,9 @@ export function Analytics() {
     queryClient.invalidateQueries({ queryKey: ["getWeeklyConversion"] });
     queryClient.invalidateQueries({ queryKey: ["analytics"] });
   };
+
+  // Derived: check if any closure trend data has non-zero values
+  const hasClosureTrendData = closureTrend.some(d => d.won > 0 || d.lost > 0 || d.postponed > 0);
 
   const avgDays = stats?.avgConversionDays;
   const avgDisplay = (avgDays != null && avgDays > 0) ? Math.round(avgDays) : "N/A";
@@ -297,6 +315,85 @@ export function Analytics() {
             );
           })()}
         </div>
+      </div>
+      {/* ─── Closure Performance Trend ─── */}
+      <div className="chart-card" style={{ marginBottom: "var(--space-4)", padding: "var(--space-5)" }}>
+        {/* Header row with title + range toggle */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-4)" }}>
+          <div className="chart-title" style={{ marginBottom: 0 }}>Closure Performance Over Time</div>
+          <div style={{ display: "flex", gap: 4, background: "var(--bg-subtle)", borderRadius: "var(--radius-md)", padding: 3 }}>
+            {([7, 30] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setTrendRange(r)}
+                style={{
+                  height: 28, padding: "0 12px",
+                  borderRadius: "var(--radius-sm)",
+                  border: "none", cursor: "pointer",
+                  fontSize: "var(--text-xs)", fontWeight: 600,
+                  background: trendRange === r ? "var(--bg-elevated)" : "transparent",
+                  color: trendRange === r ? "var(--teal)" : "var(--text-muted)",
+                  boxShadow: trendRange === r ? "0 1px 3px hsl(0 0% 0% / 0.3)" : "none",
+                  transition: "all 150ms ease",
+                }}
+              >
+                {r}d
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {!hasClosureTrendData ? (
+          <div style={{ textAlign: "center", padding: "var(--space-8) 0", color: "var(--text-muted)", fontSize: "var(--text-sm)" }}>
+            No closed leads in this period — try a wider range or mark some leads as Won / Lost / Postponed
+          </div>
+        ) : (
+          <>
+            {/* Legend */}
+            <div style={{ display: "flex", gap: "var(--space-5)", marginBottom: "var(--space-3)" }}>
+              {[
+                { label: "Won",       color: "hsl(152, 58%, 43%)" },
+                { label: "Lost",      color: "hsl(4, 68%, 58%)"   },
+                { label: "Postponed", color: "hsl(36, 88%, 52%)"  },
+              ].map(({ label, color }) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+                  <span style={{ width: 24, height: 3, borderRadius: 2, background: color, display: "inline-block" }} />
+                  {label}
+                </div>
+              ))}
+            </div>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart data={closureTrend} margin={{ left: 0, right: 8 }}>
+                <XAxis
+                  dataKey="date"
+                  stroke="var(--text-muted)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  interval={trendRange === 7 ? 0 : Math.floor(closureTrend.length / 6)}
+                />
+                <YAxis
+                  stroke="var(--text-muted)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                  width={24}
+                />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  labelStyle={tooltipLabelStyle}
+                  itemStyle={tooltipItemStyle}
+                  wrapperStyle={tooltipWrapperStyle}
+                  formatter={(v: any, name: any) => [v === 1 ? "1 lead" : `${v} leads`, name.charAt(0).toUpperCase() + name.slice(1)]}
+                />
+                <Line type="monotone" dataKey="won"       stroke="hsl(152, 58%, 43%)" strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="lost"      stroke="hsl(4, 68%, 58%)"   strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+                <Line type="monotone" dataKey="postponed" stroke="hsl(36, 88%, 52%)"  strokeWidth={2.5} dot={false} activeDot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </>
+        )}
       </div>
     </div>
   );

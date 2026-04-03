@@ -1,0 +1,212 @@
+## 📈 Add Closure Performance Trend Over Time (Analytics Page)
+
+---
+
+# 🎯 Objective
+
+Add a new chart to Analytics:
+
+👉 **Closure Performance Over Time**
+
+### Show trends for:
+
+* 🟢 Won
+* 🔴 Lost
+* 🟡 Postponed
+
+Over time (daily / weekly)
+
+---
+
+# ❗ Why This is Important
+
+* Understand **conversion trends**
+* Identify **drop-offs**
+* Track **sales performance over time**
+
+---
+
+# ✅ EXPECTED OUTPUT
+
+* Line / Area Chart
+* X-axis → Date (last 30 days)
+* Y-axis → Number of leads closed
+* 3 lines:
+
+  * Won
+  * Lost
+  * Postponed
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Prepare Data Source
+
+👉 Use ONLY closure stage leads:
+
+```ts id="z9m2kx"
+const closureLeads = leads.filter(
+  (lead) => lead.stage === "Closure"
+);
+```
+
+---
+
+## ✅ 2. Group Data by Date
+
+```ts id="d8k3qv"
+import dayjs from "dayjs";
+
+const last30Days = Array.from({ length: 30 }).map((_, i) =>
+  dayjs().subtract(29 - i, "day").format("YYYY-MM-DD")
+);
+```
+
+---
+
+## ✅ 3. Build Trend Data
+
+```ts id="q2v7xm"
+const trendData = last30Days.map((date) => {
+  const dayLeads = closureLeads.filter(
+    (lead) => dayjs(lead.updated_at).format("YYYY-MM-DD") === date
+  );
+
+  return {
+    date,
+    Won: dayLeads.filter((l) => l.status === "Won").length,
+    Lost: dayLeads.filter((l) => l.status === "Lost").length,
+    Postponed: dayLeads.filter((l) => l.status === "Postponed").length,
+  };
+});
+```
+
+---
+
+## ✅ 4. Render Chart (Recharts)
+
+```tsx id="h7l2vp"
+<ResponsiveContainer width="100%" height={300}>
+  <LineChart data={trendData}>
+    
+    <XAxis dataKey="date" stroke="#888" />
+    <YAxis stroke="#888" />
+    
+    <Tooltip
+      contentStyle={{
+        backgroundColor: "#0B0F19",
+        border: "1px solid #333",
+        color: "#fff",
+      }}
+    />
+
+    <Legend />
+
+    <Line
+      type="monotone"
+      dataKey="Won"
+      stroke="#22c55e"
+      strokeWidth={2}
+    />
+
+    <Line
+      type="monotone"
+      dataKey="Lost"
+      stroke="#ef4444"
+      strokeWidth={2}
+    />
+
+    <Line
+      type="monotone"
+      dataKey="Postponed"
+      stroke="#f59e0b"
+      strokeWidth={2}
+    />
+
+  </LineChart>
+</ResponsiveContainer>
+```
+
+---
+
+## ✅ 5. Improve Readability
+
+### Format Date:
+
+```ts id="v8p2zx"
+date: dayjs(date).format("DD MMM")
+```
+
+---
+
+## ✅ 6. Handle Empty State
+
+```tsx id="m1x9gh"
+if (closureLeads.length === 0) {
+  return <p className="text-gray-500">No closure data available</p>;
+}
+```
+
+---
+
+# 🚀 FINAL RESULT
+
+* Visual trend of:
+
+  * Won 📈
+  * Lost 📉
+  * Postponed ⏳
+* Easy performance tracking
+* Helps decision-making
+
+---
+
+# 🔥 BONUS (Highly Recommended)
+
+## 1. Add Toggle (7 / 30 / 90 Days)
+
+```ts id="x6c2pn"
+const [range, setRange] = useState(30);
+```
+
+---
+
+## 2. Add Area Chart (Better UI)
+
+```tsx id="f9k3wr"
+<Area type="monotone" dataKey="Won" fill="#22c55e33" stroke="#22c55e" />
+```
+
+---
+
+## 3. Add Conversion Insight
+
+```ts id="t4k8dn"
+const totalClosed = Won + Lost + Postponed;
+const winRate = (Won / totalClosed) * 100;
+```
+
+---
+
+# ⚠️ COMMON MISTAKES
+
+❌ Using created_at instead of updated_at
+❌ Not filtering only Closure stage
+❌ Date mismatch format
+❌ Empty dataset handling
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Use `updated_at` as closure date
+* Maintain dark theme styling
+* Ensure responsive chart
+* Keep tooltip readable
+
+---
+
+This adds **real sales intelligence to your CRM** 📊🔥

@@ -151,6 +151,53 @@ router.get("/kill-reasons", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
+// Closure performance trend — Won / Lost / Postponed per day
+router.get("/closure-trend", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const range = Math.min(Math.max(parseInt(String(req.query.range || "30"), 10), 7), 90);
+    const leads = await db.select().from(leadsTable);
+    const statuses = await db.select().from(pipelineStatusesTable);
+
+    const wonIds = new Set(statuses.filter((s) => s.isWon).map((s) => s.id));
+    const postponedIds = new Set(
+      statuses
+        .filter((s) => !s.isWon && (s.isLost ?? false) && s.displayName.toLowerCase().includes("postponed"))
+        .map((s) => s.id)
+    );
+    const lostIds = new Set(
+      statuses
+        .filter((s) => !s.isWon && (s.isLost ?? false) && !s.displayName.toLowerCase().includes("postponed"))
+        .map((s) => s.id)
+    );
+
+    const closureLeads = leads.filter(
+      (l) =>
+        l.pipelineStatusId &&
+        (wonIds.has(l.pipelineStatusId) || lostIds.has(l.pipelineStatusId) || postponedIds.has(l.pipelineStatusId))
+    );
+
+    const result = [];
+    for (let i = range - 1; i >= 0; i--) {
+      const day = subDays(new Date(), i);
+      const dateStr = format(day, "yyyy-MM-dd");
+      const dayLeads = closureLeads.filter(
+        (l) => format(new Date(l.updatedAt), "yyyy-MM-dd") === dateStr
+      );
+      result.push({
+        date: format(day, "dd MMM"),
+        won: dayLeads.filter((l) => wonIds.has(l.pipelineStatusId!)).length,
+        lost: dayLeads.filter((l) => lostIds.has(l.pipelineStatusId!)).length,
+        postponed: dayLeads.filter((l) => postponedIds.has(l.pipelineStatusId!)).length,
+      });
+    }
+
+    res.json(result);
+  } catch (err) {
+    req.log.error({ err }, "Get closure trend error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 router.get("/weekly-conversion", requireAuth, async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable);
