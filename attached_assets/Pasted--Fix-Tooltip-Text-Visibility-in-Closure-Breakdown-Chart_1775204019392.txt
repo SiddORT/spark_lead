@@ -1,0 +1,139 @@
+## 🛠 Fix Tooltip Text Visibility in Closure Breakdown Chart (Recharts)
+
+---
+
+# 🎯 Objective
+
+Fix the tooltip in **Closure Breakdown chart** so that:
+
+* ✅ Text is clearly visible (white / light color)
+* ✅ Matches dark theme
+* ❌ No black text on dark background
+
+---
+
+# ❗ Current Problem
+
+* Tooltip text is **black**
+* Background is **dark**
+* Result → **unreadable tooltip**
+
+---
+
+# 🧠 Root Cause
+
+Recharts default tooltip styles:
+
+* Text color = black
+* Not overridden properly
+
+---
+
+# ✅ FIX IMPLEMENTATION
+
+---
+
+## ✅ 1. Override Tooltip Styles (IMPORTANT)
+
+Update Tooltip component:
+
+```tsx id="fix1"
+<Tooltip
+  contentStyle={{
+    backgroundColor: "#0B0F19",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "10px",
+    color: "#ffffff", // fallback
+  }}
+  labelStyle={{
+    color: "#ffffff", // FIX label color
+    fontSize: "12px",
+  }}
+  itemStyle={{
+    color: "#ffffff", // FIX item text color
+    fontSize: "13px",
+  }}
+  wrapperStyle={{
+    outline: "none",
+  }}
+/>
+```
+
+---
+
+## ✅ 2. Force Text Color (If Still Not Working)
+
+👉 Recharts sometimes ignores styles → force with CSS:
+
+```css
+.recharts-tooltip-wrapper {
+  color: white !important;
+}
+
+.recharts-default-tooltip {
+  background-color: #0B0F19 !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+  border-radius: 10px !important;
+}
+
+.recharts-tooltip-label {
+  color: #ffffff !important;
+}
+
+.recharts-tooltip-item {
+  color: #ffffff !important;
+}
+```
+
+---
+
+## ✅ 3. (BEST FIX) Custom Tooltip Component
+
+👉 Use this if above doesn't fully fix:
+
+```tsx id="fix3"
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#0B0F19] border border-white/10 rounded-lg p-2 text-white text-sm shadow-lg">
+        <p>{payload[0].name}</p>
+        <p>{payload[0].value} leads</p>
+      </div>
+    );
+  }
+  return null;
+};
+```
+
+Use it:
+
+```tsx id="fix4"
+<Tooltip content={<CustomTooltip />} />
+```
+
+---
+
+# 🚀 FINAL RESULT
+
+* Tooltip text clearly visible ✅
+* Matches dark UI theme ✅
+* Professional look & feel ✅
+
+---
+
+# ⚠️ COMMON ISSUES
+
+❌ Only setting `contentStyle` (not enough)
+❌ Missing `labelStyle` and `itemStyle`
+❌ Recharts overriding styles
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Apply fix to ALL charts (not just closure)
+* Maintain consistent tooltip styling across system
+
+---
+
+This will fix your **readability issue instantly** 👌

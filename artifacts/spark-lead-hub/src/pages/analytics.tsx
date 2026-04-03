@@ -49,6 +49,9 @@ const tooltipStyle = {
   color: "var(--text-primary)",
   fontSize: "var(--text-xs)",
 };
+const tooltipLabelStyle  = { color: "var(--text-secondary)", fontSize: "var(--text-xs)", marginBottom: 2 };
+const tooltipItemStyle   = { color: "var(--text-primary)", fontSize: "var(--text-xs)" };
+const tooltipWrapperStyle = { outline: "none" };
 
 export function Analytics() {
   const queryClient = useQueryClient();
@@ -128,7 +131,7 @@ export function Analytics() {
               </defs>
               <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)} />
               <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ stroke: "var(--border-default)" }} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} wrapperStyle={tooltipWrapperStyle} cursor={{ stroke: "var(--border-default)" }} />
               <Area type="monotone" dataKey="count" stroke="hsl(172 75% 48%)" strokeWidth={2.5} fillOpacity={1} fill="url(#tealFill)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -146,7 +149,7 @@ export function Analytics() {
               </defs>
               <XAxis dataKey="week" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} width={38} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v: any) => [`${v}%`, "Conversion Rate"]} cursor={{ stroke: "var(--border-default)" }} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} wrapperStyle={tooltipWrapperStyle} formatter={(v: any) => [`${v}%`, "Conversion Rate"]} cursor={{ stroke: "var(--border-default)" }} />
               <Area type="monotone" dataKey="rate" stroke="hsl(262 65% 62%)" strokeWidth={2.5} fillOpacity={1} fill="url(#purpleFill)" />
             </AreaChart>
           </ResponsiveContainer>
@@ -206,7 +209,7 @@ export function Analytics() {
             <BarChart data={formattedKillReasons} layout="vertical" margin={{ left: 16, right: 16 }}>
               <XAxis type="number" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
               <YAxis type="category" dataKey="label" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} width={90} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "hsl(0 70% 58% / 0.06)" }} formatter={(v: any) => [v, "Deals lost"]} />
+              <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} wrapperStyle={tooltipWrapperStyle} cursor={{ fill: "hsl(0 70% 58% / 0.06)" }} formatter={(v: any) => [v, "Deals lost"]} />
               <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={28}>
                 {formattedKillReasons.map((_, i) => (
                   <Cell key={i} fill="hsl(0 70% 58%)" />
@@ -250,6 +253,9 @@ export function Analytics() {
                     </Pie>
                     <Tooltip
                       contentStyle={tooltipStyle}
+                      labelStyle={tooltipLabelStyle}
+                      itemStyle={tooltipItemStyle}
+                      wrapperStyle={tooltipWrapperStyle}
                       formatter={(v: any, name: any) => {
                         const pct = total > 0 ? Math.round((v / total) * 100) : 0;
                         return [`${v} lead${v !== 1 ? "s" : ""} (${pct}%)`, name];
