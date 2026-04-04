@@ -229,9 +229,17 @@ export function Dashboard() {
     (l: any) => !l.outcome || (l.outcome !== "closed" && l.outcome !== "lost")
   ).length;
 
+  // Sort latest → oldest as a guaranteed frontend fallback
+  const sortedLeads = useMemo(() =>
+    [...filteredLeads].sort((a: any, b: any) =>
+      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+    ),
+    [filteredLeads]
+  );
+
   // Pagination
-  const totalPages     = Math.max(1, Math.ceil(filteredLeads.length / PAGE_SIZE));
-  const paginatedLeads = filteredLeads.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages     = Math.max(1, Math.ceil(sortedLeads.length / PAGE_SIZE));
+  const paginatedLeads = sortedLeads.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Compute tbody rows outside JSX to avoid nested-ternary parse issues
   let tbodyRows: React.ReactNode;
@@ -243,68 +251,95 @@ export function Dashboard() {
       return (
         <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)}>
           <td>
-            <span style={{ color: "var(--text-primary)", fontWeight: 600, fontSize: "var(--text-sm)" }}>
+            <div
+              style={{
+                fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--text-primary)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}
+              title={lead.leadName}
+            >
               {lead.leadName}
-            </span>
-            {lead.company && (
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginTop: 1 }}>
-                {lead.company}
-              </div>
-            )}
+            </div>
           </td>
           <td>
             <span className={`badge ${tc.cls}`}>{tc.emoji} {tc.label}</span>
           </td>
-          <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>{lead.serviceName || "—"}</td>
-          <td style={{ fontSize: "var(--text-xs)" }}>
-            {lead.companies && lead.companies.length > 0 ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                {lead.companies.slice(0, 2).map((c: any) => (
-                  <span key={c.id} style={{
-                    display: "inline-block",
-                    padding: "1px 6px",
-                    background: "hsl(172 75% 48% / 0.08)",
-                    border: "1px solid hsl(172 75% 48% / 0.2)",
-                    borderRadius: "var(--radius-full)",
-                    color: "var(--teal)",
-                    fontSize: 10,
-                    fontWeight: 500,
-                    lineHeight: 1.6,
-                    whiteSpace: "nowrap",
-                  }}>{c.name}</span>
-                ))}
-                {lead.companies.length > 2 && (
-                  <span style={{
-                    display: "inline-block",
-                    padding: "1px 6px",
-                    background: "var(--bg-subtle)",
-                    border: "1px solid var(--border-default)",
-                    borderRadius: "var(--radius-full)",
-                    color: "var(--text-muted)",
-                    fontSize: 10,
-                    fontWeight: 500,
-                    lineHeight: 1.6,
-                  }}>+{lead.companies.length - 2}</span>
-                )}
-              </div>
-            ) : <span style={{ color: "var(--text-muted)" }}>—</span>}
-          </td>
+          <td title={lead.serviceName || undefined} style={{
+            color: "var(--text-muted)", fontSize: "var(--text-xs)",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>{lead.serviceName || "—"}</td>
+          {(() => {
+            const validCompanies = (lead.companies || []).filter((c: any) => c && c.name);
+            return (
+              <td
+                style={{ fontSize: "var(--text-xs)" }}
+                title={validCompanies.length > 0 ? validCompanies.map((c: any) => c.name).join(", ") : undefined}
+              >
+                {validCompanies.length > 0 ? (
+                  <div style={{ display: "flex", flexWrap: "nowrap", gap: 3, overflow: "hidden" }}>
+                    <span
+                      className="company-pill"
+                      style={{
+                        display: "inline-block",
+                        padding: "1px 7px",
+                        background: "hsl(172 75% 48% / 0.1)",
+                        border: "1px solid hsl(172 75% 48% / 0.25)",
+                        borderRadius: "var(--radius-full)",
+                        color: "var(--teal)",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        lineHeight: 1.8,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        maxWidth: "calc(100% - 36px)",
+                      }}
+                    >
+                      {validCompanies[0].name}
+                    </span>
+                    {validCompanies.length > 1 && (
+                      <span
+                        style={{
+                          display: "inline-flex", alignItems: "center",
+                          padding: "1px 6px",
+                          background: "var(--bg-subtle)",
+                          border: "1px solid var(--border-default)",
+                          borderRadius: "var(--radius-full)",
+                          color: "var(--text-muted)",
+                          fontSize: 10, fontWeight: 500, lineHeight: 1.6,
+                          flexShrink: 0,
+                        }}
+                      >
+                        +{validCompanies.length - 1}
+                      </span>
+                    )}
+                  </div>
+                ) : <span style={{ color: "var(--text-muted)" }}>—</span>}
+              </td>
+            );
+          })()}
           <td style={{ fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--teal)", fontWeight: 600 }}>
             {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
           </td>
           <td>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-              <div className="avatar avatar-sm">{resolveName(lead.leadOwner)[0]}</div>
-              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", overflow: "hidden" }}>
+              <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>{resolveName(lead.leadOwner)[0]}</div>
+              <span style={{
+                fontSize: "var(--text-xs)", color: "var(--text-secondary)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }} title={resolveName(lead.leadOwner)}>
                 {resolveName(lead.leadOwner)}
               </span>
             </div>
           </td>
           <td>
             {lead.dealHandler ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                <div className="avatar avatar-sm avatar-purple">{resolveName(lead.dealHandler)[0]}</div>
-                <span style={{ fontSize: "var(--text-xs)", color: "var(--text-secondary)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", overflow: "hidden" }}>
+                <div className="avatar avatar-sm avatar-purple" style={{ flexShrink: 0 }}>{resolveName(lead.dealHandler)[0]}</div>
+                <span style={{
+                  fontSize: "var(--text-xs)", color: "var(--text-secondary)",
+                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                }} title={resolveName(lead.dealHandler)}>
                   {resolveName(lead.dealHandler)}
                 </span>
               </div>
@@ -627,6 +662,17 @@ export function Dashboard() {
 
           <div className="table-scroll-wrapper">
           <table className="data-table">
+            <colgroup>
+              <col style={{ width: "18%" }} />
+              <col style={{ width: "8%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "9%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "12%" }} />
+              <col style={{ width: "13%" }} />
+              <col style={{ width: "10%" }} />
+            </colgroup>
             <thead>
               <tr>
                 <th>Lead Name</th>
@@ -651,7 +697,7 @@ export function Dashboard() {
         <TablePagination
           page={page}
           totalPages={totalPages}
-          total={filteredLeads.length}
+          total={sortedLeads.length}
           pageSize={PAGE_SIZE}
           onChange={setPage}
         />

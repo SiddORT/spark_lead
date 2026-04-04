@@ -13,7 +13,7 @@ import {
   pipelineStagesTable,
   pipelineStatusesTable,
 } from "@workspace/db";
-import { eq, inArray, and, or, gte, asc, sql } from "drizzle-orm";
+import { eq, inArray, and, or, gte, asc, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { sendActivityAlertEmail } from "../lib/email";
@@ -116,7 +116,7 @@ function formatLead(lead: any) {
 
 router.get("/export/csv", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const leads = await db.select().from(leadsTable).orderBy(leadsTable.createdAt);
+    const leads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
 
     const headers = [
       "Lead Name", "Contact Email", "Phone", "Lead Type",
@@ -187,7 +187,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
     const role = req.user!.role;
     const userId = req.user!.userId;
 
-    let leads = await db.select().from(leadsTable).orderBy(leadsTable.createdAt);
+    let leads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
 
     if (role === "lead_owner") {
       leads = leads.filter(
