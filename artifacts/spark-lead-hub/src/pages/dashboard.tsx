@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import {
   Search, X, Download, Users, Flame, CheckCircle2,
   Activity, TrendingUp, LayoutDashboard,
+  ChevronUp, ChevronDown, ChevronsUpDown,
 } from "lucide-react";
 import { PermissionCheck } from "@/components/auth-provider";
 
@@ -180,6 +181,29 @@ export function Dashboard() {
     setPage(1);
   };
 
+  // Sort state — default: latest first
+  type SortKey = "leadName" | "leadType" | "serviceName" | "company" | "dealValue" | "stageSortOrder" | "createdAt";
+  type SortDir = "asc" | "desc";
+  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc"); // always reset to asc when switching column
+    }
+    setPage(1);
+  };
+
+  const getSortIcon = (key: SortKey) => {
+    if (sortKey !== key) return <ChevronsUpDown size={12} style={{ opacity: 0.4 }} />;
+    return sortDir === "asc"
+      ? <ChevronUp size={12} style={{ color: "var(--teal)" }} />
+      : <ChevronDown size={12} style={{ color: "var(--teal)" }} />;
+  };
+
   // Reset page on filter change
   useEffect(() => { setPage(1); }, [search, serviceFilter, companyFilter, typeFilter, stageFilter]);
 
@@ -229,13 +253,33 @@ export function Dashboard() {
     (l: any) => !l.outcome || (l.outcome !== "closed" && l.outcome !== "lost")
   ).length;
 
-  // Sort latest → oldest as a guaranteed frontend fallback
-  const sortedLeads = useMemo(() =>
-    [...filteredLeads].sort((a: any, b: any) =>
-      new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    ),
-    [filteredLeads]
-  );
+  // Dynamic column sort (default: newest first)
+  const sortedLeads = useMemo(() => {
+    const TYPE_ORDER: Record<string, number> = { hot: 0, warm: 1, cold: 2, ghosted: 3 };
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filteredLeads].sort((a: any, b: any) => {
+      switch (sortKey) {
+        case "leadName":
+          return dir * (a.leadName || "").localeCompare(b.leadName || "");
+        case "leadType":
+          return dir * ((TYPE_ORDER[a.leadType] ?? 4) - (TYPE_ORDER[b.leadType] ?? 4));
+        case "serviceName":
+          return dir * (a.serviceName || "").localeCompare(b.serviceName || "");
+        case "company": {
+          const an = (a.companies || []).find((c: any) => c?.name)?.name || "";
+          const bn = (b.companies || []).find((c: any) => c?.name)?.name || "";
+          return dir * an.localeCompare(bn);
+        }
+        case "dealValue":
+          return dir * (Number(a.dealValue || 0) - Number(b.dealValue || 0));
+        case "stageSortOrder":
+          return dir * ((a.stageSortOrder ?? 999) - (b.stageSortOrder ?? 999));
+        case "createdAt":
+        default:
+          return dir * (new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+      }
+    });
+  }, [filteredLeads, sortKey, sortDir]);
 
   // Pagination
   const totalPages     = Math.max(1, Math.ceil(sortedLeads.length / PAGE_SIZE));
@@ -675,15 +719,40 @@ export function Dashboard() {
             </colgroup>
             <thead>
               <tr>
-                <th>Lead Name</th>
-                <th>Type</th>
-                <th>Service</th>
-                <th>Company</th>
-                <th>Value</th>
-                <th>Owner</th>
-                <th>Handler</th>
-                <th>Stage</th>
-                <th>Created</th>
+                {([
+                  { key: "leadName",      label: "Lead Name", sortable: true  },
+                  { key: null,            label: "Type",      sortable: false },
+                  { key: "serviceName",   label: "Service",   sortable: true  },
+                  { key: "company",       label: "Company",   sortable: true  },
+                  { key: "dealValue",     label: "Value",     sortable: true  },
+                  { key: null,            label: "Owner",     sortable: false },
+                  { key: null,            label: "Handler",   sortable: false },
+                  { key: "stageSortOrder",label: "Stage",     sortable: true  },
+                  { key: "createdAt",     label: "Created",   sortable: true  },
+                ] as Array<{ key: SortKey | null; label: string; sortable: boolean }>).map(col => (
+                  col.sortable && col.key ? (
+                    <th
+                      key={col.label}
+                      onClick={() => handleSort(col.key!)}
+                      style={{
+                        cursor: "pointer",
+                        userSelect: "none",
+                        whiteSpace: "nowrap",
+                        color: sortKey === col.key ? "var(--teal)" : undefined,
+                        transition: "color 120ms ease",
+                      }}
+                      onMouseEnter={e => { if (sortKey !== col.key) (e.currentTarget as HTMLElement).style.color = "var(--text-primary)"; }}
+                      onMouseLeave={e => { if (sortKey !== col.key) (e.currentTarget as HTMLElement).style.color = ""; }}
+                    >
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {col.label}
+                        {getSortIcon(col.key)}
+                      </span>
+                    </th>
+                  ) : (
+                    <th key={col.label}>{col.label}</th>
+                  )
+                ))}
               </tr>
             </thead>
             <tbody>

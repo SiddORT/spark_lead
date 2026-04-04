@@ -1,0 +1,220 @@
+## 🚀 Add Column Sorting (Click Headers) – Leads Table
+
+---
+
+# 🎯 Objective
+
+Enable users to sort the Leads table by clicking on column headers.
+
+---
+
+# ✅ FEATURES
+
+### User should be able to:
+
+* Click any sortable column:
+
+  * Lead Name
+  * Value
+  * Company
+  * Owner
+  * Stage
+  * Created
+
+* Toggle sorting:
+
+  * 🔼 Ascending
+  * 🔽 Descending
+  * ⛔ Default (no sort → fallback to latest first)
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Add Sorting State
+
+```ts id="srt1"
+const [sortConfig, setSortConfig] = useState({
+  key: "created_at",
+  direction: "desc", // default latest first
+});
+```
+
+---
+
+## ✅ 2. Handle Header Click
+
+```ts id="srt2"
+const handleSort = (key) => {
+  setSortConfig((prev) => {
+    if (prev.key === key) {
+      // toggle direction
+      return {
+        key,
+        direction: prev.direction === "asc" ? "desc" : "asc",
+      };
+    }
+    return { key, direction: "asc" };
+  });
+};
+```
+
+---
+
+## ✅ 3. Sort Data Dynamically
+
+```ts id="srt3"
+const sortedLeads = [...filteredLeads].sort((a, b) => {
+  const { key, direction } = sortConfig;
+
+  let aValue = a[key];
+  let bValue = b[key];
+
+  // Handle dates
+  if (key === "created_at") {
+    aValue = new Date(aValue);
+    bValue = new Date(bValue);
+  }
+
+  // Handle numbers
+  if (key === "value") {
+    aValue = Number(aValue);
+    bValue = Number(bValue);
+  }
+
+  // Handle strings
+  if (typeof aValue === "string") {
+    return direction === "asc"
+      ? aValue.localeCompare(bValue)
+      : bValue.localeCompare(aValue);
+  }
+
+  return direction === "asc" ? aValue - bValue : bValue - aValue;
+});
+```
+
+---
+
+## ✅ 4. Apply Sorted Data
+
+```ts id="srt4"
+const displayLeads = sortedLeads;
+```
+
+---
+
+## ✅ 5. Make Headers Clickable
+
+```tsx id="srt5"
+<th onClick={() => handleSort("created_at")} className="cursor-pointer">
+  Created
+</th>
+
+<th onClick={() => handleSort("value")} className="cursor-pointer">
+  Value
+</th>
+```
+
+---
+
+## ✅ 6. Add Sorting Icons (IMPORTANT UX)
+
+```tsx id="srt6"
+const getSortIcon = (key) => {
+  if (sortConfig.key !== key) return "↕";
+  return sortConfig.direction === "asc" ? "↑" : "↓";
+};
+```
+
+Use:
+
+```tsx
+<th onClick={() => handleSort("created_at")}>
+  Created {getSortIcon("created_at")}
+</th>
+```
+
+---
+
+## ✅ 7. Default Sorting (CRITICAL)
+
+Always default to:
+
+```ts
+key: "created_at",
+direction: "desc"
+```
+
+---
+
+---
+
+# 🧪 TESTING (MANDATORY)
+
+---
+
+## ✅ Functional
+
+* Click column → sorts ascending
+* Click again → sorts descending
+* Switch column → resets to ascending
+
+---
+
+## ✅ Data Integrity
+
+* Sorting works with:
+
+  * Numbers (Value)
+  * Strings (Name, Company)
+  * Dates (Created)
+
+---
+
+## ✅ UX
+
+* Icons update correctly
+* No lag
+* No flicker
+
+---
+
+## ✅ Edge Cases
+
+* Empty data
+* Null values
+* Large dataset
+
+---
+
+---
+
+# 🚀 FINAL RESULT
+
+* Fully interactive table
+* User-controlled sorting
+* Clean UX
+* Professional CRM behaviour
+
+---
+
+# 🔥 BONUS (NEXT LEVEL)
+
+* Multi-column sorting
+* Save user preference
+* Server-side sorting for large datasets
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Do NOT break existing filters
+* Sorting should work WITH filters
+* Keep latest-first as default
+* Ensure smooth UI
+
+---
+
+This will make your CRM feel like **HubSpot / Salesforce level** 🔥
