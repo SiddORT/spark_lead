@@ -98,7 +98,7 @@ function CompanyChipSelect({
         ))}
         {selectedCompanies.length === 0 && (
           <span className="company-chip-empty">
-            {companies.length === 0 ? "No references linked to this service" : "Click to select references…"}
+            {companies.length === 0 ? "No companies linked to this service" : "Click to select companies…"}
           </span>
         )}
         {companies.length > 0 && (
@@ -354,7 +354,7 @@ function DetailsTab({
             />
           </div>
           <div className="form-field">
-            <label className="field-label">Lead Reference</label>
+            <label className="field-label">Lead Company</label>
             <input
               className="field-input"
               defaultValue={lead.company || ""}

@@ -560,7 +560,7 @@ export function Dashboard() {
           <input
             value={searchRaw}
             onChange={e => setSearchRaw(e.target.value)}
-            placeholder="Search leads or references…"
+            placeholder="Search leads or companies…"
             style={{
               width: "100%",
               height: 40,
@@ -619,7 +619,7 @@ export function Dashboard() {
           value={companyFilter}
           onChange={setCompanyFilter}
           options={companyOptions}
-          placeholder="All References"
+          placeholder="All Companies"
           width={165}
         />
         <FilterSelect
@@ -711,7 +711,7 @@ export function Dashboard() {
                   { key: "leadName",      label: "Lead Name", sortable: true  },
                   { key: null,            label: "Type",      sortable: false },
                   { key: "serviceName",   label: "Service",   sortable: true  },
-                  { key: "company",       label: "Reference", sortable: true  },
+                  { key: "company",       label: "Company",   sortable: true  },
                   { key: "dealValue",     label: "Value",     sortable: true  },
                   { key: null,            label: "Handler",   sortable: false },
                   { key: "stageSortOrder",label: "Stage",     sortable: true  },
