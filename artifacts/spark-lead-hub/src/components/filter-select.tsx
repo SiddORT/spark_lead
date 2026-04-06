@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Search, X } from "lucide-react";
 
 interface FilterSelectOption {
   value: string;
@@ -12,24 +12,39 @@ interface FilterSelectProps {
   options: FilterSelectOption[];
   placeholder: string;
   width?: number | string;
+  searchable?: boolean;
 }
 
-export function FilterSelect({ value, onChange, options, placeholder, width = 160 }: FilterSelectProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+export function FilterSelect({ value, onChange, options, placeholder, width = 160, searchable = true }: FilterSelectProps) {
+  const [open, setOpen]     = useState(false);
+  const [query, setQuery]   = useState("");
+  const ref                 = useRef<HTMLDivElement>(null);
+  const searchRef           = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
+        setQuery("");
       }
     };
     if (open) document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const selected = options.find(o => o.value === value);
-  const isActive = !!value;
+  useEffect(() => {
+    if (open && searchable && searchRef.current) {
+      setTimeout(() => searchRef.current?.focus(), 50);
+    }
+    if (!open) setQuery("");
+  }, [open, searchable]);
+
+  const filtered = searchable && query.trim()
+    ? options.filter(o => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options;
+
+  const selected  = options.find(o => o.value === value);
+  const isActive  = !!value;
 
   return (
     <div ref={ref} style={{ position: "relative", flexShrink: 0, width }}>
@@ -95,17 +110,65 @@ export function FilterSelect({ value, onChange, options, placeholder, width = 16
             boxShadow: "0 8px 32px hsl(222 22% 3% / 0.5), 0 0 0 1px hsl(172 75% 48% / 0.08)",
           }}
         >
-          {options.map(opt => {
-            const isSelected = opt.value === value;
-            return (
-              <DropdownItem
-                key={opt.value}
-                label={opt.label}
-                selected={isSelected}
-                onClick={() => { onChange(opt.value); setOpen(false); }}
+          {searchable && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "var(--space-2)",
+                padding: "var(--space-2) var(--space-3)",
+                borderBottom: "1px solid var(--border-subtle)",
+              }}
+            >
+              <Search size={12} style={{ color: "var(--text-faint)", flexShrink: 0 }} />
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search…"
+                onKeyDown={e => { if (e.key === "Escape") { setOpen(false); setQuery(""); } }}
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  color: "var(--text-primary)",
+                  fontSize: "var(--text-xs)",
+                  minWidth: 0,
+                }}
               />
-            );
-          })}
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--text-faint)", display: "flex" }}
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </div>
+          )}
+
+          <div style={{ maxHeight: 220, overflowY: "auto" }}>
+            {filtered.length === 0 ? (
+              <div style={{ padding: "var(--space-3)", fontSize: "var(--text-xs)", color: "var(--text-faint)", textAlign: "center" }}>
+                No results
+              </div>
+            ) : (
+              filtered.map(opt => {
+                const isSelected = opt.value === value;
+                return (
+                  <DropdownItem
+                    key={opt.value}
+                    label={opt.label}
+                    selected={isSelected}
+                    onClick={() => { onChange(opt.value); setOpen(false); setQuery(""); }}
+                  />
+                );
+              })
+            )}
+          </div>
         </div>
       )}
     </div>

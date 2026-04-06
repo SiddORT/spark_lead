@@ -441,6 +441,7 @@ function DetailsTab({
               placeholder="Select a service…"
               onChange={onServiceChange}
               options={services.map((s: any) => ({ value: s.id, label: s.name }))}
+              searchable
             />
           </div>
           <div className="form-field">
@@ -466,6 +467,7 @@ function DetailsTab({
               value={lead.leadOwner ?? null}
               placeholder="Unassigned"
               onChange={(v) => handleUpdate("leadOwner", v || null)}
+              searchable
               options={[
                 { value: "", label: "Unassigned" },
                 ...users
@@ -492,6 +494,7 @@ function DetailsTab({
               value={lead.dealHandler ?? null}
               placeholder="Unassigned"
               onChange={(v) => handleUpdate("dealHandler", v || null)}
+              searchable
               options={[
                 { value: "", label: "Unassigned" },
                 ...users

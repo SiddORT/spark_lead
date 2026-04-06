@@ -387,6 +387,7 @@ export function NewLead() {
                     onChange={val => { set("serviceId", val); set("companyIds", []); }}
                     placeholder="Select service…"
                     options={(services as any[]).map((s: any) => ({ value: s.id, label: s.name }))}
+                    searchable
                   />
                 </div>
                 <button
@@ -422,6 +423,7 @@ export function NewLead() {
                   placeholder="Unassigned"
                   options={whitelistedUsers
                     .map((u: any) => ({ value: u.id, label: u.displayName || u.email }))}
+                  searchable
                 />
               </div>
               <div>
@@ -432,6 +434,7 @@ export function NewLead() {
                   placeholder="Unassigned"
                   options={whitelistedUsers
                     .map((u: any) => ({ value: u.id, label: u.displayName || u.email }))}
+                  searchable
                 />
               </div>
             </div>
