@@ -5,7 +5,7 @@ import {
   useDeleteLeadNote, useGetLeadActivities, useDeleteLead,
   useGetServices, useGetServiceCompanies, getGetLeadsQueryKey,
   getGetLeadActivitiesQueryKey,
-  useGetTeamMembers,
+  useGetTeamMembers, useGetCompanies,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
@@ -45,6 +45,59 @@ function capitalize(s: string) {
 const LEAD_TYPE_EMOJI: Record<string, string> = {
   hot: "🔥", warm: "☀️", cold: "🧊", ghosted: "👻",
 };
+
+// ─── Timeline field-label & value-resolution helpers ──
+const FIELD_LABELS: Record<string, string> = {
+  dealHandler:      "Deal Handler",
+  leadOwner:        "Lead Owner",
+  serviceId:        "Service",
+  company:          "Company",
+  companyId:        "Company",
+  pipelineStatusId: "Status",
+  pipelineStageId:  "Stage",
+  dealValue:        "Deal Value",
+  leadType:         "Lead Type",
+  leadName:         "Lead Name",
+  leadReference:    "Lead Reference",
+  followUpDate:     "Follow-up Date",
+  notes:            "Notes",
+};
+
+function fieldLabel(field: string): string {
+  return FIELD_LABELS[field] ?? field.replace(/([A-Z])/g, " $1").replace(/^./, s => s.toUpperCase());
+}
+
+function resolveValue(
+  field: string,
+  raw: string | null | undefined,
+  resolveName: (id?: string | null) => string,
+  services: any[],
+  companies: any[],
+  allStatuses: any[],
+  allStages: any[],
+): string {
+  if (raw === null || raw === undefined || raw === "") return "—";
+  switch (field) {
+    case "dealHandler":
+    case "leadOwner":
+      return resolveName(raw);
+    case "serviceId":
+      return services.find((s: any) => s.id === raw)?.name || raw;
+    case "company":
+    case "companyId":
+      return companies.find((c: any) => c.id === raw)?.name || raw;
+    case "pipelineStatusId":
+      return allStatuses.find((s: any) => s.id === raw)?.displayName || raw;
+    case "pipelineStageId":
+      return allStages.find((s: any) => s.id === raw)?.displayName || raw;
+    case "dealValue": {
+      const num = Number(raw);
+      return isNaN(num) ? raw : formatCurrency(num);
+    }
+    default:
+      return raw;
+  }
+}
 
 // ─── Company chip multi-select ────────────────────────
 function CompanyChipSelect({
@@ -249,7 +302,15 @@ function NotesSection({ leadId }: { leadId: string }) {
 
 // ─── Activity log ─────────────────────────────────────
 function ActivityLog({ leadId }: { leadId: string }) {
-  const { data: activities } = useGetLeadActivities(leadId);
+  const { data: activities }       = useGetLeadActivities(leadId);
+  const { resolveName }            = useUserMap();
+  const { data: services = [] }    = useGetServices();
+  const { data: companies = [] }   = useGetCompanies();
+  const { data: stages = [] }      = usePipelineStages();
+  const allStatuses                = (stages as any[]).flatMap((s: any) => s.statuses ?? []);
+
+  const resolve = (field: string, raw: string | null | undefined) =>
+    resolveValue(field, raw, resolveName, services, companies, allStatuses, stages);
 
   const uniqueActivities = activities
     ? Array.from(new Map(activities.filter((a) => a.id).map((a) => [a.id, a])).values())
@@ -268,9 +329,9 @@ function ActivityLog({ leadId }: { leadId: string }) {
             <div className="activity-action">
               {a.fieldName ? (
                 <>
-                  Updated <strong>{a.fieldName}</strong> from{" "}
-                  <em style={{ opacity: 0.7 }}>{a.oldValue || "none"}</em> →{" "}
-                  <span className="action-tag">{a.newValue}</span>
+                  Updated <strong>{fieldLabel(a.fieldName)}</strong> from{" "}
+                  <em style={{ opacity: 0.7 }}>{resolve(a.fieldName, a.oldValue) || "none"}</em> →{" "}
+                  <span className="action-tag">{resolve(a.fieldName, a.newValue)}</span>
                 </>
               ) : (
                 <><strong>{a.actorName}</strong> created this lead</>
@@ -547,7 +608,15 @@ function DetailsTab({
 
 // ─── Timeline tab ─────────────────────────────────────
 function TimelineTab({ leadId }: { leadId: string }) {
-  const { data: activities } = useGetLeadActivities(leadId);
+  const { data: activities }       = useGetLeadActivities(leadId);
+  const { resolveName }            = useUserMap();
+  const { data: services = [] }    = useGetServices();
+  const { data: companies = [] }   = useGetCompanies();
+  const { data: stages = [] }      = usePipelineStages();
+  const allStatuses                = (stages as any[]).flatMap((s: any) => s.statuses ?? []);
+
+  const resolve = (field: string, raw: string | null | undefined) =>
+    resolveValue(field, raw, resolveName, services, companies, allStatuses, stages);
 
   // Deduplicate by id, then sort newest first
   const uniqueActivities = activities
@@ -577,11 +646,11 @@ function TimelineTab({ leadId }: { leadId: string }) {
               {a.fieldName ? (
                 <>
                   <strong>{a.actorName}</strong> updated{" "}
-                  <span className="timeline-field">{a.fieldName}</span>
+                  <span className="timeline-field">{fieldLabel(a.fieldName)}</span>
                   <span className="timeline-arrow"> → </span>
-                  <span className="timeline-new-val">{a.newValue}</span>
+                  <span className="timeline-new-val">{resolve(a.fieldName, a.newValue)}</span>
                   {a.oldValue && (
-                    <span className="timeline-old-val"> (was: {a.oldValue})</span>
+                    <span className="timeline-old-val"> (was: {resolve(a.fieldName, a.oldValue)})</span>
                   )}
                 </>
               ) : (

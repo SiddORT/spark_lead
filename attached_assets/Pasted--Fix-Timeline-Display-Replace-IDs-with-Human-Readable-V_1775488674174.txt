@@ -1,0 +1,249 @@
+## 🚀 Fix Timeline Display – Replace IDs with Human-Readable Values
+
+---
+
+# 🎯 Objective
+
+Fix the Timeline so that:
+
+### ❌ Current (WRONG)
+
+```plaintext
+Admin updated dealHandler → 945ae736-dbf9-49cc-86bd-34dd74f5a84b
+```
+
+### ✅ Expected (CORRECT)
+
+```plaintext
+Admin updated Deal Handler → Siddharth Karanjekar
+```
+
+---
+
+# ❗ CURRENT ISSUE
+
+* Timeline shows **raw database IDs**
+* Not readable by users
+* Looks unprofessional and confusing
+
+---
+
+# ✅ EXPECTED BEHAVIOUR
+
+---
+
+## ✔ Replace IDs with Names
+
+| Field            | Current (Wrong) | Expected (Correct) |
+| ---------------- | --------------- | ------------------ |
+| dealHandler      | UUID            | User Name          |
+| leadOwner        | UUID            | User Name          |
+| serviceId        | UUID            | Service Name       |
+| companyId        | UUID            | Company Name       |
+| pipelineStatusId | UUID            | Status Name        |
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Create Mapping Functions
+
+---
+
+### 🔹 Users Mapping
+
+```ts
+const getUserName = (id) => {
+  return users.find(u => u.id === id)?.display_name || "Unknown User";
+};
+```
+
+---
+
+### 🔹 Services Mapping
+
+```ts
+const getServiceName = (id) => {
+  return services.find(s => s.id === id)?.name || "Unknown Service";
+};
+```
+
+---
+
+### 🔹 Companies Mapping
+
+```ts
+const getCompanyName = (id) => {
+  return companies.find(c => c.id === id)?.name || "Unknown Company";
+};
+```
+
+---
+
+### 🔹 Pipeline Status Mapping
+
+```ts
+const getStatusName = (id) => {
+  return pipelineStatuses.find(p => p.id === id)?.name || "Unknown Status";
+};
+```
+
+---
+
+## ✅ 2. Transform Timeline Before Rendering
+
+```ts
+const formattedTimeline = timeline.map(item => {
+  let value = item.new_value;
+
+  switch (item.field) {
+    case "dealHandler":
+      value = getUserName(item.new_value);
+      break;
+
+    case "leadOwner":
+      value = getUserName(item.new_value);
+      break;
+
+    case "serviceId":
+      value = getServiceName(item.new_value);
+      break;
+
+    case "company":
+      value = getCompanyName(item.new_value);
+      break;
+
+    case "pipelineStatusId":
+      value = getStatusName(item.new_value);
+      break;
+  }
+
+  return {
+    ...item,
+    displayValue: value,
+  };
+});
+```
+
+---
+
+## ✅ 3. Improve Timeline UI Text
+
+```tsx
+<div>
+  <strong>{userName}</strong> updated <b>{fieldLabel}</b> → {displayValue}
+</div>
+```
+
+---
+
+## ✅ 4. Handle “Previous Value” Properly
+
+```ts
+(previousValue && ` (was: ${previousValue})`)
+```
+
+👉 Also map previous values using same logic
+
+---
+
+## ✅ 5. Add Field Labels (Better UX)
+
+```ts
+const fieldLabels = {
+  dealHandler: "Deal Handler",
+  leadOwner: "Lead Owner",
+  serviceId: "Service",
+  company: "Company",
+  pipelineStatusId: "Status",
+  dealValue: "Deal Value",
+  leadType: "Lead Type",
+};
+```
+
+---
+
+# 🎨 UX IMPROVEMENTS (IMPORTANT)
+
+---
+
+## ✅ Capitalized Labels
+
+* “dealHandler” → “Deal Handler”
+* “leadType” → “Lead Type”
+
+---
+
+## ✅ Currency Formatting
+
+```ts
+₹1,000,000 instead of 1000000
+```
+
+---
+
+## ✅ Highlight Changes
+
+* New value → green
+* Old value → muted
+
+---
+
+# 🧪 TESTING (MANDATORY)
+
+---
+
+## ✅ Functional Tests
+
+* No IDs visible anywhere
+* All values mapped correctly
+* Timeline readable
+
+---
+
+## ✅ Edge Cases
+
+* Missing mapping → show fallback text
+* Deleted user/service/company
+
+---
+
+## ✅ Regression Testing
+
+* Timeline loads correctly
+* No performance issues
+* No crashes
+
+---
+
+## ✅ Data Integrity
+
+* No change in stored data
+* Only UI transformation
+
+---
+
+# 🚀 FINAL RESULT
+
+* Clean, readable timeline
+* No technical IDs visible
+* Professional CRM experience
+
+---
+
+# ⚠️ FINAL INSTRUCTION
+
+* NEVER show raw IDs in UI
+* Always map to readable values
+* Apply transformation BEFORE rendering
+
+---
+
+This ensures:
+👉 Clear activity tracking
+👉 Better user trust
+👉 Professional UI
+
+---
