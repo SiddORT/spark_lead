@@ -9,6 +9,7 @@ import {
   pipelineStagesTable,
   pipelineStatusesTable,
 } from "@workspace/db";
+import { sql } from "drizzle-orm";
 import { logger } from "./logger";
 
 const SEED_EMAIL = "admin@sparkleadhub.com";
@@ -226,5 +227,35 @@ export async function seedPipelineStages(): Promise<void> {
     logger.info(`✅ Seeded ${SEED_STAGES.length} pipeline stages and ${SEED_STATUSES.length} statuses.`);
   } catch (err) {
     logger.error({ err }, "❌ Failed to seed pipeline stages");
+  }
+}
+
+/**
+ * One-time data fix: remove duplicate rows from lead_companies so that each
+ * (lead_id, company_id) pair has exactly one row.  Safe to run repeatedly —
+ * it deletes nothing when there are no duplicates.
+ */
+export async function fixDuplicateLeadCompanies() {
+  try {
+    const result = await db.execute(sql`
+      DELETE FROM lead_companies
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT id,
+                 ROW_NUMBER() OVER (
+                   PARTITION BY lead_id, company_id
+                   ORDER BY id
+                 ) AS rn
+          FROM lead_companies
+        ) ranked
+        WHERE rn > 1
+      )
+    `);
+    const deleted = (result as any).rowCount ?? 0;
+    if (deleted > 0) {
+      logger.info(`🧹 Removed ${deleted} duplicate lead_company row(s).`);
+    }
+  } catch (err) {
+    logger.error({ err }, "❌ Failed to fix duplicate lead_companies");
   }
 }
