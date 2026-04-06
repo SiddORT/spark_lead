@@ -231,6 +231,31 @@ export async function seedPipelineStages(): Promise<void> {
 }
 
 /**
+ * Back-fill resolved_at for won/lost leads that are missing it.
+ * Uses updated_at as the best available proxy for when the lead was resolved.
+ * Safe to run repeatedly — only touches leads where resolved_at IS NULL and
+ * the lead's pipeline status is marked isWon or isLost.
+ */
+export async function fixMissingResolvedAt() {
+  try {
+    const result = await db.execute(sql`
+      UPDATE leads
+      SET resolved_at = leads.updated_at
+      FROM pipeline_statuses
+      WHERE leads.pipeline_status_id = pipeline_statuses.id
+        AND (pipeline_statuses.is_won = true OR pipeline_statuses.is_lost = true)
+        AND leads.resolved_at IS NULL
+    `);
+    const fixed = (result as any).rowCount ?? 0;
+    if (fixed > 0) {
+      logger.info(`🔧 Back-filled resolved_at for ${fixed} won/lost lead(s) that were missing it.`);
+    }
+  } catch (err) {
+    logger.error({ err }, "❌ Failed to back-fill resolved_at for won/lost leads");
+  }
+}
+
+/**
  * One-time data fix: remove duplicate rows from lead_companies so that each
  * (lead_id, company_id) pair has exactly one row.  Safe to run repeatedly —
  * it deletes nothing when there are no duplicates.

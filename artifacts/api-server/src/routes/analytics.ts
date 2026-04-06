@@ -36,13 +36,18 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
 
     const winRate = totalLeads > 0 ? (wonLeads.length / totalLeads) * 100 : 0;
 
-    const resolvedLeads = leads.filter(
-      (l) => l.resolvedAt && l.resolvedAt.getTime() > l.createdAt.getTime()
-    );
+    // For avg conversion: use resolvedAt when available, fall back to updatedAt
+    // for terminal leads that are missing resolvedAt (e.g. set before auto-stamp was added)
+    const terminalLeads = [...wonLeads, ...lostLeads];
+    const resolvedLeads = terminalLeads.filter((l) => {
+      const resolvedDate = l.resolvedAt ?? l.updatedAt;
+      return resolvedDate && resolvedDate.getTime() > l.createdAt.getTime();
+    });
     let avgConversionDays: number | null = null;
     if (resolvedLeads.length > 0) {
       const totalDays = resolvedLeads.reduce((acc, l) => {
-        const diff = l.resolvedAt!.getTime() - l.createdAt.getTime();
+        const resolvedDate = l.resolvedAt ?? l.updatedAt;
+        const diff = resolvedDate!.getTime() - l.createdAt.getTime();
         return acc + diff / (1000 * 60 * 60 * 24);
       }, 0);
       avgConversionDays = totalDays / resolvedLeads.length;

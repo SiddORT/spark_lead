@@ -1,7 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { verifyEmailConnection } from "./lib/email";
-import { seedInitialAdmin, seedDefaultPermissions, seedPipelineStages, fixDuplicateLeadCompanies } from "./lib/seed";
+import { seedInitialAdmin, seedDefaultPermissions, seedPipelineStages, fixDuplicateLeadCompanies, fixMissingResolvedAt } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
 
@@ -48,6 +48,7 @@ app.listen(port, "0.0.0.0", async (err) => {
   await seedDefaultPermissions();
   await seedPipelineStages();
   await fixDuplicateLeadCompanies();
+  await fixMissingResolvedAt();
 
   // Verify email service (non-blocking — warn but don't fail startup)
   verifyEmailConnection().then((ok) => {
