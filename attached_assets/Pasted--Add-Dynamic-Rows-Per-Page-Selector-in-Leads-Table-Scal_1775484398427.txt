@@ -1,0 +1,231 @@
+## 🚀 Add Dynamic “Rows Per Page” Selector in Leads Table (Scalable & Robust)
+
+---
+
+# 🎯 Objective
+
+Enhance the Leads table to allow users to:
+
+### ✅ Select how many leads to view per page:
+
+* 10 (default)
+* 25
+* 50
+* 100
+
+---
+
+# ❗ CURRENT ISSUE
+
+* Table is fixed to **10 rows per page**
+* No flexibility for users
+* Poor UX for large datasets
+
+---
+
+# ✅ EXPECTED BEHAVIOUR
+
+---
+
+## ✔ Rows Per Page Dropdown
+
+Add a dropdown near pagination:
+
+```plaintext
+Show: [10 ▼] entries
+```
+
+Options:
+
+```plaintext
+10
+25
+50
+100
+```
+
+---
+
+## ✔ Dynamic Update
+
+* When user selects **50** → show 50 leads
+* Pagination updates automatically
+* No page reload
+
+---
+
+## ✔ Default Behaviour
+
+* Default = 10
+* Persist user selection (optional but recommended)
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Add State
+
+```ts
+const [rowsPerPage, setRowsPerPage] = useState(10);
+const [currentPage, setCurrentPage] = useState(1);
+```
+
+---
+
+## ✅ 2. Dropdown UI
+
+```tsx
+<div className="flex items-center gap-2">
+  <span className="text-sm text-gray-400">Show</span>
+  
+  <select
+    value={rowsPerPage}
+    onChange={(e) => {
+      setRowsPerPage(Number(e.target.value));
+      setCurrentPage(1); // Reset page
+    }}
+    className="bg-dark border rounded px-2 py-1"
+  >
+    <option value={10}>10</option>
+    <option value={25}>25</option>
+    <option value={50}>50</option>
+    <option value={100}>100</option>
+  </select>
+
+  <span className="text-sm text-gray-400">entries</span>
+</div>
+```
+
+---
+
+## ✅ 3. Pagination Logic
+
+```ts
+const startIndex = (currentPage - 1) * rowsPerPage;
+const endIndex = startIndex + rowsPerPage;
+
+const paginatedLeads = leads.slice(startIndex, endIndex);
+```
+
+---
+
+## ✅ 4. Update Total Pages
+
+```ts
+const totalPages = Math.ceil(leads.length / rowsPerPage);
+```
+
+---
+
+## ✅ 5. Persist User Preference (Optional but Recommended)
+
+```ts
+useEffect(() => {
+  const saved = localStorage.getItem("rowsPerPage");
+  if (saved) setRowsPerPage(Number(saved));
+}, []);
+
+useEffect(() => {
+  localStorage.setItem("rowsPerPage", rowsPerPage);
+}, [rowsPerPage]);
+```
+
+---
+
+# 🎨 UI / UX REQUIREMENTS
+
+---
+
+## ✅ Must Handle Large Data Smoothly
+
+* 100 rows should NOT break layout
+* Maintain row height consistency
+* Proper spacing
+
+---
+
+## ✅ Scroll Behaviour
+
+* Table should scroll **inside container** if needed
+* Avoid full page scroll jumps
+
+---
+
+## ✅ Responsive Layout
+
+* Works on all screen sizes
+* No overflow breaking UI
+
+---
+
+# 🧪 TESTING (MANDATORY)
+
+---
+
+## ✅ Functional Testing
+
+* Select 10 → shows 10 rows
+* Select 50 → shows 50 rows
+* Pagination updates correctly
+
+---
+
+## ✅ Edge Cases
+
+* 0 leads
+* Less than selected rows
+* Large dataset (100+)
+
+---
+
+## ✅ UI Testing
+
+* No layout breaking
+* No overlapping
+* No misalignment
+
+---
+
+## ✅ Performance Testing
+
+* Smooth rendering for 100 rows
+* No lag
+* No re-render loops
+
+---
+
+## ✅ Regression Testing
+
+* Filters still work
+* Sorting still works
+* Search still works
+* Navigation unaffected
+
+---
+
+# 🚀 FINAL RESULT
+
+* Fully dynamic table
+* User-controlled pagination
+* Clean UI even at 100 rows
+* Scalable and professional UX
+
+---
+
+# ⚠️ FINAL INSTRUCTION
+
+* Reset page to 1 when rows change
+* Keep logic efficient
+* Avoid unnecessary re-renders
+* Ensure compatibility with filters & sorting
+
+---
+
+This feature ensures:
+👉 Better usability
+👉 Faster navigation
+👉 Enterprise-grade table experience
+
+---

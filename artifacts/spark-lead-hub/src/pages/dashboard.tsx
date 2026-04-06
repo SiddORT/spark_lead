@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { PermissionCheck } from "@/components/auth-provider";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 const STAGE_COLORS: Record<string, string> = {
   discovery:     "hsl(210, 15%, 48%)",
@@ -166,6 +166,10 @@ export function Dashboard() {
   const [typeFilter, setTypeFilter] = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(() => {
+    const saved = Number(localStorage.getItem("slh_rows_per_page"));
+    return PAGE_SIZE_OPTIONS.includes(saved) ? saved : 10;
+  });
 
   const search = useDebounce(searchRaw, 300);
   const isDebouncing = searchRaw !== search;
@@ -282,8 +286,8 @@ export function Dashboard() {
   }, [filteredLeads, sortKey, sortDir]);
 
   // Pagination
-  const totalPages     = Math.max(1, Math.ceil(sortedLeads.length / PAGE_SIZE));
-  const paginatedLeads = sortedLeads.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages     = Math.max(1, Math.ceil(sortedLeads.length / pageSize));
+  const paginatedLeads = sortedLeads.slice((page - 1) * pageSize, page * pageSize);
 
   // Compute tbody rows outside JSX to avoid nested-ternary parse issues
   let tbodyRows: React.ReactNode;
@@ -749,14 +753,43 @@ export function Dashboard() {
           </div> {/* table-scroll-wrapper */}
         </div> {/* relative wrapper */}
 
-        {/* Pagination — natural base of the table */}
-        <TablePagination
-          page={page}
-          totalPages={totalPages}
-          total={sortedLeads.length}
-          pageSize={PAGE_SIZE}
-          onChange={setPage}
-        />
+        {/* Pagination row — rows-per-page selector + page navigator */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-3)", padding: "0 var(--space-4)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>Show</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                setPageSize(val);
+                setPage(1);
+                localStorage.setItem("slh_rows_per_page", String(val));
+              }}
+              style={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                color: "var(--text-primary)",
+                fontSize: "var(--text-xs)",
+                padding: "3px 8px",
+                cursor: "pointer",
+                outline: "none",
+              }}
+            >
+              {PAGE_SIZE_OPTIONS.map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>entries</span>
+          </div>
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={sortedLeads.length}
+            pageSize={pageSize}
+            onChange={setPage}
+          />
+        </div>
       </div>
 
       <LeadDetailSheet
