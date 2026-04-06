@@ -1,0 +1,249 @@
+## 🚀 Add “Duplicate Lead” Feature (Safe Copy – No Data Modification)
+
+---
+
+# 🎯 Objective
+
+Add a **Duplicate Lead button** in the Lead Details page that allows:
+
+### ✅ User Flow
+
+1. Open any Lead Details page
+2. Click **Duplicate (📄 icon)** beside Delete button
+3. Redirect to **Create Lead form**
+4. Form is **pre-filled with selected lead data**
+5. User can:
+
+   * Edit fields if needed
+   * Click “Create Lead”
+6. A **NEW lead is created**
+
+---
+
+# ❗ CRITICAL REQUIREMENTS
+
+### 🔒 Data Safety (MOST IMPORTANT)
+
+* ❌ Original lead MUST NOT be modified
+* ❌ No overwrite of existing data
+* ❌ No accidental updates
+* ✅ Only CREATE new record
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Add Duplicate Button (UI)
+
+Place beside delete button:
+
+```tsx id="dup1"
+<button
+  onClick={handleDuplicate}
+  className="p-2 rounded-lg hover:bg-white/10"
+  title="Duplicate Lead"
+>
+  📄
+</button>
+```
+
+---
+
+## ✅ 2. Handle Duplicate Click
+
+```ts id="dup2"
+const handleDuplicate = () => {
+  navigate("/new-lead", {
+    state: {
+      duplicateLead: currentLead,
+    },
+  });
+};
+```
+
+---
+
+## ✅ 3. Populate Create Lead Form
+
+In Create Lead page:
+
+```ts id="dup3"
+const location = useLocation();
+const duplicateLead = location.state?.duplicateLead;
+```
+
+---
+
+## ✅ 4. Pre-fill Form Fields
+
+```ts id="dup4"
+useEffect(() => {
+  if (duplicateLead) {
+    setFormData({
+      lead_name: duplicateLead.lead_name,
+      company_name: duplicateLead.company_name,
+      type: duplicateLead.type,
+      value: duplicateLead.value,
+      stage: duplicateLead.stage,
+      status: duplicateLead.status,
+      email: duplicateLead.email,
+      phone: duplicateLead.phone,
+      service: duplicateLead.service,
+      owner_id: duplicateLead.owner_id,
+      handler_id: duplicateLead.handler_id,
+      notes: duplicateLead.notes,
+    });
+  }
+}, [duplicateLead]);
+```
+
+---
+
+## ⚠️ IMPORTANT: EXCLUDE THESE FIELDS
+
+DO NOT copy:
+
+```ts id="dup5"
+id ❌
+created_at ❌
+updated_at ❌
+```
+
+---
+
+## ✅ 5. Ensure New Record Creation
+
+```ts id="dup6"
+await supabase.from("leads").insert({
+  ...formData,
+});
+```
+
+👉 Must NOT use update()
+
+---
+
+## ✅ 6. Clear Navigation State (Prevent Reuse Bug)
+
+```ts id="dup7"
+useEffect(() => {
+  return () => {
+    window.history.replaceState({}, document.title);
+  };
+}, []);
+```
+
+---
+
+## ✅ 7. Optional UX Enhancement
+
+Show banner:
+
+```tsx id="dup8"
+{duplicateLead && (
+  <div className="text-sm text-yellow-400 mb-2">
+    Duplicating lead – make changes if required
+  </div>
+)}
+```
+
+---
+
+# 🧪 TESTING (MANDATORY – STRICT)
+
+---
+
+## ✅ Functional Tests
+
+* Duplicate button visible
+* Clicking opens Create Lead form
+* All fields pre-filled correctly
+* Editing works
+* New lead created successfully
+
+---
+
+## ❌ Must NOT Happen
+
+* Original lead modified ❌
+* Data overwritten ❌
+* Duplicate overwrites ID ❌
+
+---
+
+## ✅ Data Integrity Tests
+
+* Original lead remains unchanged
+* New lead has new ID
+* created_at is new timestamp
+
+---
+
+## ✅ Edge Cases
+
+* Missing fields
+* Null values
+* Large data
+* No service selected
+
+---
+
+## ✅ Integration Tests
+
+* Works with:
+
+  * Filters
+  * Dashboard
+  * Kanban
+  * Analytics
+
+---
+
+## ✅ Regression Tests
+
+* Delete still works
+* Edit still works
+* Create still works
+
+---
+
+# 🚀 FINAL RESULT
+
+* One-click duplication
+* Faster lead creation
+* Zero data risk
+* Enterprise-grade UX
+
+---
+
+# 🔥 BONUS (Optional)
+
+* Add confirmation toast:
+  👉 “Lead duplicated successfully”
+
+* Auto-append name:
+
+```ts id="dup9"
+lead_name + " (Copy)"
+```
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* STRICTLY avoid modifying original lead
+* Use only INSERT for new lead
+* Ensure full form compatibility
+* Test thoroughly across system
+
+---
+
+This feature should be:
+👉 Safe
+👉 Fast
+👉 Seamless
+👉 Bug-free
+
+---

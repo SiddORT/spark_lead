@@ -10,8 +10,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
-  FileText, MessageSquare, History,
+  FileText, MessageSquare, History, Copy,
 } from "lucide-react";
+import { useLocation } from "wouter";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useAuth } from "./auth-provider";
 import { toast } from "sonner";
@@ -673,6 +674,29 @@ export function LeadDetailSheet({
     deleteLeadMutation.mutate({ id: lead.id });
   };
 
+  const [, setLocation] = useLocation();
+  const handleDuplicate = () => {
+    if (!lead) return;
+    const payload = {
+      leadName:       lead.leadName,
+      company:        lead.company,
+      leadType:       lead.leadType,
+      contactEmail:   lead.contactEmail,
+      phone:          lead.phone,
+      serviceId:      lead.serviceId,
+      leadOwner:      lead.leadOwner,
+      dealHandler:    lead.dealHandler,
+      dealValue:      lead.dealValue,
+      pipelineStageId: lead.pipelineStageId,
+      companyIds:     Array.isArray(lead.companies)
+                        ? lead.companies.map((c: any) => c.id).filter(Boolean)
+                        : [],
+    };
+    sessionStorage.setItem("slh_duplicate_lead", JSON.stringify(payload));
+    onOpenChange(false);
+    setLocation("/leads/new");
+  };
+
   const handleUpdate = (field: string, value: any) => {
     if (!lead) return;
     if (lead[field as keyof typeof lead] === value) return;
@@ -769,8 +793,18 @@ export function LeadDetailSheet({
             )}
           </div>
 
-          {/* Actions: delete + close */}
+          {/* Actions: duplicate + delete + close */}
           <div className="sheet-topbar-actions">
+            {!confirmingDelete && (
+              <button
+                className="sheet-delete-btn"
+                onClick={handleDuplicate}
+                aria-label="Duplicate lead"
+                title="Duplicate lead"
+              >
+                <Copy size={15} />
+              </button>
+            )}
             {confirmingDelete ? (
               <>
                 <span className="sheet-delete-confirm-label">Delete this lead?</span>

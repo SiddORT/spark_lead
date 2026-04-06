@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useCreateLead, useGetServices, useGetServiceCompanies,
   useGetTeamMembers, useCreateService, useLinkServiceCompanies,
@@ -145,6 +145,7 @@ export function NewLead() {
     }
   };
 
+  const [isDuplicate, setIsDuplicate] = useState(false);
   const [formData, setFormData] = useState<any>({
     leadName: "",
     company: "",
@@ -161,6 +162,33 @@ export function NewLead() {
     pipelineStageId: "",
     pipelineStatusId: "",
   });
+
+  // Pre-fill form when duplicating an existing lead
+  useEffect(() => {
+    const raw = sessionStorage.getItem("slh_duplicate_lead");
+    if (!raw) return;
+    sessionStorage.removeItem("slh_duplicate_lead");
+    try {
+      const src = JSON.parse(raw);
+      setFormData((prev: any) => ({
+        ...prev,
+        leadName:        src.leadName ? `${src.leadName} (Copy)` : "",
+        company:         src.company        ?? "",
+        leadType:        src.leadType       ?? "cold",
+        contactEmail:    src.contactEmail   ?? "",
+        phone:           src.phone          ?? "",
+        serviceId:       src.serviceId      ?? "",
+        leadOwner:       src.leadOwner      ?? "",
+        dealHandler:     src.dealHandler    ?? "",
+        dealValue:       src.dealValue      ?? "",
+        pipelineStageId: src.pipelineStageId ?? "",
+        companyIds:      Array.isArray(src.companyIds) ? src.companyIds : [],
+      }));
+      setIsDuplicate(true);
+    } catch {
+      // malformed sessionStorage value — ignore
+    }
+  }, []);
 
   const { data: companies } = useGetServiceCompanies(formData.serviceId, {
     query: { enabled: !!formData.serviceId },
@@ -202,6 +230,27 @@ export function NewLead() {
           <ArrowLeft size={15} /> Back to Dashboard
         </button>
       </div>
+
+      {/* Duplicate banner */}
+      {isDuplicate && (
+        <div style={{
+          width: "100%",
+          maxWidth: 720,
+          marginBottom: "var(--space-4)",
+          padding: "var(--space-3) var(--space-4)",
+          borderRadius: "var(--radius-lg)",
+          background: "hsla(47, 96%, 53%, 0.10)",
+          border: "1px solid hsla(47, 96%, 53%, 0.30)",
+          color: "hsl(47, 96%, 65%)",
+          fontSize: "var(--text-sm)",
+          display: "flex",
+          alignItems: "center",
+          gap: "var(--space-2)",
+        }}>
+          <span style={{ fontSize: "1rem" }}>📄</span>
+          Duplicating lead — review the pre-filled details and make any changes before creating.
+        </div>
+      )}
 
       {/* Card */}
       <div style={{
