@@ -4,6 +4,7 @@ import {
   useGetLead, useUpdateLead, useGetLeadNotes, useAddLeadNote,
   useDeleteLeadNote, useGetLeadActivities, useDeleteLead,
   useGetServices, useGetServiceCompanies, getGetLeadsQueryKey,
+  getGetLeadActivitiesQueryKey,
   useGetTeamMembers,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -153,13 +154,17 @@ function NotesSection({ leadId }: { leadId: string }) {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
+        queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
         setNewNote("");
       },
     },
   });
   const deleteMutation = useDeleteLeadNote({
     mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] }),
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
+        queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
+      },
     },
   });
 
@@ -667,6 +672,7 @@ export function LeadDetailSheet({
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
         queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}`] });
+        queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
         toast.success("Lead updated");
       },
     },
