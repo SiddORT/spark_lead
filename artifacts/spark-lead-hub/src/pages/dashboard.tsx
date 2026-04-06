@@ -248,14 +248,18 @@ export function Dashboard() {
   }, [leads, search, serviceFilter, companyFilter, typeFilter, stageFilter]);
 
   // Stats from filtered data
+  // A lead is Won if EITHER the new pipeline statusIsWon flag OR the legacy outcome === "closed"
+  // A lead is Lost if EITHER the new pipeline statusIsLost flag OR the legacy outcome === "lost"
+  const isWon  = (l: any) => l.statusIsWon  === true || l.outcome === "closed";
+  const isLost = (l: any) => l.statusIsLost === true || l.outcome === "lost";
+  const isTerminal = (l: any) => isWon(l) || isLost(l);
+
   const hotCount       = filteredLeads.filter((l: any) => l.leadType === "hot").length;
-  const closedCount    = filteredLeads.filter((l: any) => l.outcome === "closed").length;
+  const closedCount    = filteredLeads.filter(isWon).length;
   const pipelineValue  = filteredLeads.reduce(
-    (s: number, l: any) => s + (l.outcome !== "closed" && l.outcome !== "lost" ? Number(l.dealValue || 0) : 0), 0
+    (s: number, l: any) => s + (!isTerminal(l) ? Number(l.dealValue || 0) : 0), 0
   );
-  const activePipeline = filteredLeads.filter(
-    (l: any) => !l.outcome || (l.outcome !== "closed" && l.outcome !== "lost")
-  ).length;
+  const activePipeline = filteredLeads.filter((l: any) => !isTerminal(l)).length;
 
   // Dynamic column sort (default: newest first)
   const sortedLeads = useMemo(() => {
