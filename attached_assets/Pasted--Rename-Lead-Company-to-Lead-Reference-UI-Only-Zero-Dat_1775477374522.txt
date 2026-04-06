@@ -1,0 +1,190 @@
+## 🚀 Rename “Lead Company” to “Lead Reference” (UI Only – Zero Data Impact)
+
+---
+
+# 🎯 Objective
+
+Update the system so that:
+
+### ✅ UI Change
+
+* Replace **“Lead Company” → “Lead Reference”**
+* Apply across:
+
+  * Create Lead Form
+  * Edit Lead Form
+  * Lead Details Page
+  * Leads Table (if shown)
+  * Filters / Search / Labels
+  * Any UI where label is visible
+
+---
+
+# ❗ CRITICAL REQUIREMENT
+
+👉 **DATA MUST NOT CHANGE AT ALL**
+
+* ❌ Do NOT rename DB column
+* ❌ Do NOT modify API fields
+* ❌ Do NOT migrate data
+* ❌ Do NOT touch backend logic
+
+👉 This is **STRICTLY a UI label change**
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Update Form Labels
+
+### Replace:
+
+```tsx
+<label>Lead Company</label>
+```
+
+### With:
+
+```tsx
+<label>Lead Reference</label>
+```
+
+---
+
+## ✅ 2. Update Placeholder Text
+
+```tsx
+placeholder="e.g. Acme Corp"
+```
+
+👉 Keep placeholder same OR update to:
+
+```tsx
+placeholder="Enter lead reference"
+```
+
+---
+
+## ✅ 3. DO NOT Change Data Binding
+
+❌ DO NOT change:
+
+```ts
+lead.company_name
+lead.company_id
+```
+
+👉 Keep as is:
+
+```tsx
+value={lead.company_name} ✅
+```
+
+---
+
+## ✅ 4. Update Table Column (If Present)
+
+```tsx
+<th>Lead Reference</th>
+```
+
+---
+
+## ✅ 5. Update Filters / Search Labels
+
+```tsx
+"All Companies" → "All References"
+```
+
+---
+
+## ✅ 6. Update Anywhere in UI
+
+Search and replace:
+
+```
+"Lead Company" → "Lead Reference"
+```
+
+---
+
+## ⚠️ DO NOT TOUCH THESE
+
+* Database schema
+* Supabase tables
+* API responses
+* Internal variable names (optional but safer to keep)
+
+---
+
+# 🧪 TESTING (MANDATORY – NO SKIPPING)
+
+---
+
+## ✅ UI TESTS
+
+* “Lead Company” is NOT visible anywhere
+* “Lead Reference” is visible everywhere
+* No broken labels
+
+---
+
+## ✅ DATA INTEGRITY TESTS
+
+* Existing leads show SAME data
+* No data loss
+* No mismatch
+
+---
+
+## ✅ FUNCTIONAL TESTS
+
+* Create Lead → works correctly
+* Edit Lead → works correctly
+* Filters → still working
+* Search → still working
+
+---
+
+## ✅ REGRESSION TESTS
+
+* Lead Details page
+* Dashboard table
+* Dropdowns
+* Analytics (if applicable)
+
+---
+
+## ✅ EDGE CASES
+
+* Old data still displays correctly
+* Null values handled
+* Long names handled
+
+---
+
+# 🚀 FINAL RESULT
+
+* Clean terminology: **Lead Reference**
+* No backend impact
+* No data risk
+* Fully consistent UI
+
+---
+
+# 📌 FINAL INSTRUCTION
+
+* Treat this as **UI terminology update only**
+* Ensure **zero regression issues**
+* Validate entire system before deployment
+
+---
+
+This ensures:
+👉 Better naming clarity
+👉 Zero risk to existing data
+👉 Fully stable system
+
+---
