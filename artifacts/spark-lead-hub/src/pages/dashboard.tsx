@@ -257,7 +257,7 @@ export function Dashboard() {
   const hotCount       = filteredLeads.filter((l: any) => l.leadType === "hot").length;
   const closedCount    = filteredLeads.filter(isWon).length;
   const pipelineValue  = filteredLeads.reduce(
-    (s: number, l: any) => s + (!isTerminal(l) ? Number(l.dealValue || 0) : 0), 0
+    (s: number, l: any) => s + Number(l.dealValue || 0), 0
   );
   const activePipeline = filteredLeads.filter((l: any) => !isTerminal(l)).length;
 
@@ -472,7 +472,7 @@ export function Dashboard() {
             <StatCard label="Hot Leads" value={hotCount} icon={<Flame size={16} />} iconClass="stat-icon-warning" sub="High priority" />
             <StatCard label="Closed Deals" value={closedCount} icon={<CheckCircle2 size={16} />} iconClass="stat-icon-success" sub="Won opportunities" />
             <StatCard label="Active Pipeline" value={activePipeline} icon={<Activity size={16} />} iconClass="stat-icon-purple" sub="In progress" />
-            <StatCard label="Pipeline Value" value={formatValue(pipelineValue)} icon={<TrendingUp size={16} />} iconClass="stat-icon-teal" sub="Active deals" />
+            <StatCard label="Pipeline Value" value={formatValue(pipelineValue)} icon={<TrendingUp size={16} />} iconClass="stat-icon-teal" sub="Total deal value" />
           </>
         )}
       </div>
