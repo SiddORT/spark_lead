@@ -241,7 +241,8 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
 
 router.post("/", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const { companyIds, ...data } = req.body;
+    const { companyIds: rawCompanyIds, ...data } = req.body;
+    const companyIds: string[] = [...new Set<string>((rawCompanyIds || []).filter(Boolean))];
     const leadId = uuidv4();
 
     await db.insert(leadsTable).values({
@@ -383,10 +384,11 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     await db.update(leadsTable).set(dbUpdate).where(eq(leadsTable.id, req.params.id));
 
     if (companyIds !== undefined) {
+      const uniqueCompanyIds: string[] = [...new Set<string>((companyIds as string[]).filter(Boolean))];
       await db.delete(leadCompaniesTable).where(eq(leadCompaniesTable.leadId, req.params.id));
-      if (companyIds.length > 0) {
+      if (uniqueCompanyIds.length > 0) {
         await db.insert(leadCompaniesTable).values(
-          companyIds.map((cId: string) => ({
+          uniqueCompanyIds.map((cId: string) => ({
             id: uuidv4(),
             leadId: req.params.id,
             companyId: cId,

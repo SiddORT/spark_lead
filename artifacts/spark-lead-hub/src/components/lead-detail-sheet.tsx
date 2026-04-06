@@ -689,7 +689,7 @@ export function LeadDetailSheet({
       dealValue:      lead.dealValue,
       pipelineStageId: lead.pipelineStageId,
       companyIds:     Array.isArray(lead.companies)
-                        ? lead.companies.map((c: any) => c.id).filter(Boolean)
+                        ? [...new Set(lead.companies.map((c: any) => c.id).filter(Boolean))]
                         : [],
     };
     sessionStorage.setItem("slh_duplicate_lead", JSON.stringify(payload));
