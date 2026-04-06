@@ -354,7 +354,7 @@ function DetailsTab({
             />
           </div>
           <div className="form-field">
-            <label className="field-label">Lead Company</label>
+            <label className="field-label">Lead Reference</label>
             <input
               className="field-input"
               defaultValue={lead.company || ""}

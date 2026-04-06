@@ -259,9 +259,9 @@ export function NewLead() {
               />
             </div>
 
-            {/* Lead Company — full width */}
+            {/* Lead Reference — full width */}
             <div>
-              <FieldLabel>Lead Company</FieldLabel>
+              <FieldLabel>Lead Reference</FieldLabel>
               <StyledInput
                 value={formData.company}
                 onChange={e => set("company", e.target.value)}

@@ -1,0 +1,203 @@
+## 🚀 Fix Incorrect Renaming – Only Replace “Lead Company” → “Lead Reference” (Strict Scope)
+
+---
+
+# 🎯 Objective
+
+Correct the previous implementation so that:
+
+### ✅ ONLY THIS FIELD IS CHANGED:
+
+* **“Lead Company” → “Lead Reference”**
+
+---
+
+# ❗ CRITICAL CORRECTION
+
+The system currently renamed multiple unrelated fields like:
+
+* ❌ Company
+* ❌ Link Companies
+* ❌ Company dropdowns
+
+👉 This is WRONG and must be reverted.
+
+---
+
+# ✅ REQUIRED BEHAVIOUR
+
+---
+
+## 🔹 1. Change ONLY These Labels
+
+### In Create Lead Form:
+
+```tsx
+<label>Lead Company</label>
+```
+
+👉 Replace with:
+
+```tsx
+<label>Lead Reference</label>
+```
+
+---
+
+### In Lead Details Page:
+
+```tsx
+<label>Lead Company</label>
+```
+
+👉 Replace with:
+
+```tsx
+<label>Lead Reference</label>
+```
+
+---
+
+## 🔹 2. DO NOT Change These (IMPORTANT)
+
+❌ DO NOT MODIFY:
+
+```plaintext
+Company
+Companies
+Link Companies
+Company dropdown
+Company master data
+```
+
+👉 These must remain EXACTLY as they are.
+
+---
+
+## 🔹 3. DO NOT TOUCH DATA / LOGIC
+
+Keep everything unchanged:
+
+```ts
+lead.company_name ✅
+lead.company_id ✅
+```
+
+👉 Only UI label changes — nothing else
+
+---
+
+## 🔹 4. Fix Any Wrong Changes (Rollback)
+
+Search and REVERT:
+
+```plaintext
+"Company Reference" ❌
+```
+
+Back to:
+
+```plaintext
+"Company" ✅
+```
+
+---
+
+# 🧠 SAFE IMPLEMENTATION APPROACH
+
+---
+
+## ✅ Use Targeted Replacement (NOT Global Replace)
+
+👉 Replace ONLY where label is EXACT match:
+
+```plaintext
+"Lead Company"
+```
+
+👉 DO NOT replace generic:
+
+```plaintext
+"Company"
+```
+
+---
+
+## ✅ Example Safe Pattern
+
+```tsx
+{label === "Lead Company" ? "Lead Reference" : label}
+```
+
+---
+
+# 🧪 TESTING (MANDATORY)
+
+---
+
+## ✅ UI TESTS
+
+* Create Lead Form → shows “Lead Reference” ✅
+* Lead Details Page → shows “Lead Reference” ✅
+* And everywhere in the system → shows “Lead Reference” ✅
+
+---
+
+## ❌ MUST NOT CHANGE
+
+* Company dropdown still says “Company”
+* Link Companies unchanged
+* Company master page unchanged
+
+---
+
+## ✅ DATA TESTS
+
+* Existing data remains same
+* No data loss
+* No mapping issues
+
+---
+
+## ✅ FUNCTIONAL TESTS
+
+* Create lead → works
+* Edit lead → works
+* Company linking → works
+* Filters → unaffected
+
+---
+
+## ✅ REGRESSION TEST
+
+Check:
+
+* Dashboard
+* Kanban
+* Analytics
+* Company module
+
+---
+
+# 🚀 FINAL RESULT
+
+* Only “Lead Company” → “Lead Reference” ✅
+* All other “Company” fields untouched ✅
+* No data impact ✅
+* No broken logic ✅
+
+---
+
+# ⚠️ FINAL INSTRUCTION
+
+🚫 NEVER use global replace
+✅ Always use scoped / exact match replacement
+
+---
+
+This ensures:
+👉 Clean UI terminology
+👉 Zero unintended side effects
+👉 Fully stable system
+
+---
