@@ -1,0 +1,191 @@
+## 🚀 Hide Lead Owner Column in Leads Table (UI Only – Data Must Remain Intact)
+
+---
+
+# 🎯 Objective
+
+Modify the **Leads Table (Dashboard)** so that:
+
+### ✅ UI Change
+
+* ❌ Do NOT show **Lead Owner column** in the table
+
+### ✅ Data Integrity (CRITICAL)
+
+* Lead Owner data must:
+
+  * NOT be deleted
+  * NOT be modified
+  * NOT be affected in any way
+
+### ✅ Visibility Elsewhere
+
+* Lead Owner should still be visible in:
+
+  * Lead Details Page
+  * Dropdowns (Owner selection)
+  * Filters (if any)
+  * Reports / Analytics
+  * Any other existing location
+
+---
+
+# ❗ IMPORTANT RULE
+
+👉 This is a **UI-only change**
+👉 DO NOT touch database, API, or business logic
+
+---
+
+# 🧠 IMPLEMENTATION
+
+---
+
+## ✅ 1. Remove Lead Owner Column from Table Header
+
+❌ Remove or comment:
+
+```tsx id="rm1"
+<th>Owner</th>
+```
+
+---
+
+## ✅ 2. Remove Lead Owner Column from Table Rows
+
+❌ Remove or comment:
+
+```tsx id="rm2"
+<td>
+  {lead.owner_name}
+</td>
+```
+
+---
+
+## ✅ 3. DO NOT Modify Data Layer
+
+Ensure:
+
+```ts id="safe1"
+lead.owner_id ✅
+lead.owner_name ✅
+```
+
+👉 Still exists and is fetched normally
+
+---
+
+## ✅ 4. DO NOT Modify API / Query
+
+```ts id="safe2"
+select("*") // keep as is
+```
+
+---
+
+## ✅ 5. Adjust Column Widths
+
+After removing column, redistribute space:
+
+```tsx id="layout1"
+<th className="w-[20%]">Lead Name</th>
+<th className="w-[12%]">Type</th>
+<th className="w-[18%]">Service</th>
+<th className="w-[18%]">Company</th>
+<th className="w-[12%]">Value</th>
+<th className="w-[10%]">Handler</th>
+<th className="w-[10%]">Stage</th>
+<th className="w-[10%]">Created</th>
+```
+
+---
+
+## ✅ 6. Ensure No Logic Dependency
+
+Check:
+
+* Sorting logic ❌ should NOT depend on owner
+* Filtering logic ❌ should NOT break
+* Mapping functions ❌ should not expect owner column
+
+---
+
+# 🧪 TESTING (MANDATORY – NO SKIPPING)
+
+---
+
+## ✅ UI TESTS
+
+* Lead Owner column NOT visible in table
+* Table layout remains clean
+* No empty gaps or broken alignment
+
+---
+
+## ✅ DATA INTEGRITY TESTS
+
+* Lead Owner still:
+
+  * Visible in Lead Details
+  * Selectable in dropdowns
+  * Stored correctly in DB
+
+---
+
+## ✅ FUNCTIONAL TESTS
+
+* Create lead → owner saved correctly
+* Edit lead → owner unchanged
+* Filters still working
+* Sorting still working
+
+---
+
+## ✅ EDGE CASES
+
+* Leads without owner
+* Large dataset
+* Different user roles
+
+---
+
+## ✅ REGRESSION TESTING
+
+* Check:
+
+  * Analytics page
+  * Lead detail page
+  * Edit lead flow
+  * Any API response
+
+---
+
+# 🚀 FINAL RESULT
+
+* Cleaner table UI
+* No data loss
+* No logic break
+* Owner still available system-wide
+
+---
+
+# ⚠️ STRICT INSTRUCTION
+
+* DO NOT remove owner from:
+
+  * DB
+  * API
+  * State
+* ONLY remove from table UI
+
+---
+
+This ensures:
+👉 Clean UI
+👉 Zero data risk
+👉 Fully robust system
+
+---
+
+This is a **safe, enterprise-grade UI refinement** 🚀

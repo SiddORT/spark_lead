@@ -288,7 +288,7 @@ export function Dashboard() {
   // Compute tbody rows outside JSX to avoid nested-ternary parse issues
   let tbodyRows: React.ReactNode;
   if (leadsLoading) {
-    tbodyRows = Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} cols={9} />);
+    tbodyRows = Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} cols={8} />);
   } else if (paginatedLeads.length > 0) {
     tbodyRows = paginatedLeads.map((lead: any) => {
       const tc = TYPE_CONFIG[lead.leadType || "cold"] || TYPE_CONFIG.cold;
@@ -366,17 +366,6 @@ export function Dashboard() {
             {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
           </td>
           <td>
-            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", overflow: "hidden" }}>
-              <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>{resolveName(lead.leadOwner)[0]}</div>
-              <span style={{
-                fontSize: "var(--text-xs)", color: "var(--text-secondary)",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-              }} title={resolveName(lead.leadOwner)}>
-                {resolveName(lead.leadOwner)}
-              </span>
-            </div>
-          </td>
-          <td>
             {lead.dealHandler ? (
               <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", overflow: "hidden" }}>
                 <div className="avatar avatar-sm avatar-purple" style={{ flexShrink: 0 }}>{resolveName(lead.dealHandler)[0]}</div>
@@ -418,7 +407,7 @@ export function Dashboard() {
   } else {
     tbodyRows = (
       <tr style={{ cursor: "default" }}>
-        <td colSpan={9}>
+        <td colSpan={8}>
           <div className="empty-state">
             <div className="empty-state-icon"><Search size={22} /></div>
             <div className="empty-state-title">No leads found</div>
@@ -707,13 +696,12 @@ export function Dashboard() {
           <div className="table-scroll-wrapper">
           <table className="data-table">
             <colgroup>
-              <col style={{ width: "18%" }} />
-              <col style={{ width: "8%" }} />
-              <col style={{ width: "12%" }} />
-              <col style={{ width: "16%" }} />
+              <col style={{ width: "22%" }} />
               <col style={{ width: "9%" }} />
-              <col style={{ width: "12%" }} />
-              <col style={{ width: "12%" }} />
+              <col style={{ width: "15%" }} />
+              <col style={{ width: "18%" }} />
+              <col style={{ width: "10%" }} />
+              <col style={{ width: "13%" }} />
               <col style={{ width: "13%" }} />
               <col style={{ width: "10%" }} />
             </colgroup>
@@ -725,7 +713,6 @@ export function Dashboard() {
                   { key: "serviceName",   label: "Service",   sortable: true  },
                   { key: "company",       label: "Company",   sortable: true  },
                   { key: "dealValue",     label: "Value",     sortable: true  },
-                  { key: null,            label: "Owner",     sortable: false },
                   { key: null,            label: "Handler",   sortable: false },
                   { key: "stageSortOrder",label: "Stage",     sortable: true  },
                   { key: "createdAt",     label: "Created",   sortable: true  },
