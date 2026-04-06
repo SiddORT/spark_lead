@@ -147,6 +147,7 @@ function NotesSection({ leadId }: { leadId: string }) {
   const queryClient    = useQueryClient();
   const { user }       = useAuth();
   const [newNote, setNewNote] = useState("");
+  const submittingRef  = useRef(false);  // synchronous lock — prevents rapid-click double-submit
 
   const addMutation = useAddLeadNote({
     mutation: {
@@ -163,8 +164,12 @@ function NotesSection({ leadId }: { leadId: string }) {
   });
 
   const handleAddNote = () => {
-    if (!newNote.trim()) return;
-    addMutation.mutate({ id: leadId, data: { content: newNote, stageContext: null } });
+    if (!newNote.trim() || submittingRef.current || addMutation.isPending) return;
+    submittingRef.current = true;
+    addMutation.mutate(
+      { id: leadId, data: { content: newNote, stageContext: null } },
+      { onSettled: () => { submittingRef.current = false; } },
+    );
   };
 
   const allNotes = notes || [];
@@ -180,7 +185,7 @@ function NotesSection({ leadId }: { leadId: string }) {
           onChange={(e) => setNewNote(e.target.value)}
           rows={3}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleAddNote();
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !addMutation.isPending) handleAddNote();
           }}
         />
         <div className="notes-input-footer">
@@ -188,10 +193,10 @@ function NotesSection({ leadId }: { leadId: string }) {
           <button
             className="btn btn-primary btn-sm"
             onClick={handleAddNote}
-            disabled={!newNote.trim()}
+            disabled={!newNote.trim() || addMutation.isPending}
             type="button"
           >
-            <Send size={13} /> Add Note
+            <Send size={13} /> {addMutation.isPending ? "Adding…" : "Add Note"}
           </button>
         </div>
       </div>
@@ -240,12 +245,18 @@ function NotesSection({ leadId }: { leadId: string }) {
 // ─── Activity log ─────────────────────────────────────
 function ActivityLog({ leadId }: { leadId: string }) {
   const { data: activities } = useGetLeadActivities(leadId);
-  if (!activities?.length) return null;
+
+  const uniqueActivities = activities
+    ? Array.from(new Map(activities.filter((a) => a.id).map((a) => [a.id, a])).values())
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    : [];
+
+  if (!uniqueActivities.length) return null;
 
   return (
     <div className="activity-log">
       <div className="activity-log-title">Activity Log</div>
-      {activities.map((a) => (
+      {uniqueActivities.map((a) => (
         <div key={a.id} className="activity-item">
           <div className="activity-avatar">{(a.actorName || "?")[0].toUpperCase()}</div>
           <div className="activity-content">
@@ -530,7 +541,13 @@ function DetailsTab({
 function TimelineTab({ leadId }: { leadId: string }) {
   const { data: activities } = useGetLeadActivities(leadId);
 
-  if (!activities?.length) {
+  // Deduplicate by id, then sort newest first
+  const uniqueActivities = activities
+    ? Array.from(new Map(activities.filter((a) => a.id).map((a) => [a.id, a])).values())
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    : [];
+
+  if (!uniqueActivities.length) {
     return (
       <div className="timeline-tab timeline-empty">
         <History size={32} style={{ opacity: 0.25 }} />
@@ -541,11 +558,11 @@ function TimelineTab({ leadId }: { leadId: string }) {
 
   return (
     <div className="timeline-tab">
-      {activities.map((a, idx) => (
+      {uniqueActivities.map((a, idx) => (
         <div key={a.id} className="timeline-entry">
           <div className="timeline-left">
             <div className="timeline-avatar">{(a.actorName || "?")[0].toUpperCase()}</div>
-            {idx < activities.length - 1 && <div className="timeline-line" />}
+            {idx < uniqueActivities.length - 1 && <div className="timeline-line" />}
           </div>
           <div className="timeline-body">
             <div className="timeline-action">

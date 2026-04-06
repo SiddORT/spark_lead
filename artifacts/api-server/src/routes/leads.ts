@@ -506,6 +506,28 @@ router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
       return;
     }
 
+    // Idempotency guard: reject a duplicate note with identical content from the
+    // same user for the same lead submitted within the last 5 seconds.
+    const fiveSecondsAgo = new Date(Date.now() - 5000);
+    const recentDuplicate = await db
+      .select()
+      .from(leadNotesTable)
+      .where(
+        and(
+          eq(leadNotesTable.leadId, req.params.id),
+          eq(leadNotesTable.userId, req.user!.userId),
+          eq(leadNotesTable.content, content),
+          gte(leadNotesTable.createdAt, fiveSecondsAgo),
+        ),
+      )
+      .limit(1);
+
+    if (recentDuplicate.length > 0) {
+      // Return the existing note silently — idempotent response
+      res.status(201).json(recentDuplicate[0]);
+      return;
+    }
+
     const noteId = uuidv4();
     await db.insert(leadNotesTable).values({
       id: noteId,
