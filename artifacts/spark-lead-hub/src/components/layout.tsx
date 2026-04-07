@@ -4,7 +4,7 @@ import { useAuth, PermissionCheck } from "./auth-provider";
 import {
   LayoutDashboard, Kanban, PlusCircle, Building2,
   Briefcase, BarChart3, Users, ShieldCheck, ScrollText,
-  LogOut, Zap, ChevronLeft, ChevronRight, Menu, X, GitBranch
+  LogOut, Zap, ChevronLeft, ChevronRight, Menu, X, GitBranch, CalendarClock
 } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -150,6 +150,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <PermissionCheck resource="leads" action="create">
             <NavItem href="/leads/new" icon={PlusCircle} label="New Lead" />
           </PermissionCheck>
+          <NavItem href="/follow-up" icon={CalendarClock} label="Follow Up" />
 
           <SectionLabel title="Master Data" />
           <PermissionCheck resource="companies" action="read">

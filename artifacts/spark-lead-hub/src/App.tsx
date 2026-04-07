@@ -18,6 +18,7 @@ import { RequestAccess } from "@/pages/request-access";
 import { AccessDenied } from "@/pages/access-denied";
 import { SetPassword } from "@/pages/set-password";
 import { Profile } from "@/pages/profile";
+import { FollowUp } from "@/pages/follow-up";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,9 @@ function Router() {
       </Route>
       <Route path="/leads/new">
         <ProtectedLayout><NewLead /></ProtectedLayout>
+      </Route>
+      <Route path="/follow-up">
+        <ProtectedLayout><FollowUp /></ProtectedLayout>
       </Route>
       <Route path="/analytics">
         <ProtectedLayout><Analytics /></ProtectedLayout>

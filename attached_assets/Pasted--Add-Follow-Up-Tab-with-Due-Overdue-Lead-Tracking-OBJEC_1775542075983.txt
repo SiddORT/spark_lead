@@ -1,0 +1,350 @@
+## 🚀 Add "Follow Up" Tab with Due & Overdue Lead Tracking
+
+---
+
+# 🎯 OBJECTIVE
+
+Add a new **"Follow Up" tab** in the sidebar (below "New Lead") that:
+
+1. Displays **only leads with follow-up date = today**
+2. Highlights **overdue leads (past follow-up date)**
+3. Shows **how many days overdue**
+4. Uses **same table UI as Dashboard (no UX inconsistency)**
+5. Keeps **ALL existing data untouched and safe**
+
+---
+
+# ⚠️ CRITICAL RULES
+
+* ❌ Do NOT modify existing lead data
+* ❌ Do NOT alter follow-up date logic
+* ❌ Do NOT break dashboard logic
+* ✅ Only filter and display existing data
+* ✅ Fully reuse existing components
+
+---
+
+# ✅ STEP 1: ADD SIDEBAR TAB
+
+---
+
+## 🔹 Add Menu Item
+
+```tsx id="3bxv8q"
+{
+  name: "Follow Up",
+  icon: CalendarClock, // lucide icon
+  path: "/follow-up"
+}
+```
+
+---
+
+## ✔ Placement
+
+* Below: `New Lead`
+* Above: `Companies`
+
+---
+
+# ✅ STEP 2: CREATE FOLLOW-UP PAGE
+
+---
+
+## 🔹 Route
+
+```ts id="o7k9dl"
+<Route path="/follow-up" element={<FollowUpPage />} />
+```
+
+---
+
+## 🔹 Page Layout
+
+* SAME as Dashboard table
+* SAME filters
+* SAME sorting
+* SAME pagination
+
+👉 Reuse existing LeadTable component
+
+---
+
+# ✅ STEP 3: FILTER LOGIC (CORE FEATURE)
+
+---
+
+## 🧠 Define Dates
+
+```ts id="b1ep0k"
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+```
+
+---
+
+## 🔹 Filter Leads
+
+```ts id="p6r3hz"
+const followUpLeads = leads.filter(lead => {
+  if (!lead.followUpDate) return false;
+
+  const followDate = new Date(lead.followUpDate);
+  followDate.setHours(0, 0, 0, 0);
+
+  return (
+    followDate.getTime() === today.getTime() ||
+    followDate < today
+  );
+});
+```
+
+---
+
+## ✔ Result
+
+* Shows:
+
+  * Today’s follow-ups
+  * Overdue leads
+
+---
+
+# ✅ STEP 4: OVERDUE CALCULATION
+
+---
+
+## 🔹 Calculate Days Overdue
+
+```ts id="1ct2wq"
+const getOverdueDays = (date) => {
+  const today = new Date();
+  const follow = new Date(date);
+
+  const diffTime = today - follow;
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+};
+```
+
+---
+
+# ✅ STEP 5: UI DISPLAY (IMPORTANT)
+
+---
+
+## ✔ For TODAY Leads
+
+Normal display (no highlight)
+
+---
+
+## ✔ For OVERDUE Leads
+
+### 🔹 Add Highlight
+
+```tsx id="y6v8qs"
+<tr className={isOverdue ? "bg-red-500/10 border-l-2 border-red-500" : ""}>
+```
+
+---
+
+### 🔹 Add Badge
+
+```tsx id="9m4kpd"
+{isOverdue && (
+  <span className="text-red-400 text-xs font-medium">
+    {overdueDays} days overdue
+  </span>
+)}
+```
+
+---
+
+## ✔ Column Example
+
+| Lead Name | Stage    | Follow-up | Status            |
+| --------- | -------- | --------- | ----------------- |
+| ABC Corp  | Proposal | Apr 7     | 🔴 2 days overdue |
+
+---
+
+# ✅ STEP 6: SORTING (IMPORTANT)
+
+---
+
+## 🔹 Default Sorting
+
+```ts id="z4n9kx"
+followUpLeads.sort((a, b) => {
+  return new Date(a.followUpDate) - new Date(b.followUpDate);
+});
+```
+
+---
+
+## ✔ Result
+
+* Most urgent (oldest overdue) → top
+* Today’s leads → below
+
+---
+
+# ✅ STEP 7: REUSE EXISTING FILTERS
+
+---
+
+## ✔ Must Support
+
+* Search
+* Service filter
+* Company filter
+* Type filter
+* Stage filter
+
+---
+
+## 🔹 Apply filters AFTER follow-up filtering
+
+```ts id="q1rf3y"
+const finalLeads = applyFilters(followUpLeads);
+```
+
+---
+
+# ✅ STEP 8: EMPTY STATE
+
+---
+
+## ✔ If No Leads
+
+```tsx id="4kzv7e"
+<div className="text-center text-gray-400 py-10">
+  No follow-ups for today 🎉
+</div>
+```
+
+---
+
+# 🎨 UI/UX ENHANCEMENTS
+
+---
+
+## ✔ Color Logic
+
+| Type             | Color      |
+| ---------------- | ---------- |
+| Today            | Normal     |
+| 1–2 days overdue | Light Red  |
+| 3+ days overdue  | Strong Red |
+
+---
+
+## ✔ Tooltip (Optional)
+
+```plaintext id="k6x1rw"
+Follow-up was due on Apr 5 (2 days ago)
+```
+
+---
+
+## ✔ Icon Suggestion
+
+* Use clock or alert icon for overdue
+
+---
+
+# ⚡ PERFORMANCE NOTES
+
+---
+
+* Use memoization
+
+```ts id="c8n5vt"
+useMemo(() => finalLeads, [leads, filters]);
+```
+
+---
+
+* Avoid recalculating dates repeatedly
+
+---
+
+# 🧪 TESTING (MANDATORY)
+
+---
+
+## ✅ Functional Testing
+
+* Leads with today’s date appear
+* Past leads appear as overdue
+* Correct overdue days calculation
+
+---
+
+## ✅ Edge Cases
+
+* No follow-up date → excluded
+* Timezone issues
+* Same-day comparisons
+
+---
+
+## ✅ UI Testing
+
+* Table alignment intact
+* No overflow issues
+* Highlight clearly visible
+
+---
+
+## ✅ Regression Testing
+
+* Dashboard unaffected
+* Lead creation unaffected
+* Follow-up date logic intact
+
+---
+
+## ✅ Data Safety
+
+* No DB changes
+* No mutation of data
+* Read-only filtering
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE
+
+❌ No visibility on follow-ups
+❌ Missed leads not tracked
+
+---
+
+### AFTER
+
+✅ Dedicated Follow-Up dashboard
+✅ Overdue tracking with urgency
+✅ Clean, identical UI
+✅ Better sales execution
+
+---
+
+# ⚠️ FINAL INSTRUCTION
+
+* Reuse components (no duplication)
+* Ensure UI consistency
+* Ensure zero performance degradation
+* Ensure no logic gaps
+
+---
+
+This feature will make your CRM:
+👉 Action-driven
+👉 Sales-focused
+👉 Enterprise ready
+
+---
