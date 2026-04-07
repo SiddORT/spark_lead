@@ -483,9 +483,9 @@ export function FollowUp() {
           <TablePagination
             page={page}
             totalPages={totalPages}
-            totalItems={sortedLeads.length}
+            total={sortedLeads.length}
             pageSize={pageSize}
-            onPageChange={setPage}
+            onChange={setPage}
           />
         </div>
       )}
