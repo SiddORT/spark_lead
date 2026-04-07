@@ -1,0 +1,236 @@
+# 🚨 FIX: TABLE COLUMN CROPPING + TOOLTIP VISIBILITY (FOLLOW-UP PAGE)
+
+---
+
+# 🎯 OBJECTIVE
+
+Fix 2 critical UI issues:
+
+---
+
+## ❌ ISSUE 1: LAST COLUMN (FOLLOW-UP) GETTING CROPPED
+
+### Problem:
+
+* Last column is partially hidden
+* Table width exceeds container
+* No proper column distribution
+
+---
+
+## ❌ ISSUE 2: "+1 COMPANY" TOOLTIP NOT VISIBLE
+
+### Problem:
+
+* Tooltip hidden or clipped
+* Works on Dashboard but not on Follow-up
+* Likely due to `overflow` or `z-index`
+
+---
+
+# ✅ FIX 1: PREVENT TABLE CROPPING
+
+---
+
+## 🔹 STEP 1: REMOVE `table-auto`
+
+```tsx
+<table className="w-full table-fixed">
+```
+
+---
+
+## 🔹 STEP 2: DEFINE COLUMN WIDTHS
+
+```tsx
+<th className="w-[18%]">Lead Name</th>
+<th className="w-[10%]">Type</th>
+<th className="w-[16%]">Service</th>
+<th className="w-[16%]">Company</th>
+<th className="w-[12%]">Value</th>
+<th className="w-[12%]">Handler</th>
+<th className="w-[10%]">Stage</th>
+<th className="w-[12%] text-right">Follow-up</th>
+```
+
+---
+
+## 🔹 STEP 3: ALIGN LAST COLUMN
+
+```tsx
+<td className="text-right whitespace-nowrap">
+  {lead.followUpDate}
+</td>
+```
+
+---
+
+## 🔹 STEP 4: ENSURE TABLE DOES NOT OVERFLOW
+
+```tsx
+<div className="w-full rounded-xl border border-gray-800 overflow-visible">
+```
+
+---
+
+## ❗ IMPORTANT
+
+DO NOT USE:
+
+```tsx
+overflow-hidden ❌
+```
+
+This is causing column clipping.
+
+---
+
+# ✅ FIX 2: TOOLTIP NOT VISIBLE (+1 COMPANY)
+
+---
+
+## 🚨 ROOT CAUSE
+
+Tooltip is getting clipped due to:
+
+* Parent `overflow-hidden`
+* Low `z-index`
+* Incorrect positioning
+
+---
+
+## 🔹 STEP 1: FIX PARENT CONTAINER
+
+Ensure NO clipping:
+
+```tsx
+<div className="overflow-visible">
+```
+
+---
+
+## 🔹 STEP 2: TOOLTIP WRAPPER
+
+```tsx
+<div className="relative group">
+```
+
+---
+
+## 🔹 STEP 3: TOOLTIP UI
+
+```tsx
+<div className="absolute z-50 hidden group-hover:block 
+                bg-gray-900 border border-gray-700 
+                text-sm text-white px-3 py-2 rounded-lg 
+                shadow-xl whitespace-nowrap
+                top-full mt-2 left-0">
+  {additionalCompanies.join(", ")}
+</div>
+```
+
+---
+
+## 🔹 STEP 4: ENSURE NO PARENT BREAKS TOOLTIP
+
+Check ALL parents:
+
+❌ Remove if present:
+
+```tsx
+overflow-hidden
+overflow-x-hidden
+```
+
+---
+
+## 🔹 STEP 5: OPTIONAL (BEST UX)
+
+Add fade animation:
+
+```tsx
+className="opacity-0 group-hover:opacity-100 transition duration-200"
+```
+
+---
+
+# ✅ FIX 3: MATCH DASHBOARD BEHAVIOR
+
+---
+
+👉 Copy EXACT implementation from Dashboard for:
+
+* Tooltip logic
+* Company badge rendering
+* Hover behavior
+
+DO NOT recreate separately.
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Table Layout
+
+* Last column fully visible
+* No horizontal cut-off
+* Columns aligned
+
+---
+
+## ✅ Tooltip
+
+* "+1" hover shows full company names
+* Tooltip not clipped
+* Appears above table
+* Works on all rows
+
+---
+
+## ✅ Edge Cases
+
+* Long company names
+* Multiple companies (3+)
+* Small screen widths
+
+---
+
+## ✅ Consistency
+
+* Matches Dashboard exactly
+* No UI differences
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE
+
+❌ Last column cut
+❌ Tooltip broken
+❌ Inconsistent UX
+
+---
+
+### AFTER
+
+✅ Full table visible
+✅ Tooltip working perfectly
+✅ Clean professional UI
+
+---
+
+# ⚠️ FINAL RULE
+
+👉 NEVER use `overflow-hidden` on table containers
+👉 Always use `overflow-visible` when tooltips are involved
+
+---
+
+This ensures UI never breaks again.
+
+---

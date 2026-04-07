@@ -305,14 +305,14 @@ export function FollowUp() {
         <div className="table-scroll-wrapper">
           <table className="data-table">
             <colgroup>
-              <col style={{ width: "22%" }} />
+              <col style={{ width: "20%" }} />
               <col style={{ width: "9%"  }} />
               <col style={{ width: "14%" }} />
-              <col style={{ width: "16%" }} />
+              <col style={{ width: "15%" }} />
               <col style={{ width: "10%" }} />
               <col style={{ width: "11%" }} />
               <col style={{ width: "11%" }} />
-              <col style={{ width: "7%"  }} />
+              <col style={{ width: "12%" }} />
             </colgroup>
             <thead>
               <tr>
@@ -441,7 +441,10 @@ export function FollowUp() {
                         </td>
 
                         {/* Company */}
-                        <td>
+                        <td
+                          style={{ fontSize: "var(--text-xs)" }}
+                          title={validCompanies.length > 0 ? validCompanies.map((c: any) => c.name).join(", ") : undefined}
+                        >
                           {validCompanies.length > 0 ? (
                             <div style={{ display: "flex", flexWrap: "nowrap", gap: 3, overflow: "hidden" }}>
                               <span style={{
