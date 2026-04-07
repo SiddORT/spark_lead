@@ -167,7 +167,7 @@ export function FollowUp() {
   const todayCount   = followUpLeads.filter((l: any) => l.followUpDate && getOverdueDays(l.followUpDate) === 0).length;
 
   return (
-    <div className="page-container">
+    <div className="page">
 
       {/* ── Header ──────────────────────────────────── */}
       <div className="page-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-3)" }}>
