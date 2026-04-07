@@ -545,6 +545,9 @@ router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
       noteContent: content,
     });
 
+    // Bump the lead's updatedAt so the table re-sorts to top
+    await db.update(leadsTable).set({ updatedAt: new Date() }).where(eq(leadsTable.id, req.params.id));
+
     const note = await db.select().from(leadNotesTable).where(eq(leadNotesTable.id, noteId)).limit(1);
     const author = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
 
@@ -636,6 +639,8 @@ router.delete("/:id/notes/:noteId", requireAuth, async (req: AuthRequest, res) =
     }
 
     await db.delete(leadNotesTable).where(eq(leadNotesTable.id, req.params.noteId));
+    // Bump the lead's updatedAt on note deletion too
+    await db.update(leadsTable).set({ updatedAt: new Date() }).where(eq(leadsTable.id, req.params.id));
     res.json({ success: true, message: "Note deleted" });
   } catch (err) {
     req.log.error({ err }, "Delete note error");

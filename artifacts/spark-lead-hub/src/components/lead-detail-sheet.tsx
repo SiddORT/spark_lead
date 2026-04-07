@@ -208,6 +208,7 @@ function NotesSection({ leadId }: { leadId: string }) {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
         queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
+        queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
         setNewNote("");
       },
     },
@@ -217,6 +218,7 @@ function NotesSection({ leadId }: { leadId: string }) {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
         queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
+        queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
       },
     },
   });

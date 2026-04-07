@@ -1,0 +1,281 @@
+## 🚀 Replace "Created Date" with "Last Updated Date" in Leads Table
+
+---
+
+# 🎯 OBJECTIVE
+
+Update the Leads Table to:
+
+* Replace **"Created" column → "Updated On" (Last Updated Date)**
+* Sort leads by **most recently updated first**
+* Automatically update timestamp on every change
+* Ensure **ZERO data loss / ZERO data mutation**
+
+---
+
+# ⚠️ CRITICAL RULES
+
+* ❌ Do NOT modify existing lead data
+* ❌ Do NOT delete or overwrite `createdAt`
+* ✅ Only **add/use `updatedAt` field**
+* ✅ UI-only + safe backend update tracking
+
+---
+
+# ✅ STEP 1: ENSURE `updatedAt` FIELD EXISTS
+
+---
+
+## 🧠 Backend Logic
+
+If not already present, ensure:
+
+```ts
+updatedAt: timestamp (auto-managed)
+```
+
+---
+
+## ✔ Auto-update on every change
+
+```ts
+await db.leads.update({
+  where: { id: leadId },
+  data: {
+    ...updatedFields,
+    updatedAt: new Date()
+  }
+});
+```
+
+---
+
+## ✔ IMPORTANT
+
+* Applies to:
+
+  * Lead edits
+  * Status updates
+  * Notes added
+  * Owner/handler change
+  * Service/company updates
+  * Any changes made to the Lead
+
+---
+
+# ✅ STEP 2: UPDATE TABLE COLUMN (UI)
+
+---
+
+## 🔹 Replace Column Header
+
+```tsx
+<th>Updated On</th>
+```
+
+---
+
+## 🔹 Replace Data Binding
+
+```tsx
+<td>
+  {formatDate(lead.updatedAt || lead.createdAt)}
+</td>
+```
+
+---
+
+## ✔ Fallback Logic
+
+* If `updatedAt` is missing → show `createdAt`
+
+---
+
+# ✅ STEP 3: SORT BY LAST UPDATED (DEFAULT)
+
+---
+
+## 🔹 Backend Query (Preferred)
+
+```ts
+orderBy: {
+  updatedAt: 'desc'
+}
+```
+
+---
+
+## 🔹 OR Frontend Sorting
+
+```ts
+leads.sort((a, b) => {
+  return new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt);
+});
+```
+
+---
+
+## ✔ RESULT
+
+* Most recently updated lead → top
+* Older leads → below
+
+---
+
+# ✅ STEP 4: REAL-TIME UPDATE BEHAVIOUR
+
+---
+
+## ✔ Expected Behaviour
+
+Whenever user:
+
+* Edits lead
+* Adds note
+* Changes stage/status
+* Updates owner/handler
+* Makes any changes to the Lead
+
+👉 `updatedAt` should refresh instantly
+👉 Table should **reorder automatically**
+
+---
+
+## 🔹 Optional (Best UX)
+
+* Refetch leads OR update state locally
+
+```ts
+setLeads(updatedLeadsSorted);
+```
+
+---
+
+# 🎨 UI/UX IMPROVEMENTS
+
+---
+
+## ✔ Date Format
+
+```ts
+Apr 7, 2026
+```
+
+OR
+
+```ts
+2 mins ago
+```
+
+---
+
+## ✔ Tooltip (Optional)
+
+Hover shows:
+
+```plaintext
+Last updated: Apr 7, 2026, 6:30 PM
+```
+
+---
+
+## ✔ Column Label
+
+Change:
+
+❌ Created
+✅ Updated On
+
+---
+
+# ⚡ PERFORMANCE NOTES
+
+---
+
+* Index `updatedAt` in DB (important for sorting)
+* Avoid re-sorting large arrays unnecessarily
+* Use memoization if needed
+
+---
+
+# 🧪 TESTING (MANDATORY)
+
+---
+
+## ✅ Functional Testing
+
+* Update any lead → timestamp updates
+* Table reorders correctly
+* Latest updated lead appears on top
+
+---
+
+## ✅ Edge Cases
+
+* Old leads without `updatedAt`
+* Bulk updates
+* Rapid edits
+
+---
+
+## ✅ Regression Testing
+
+* No change in:
+
+  * Lead creation flow
+  * Existing data
+  * Filters/search
+
+---
+
+## ✅ UI Testing
+
+* Column alignment correct
+* No overflow/cropping
+* Works for 10 / 50 / 100 rows
+
+---
+
+## ✅ Data Safety
+
+* `createdAt` remains untouched
+* `updatedAt` only adds tracking
+* No data loss
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE
+
+❌ Shows Created date
+❌ Sorting not meaningful
+
+---
+
+### AFTER
+
+✅ Shows Last Updated date
+✅ Smart sorting (recent activity first)
+✅ Real-time update reflection
+✅ Better CRM usability
+
+---
+
+# ⚠️ FINAL INSTRUCTION
+
+* Keep logic **robust and scalable**
+* Ensure **no UI breaks**
+* Ensure **no backend data corruption**
+* Test thoroughly across entire system
+
+---
+
+This change will make your CRM feel:
+👉 Much more dynamic
+👉 Activity-driven
+👉 Enterprise-grade
+
+---

@@ -185,10 +185,10 @@ export function Dashboard() {
     setPage(1);
   };
 
-  // Sort state — default: latest first
-  type SortKey = "leadName" | "leadType" | "serviceName" | "company" | "dealValue" | "stageSortOrder" | "createdAt";
+  // Sort state — default: most recently updated first
+  type SortKey = "leadName" | "leadType" | "serviceName" | "company" | "dealValue" | "stageSortOrder" | "updatedAt";
   type SortDir = "asc" | "desc";
-  const [sortKey, setSortKey] = useState<SortKey>("createdAt");
+  const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const handleSort = (key: SortKey) => {
@@ -282,9 +282,9 @@ export function Dashboard() {
           return dir * (Number(a.dealValue || 0) - Number(b.dealValue || 0));
         case "stageSortOrder":
           return dir * ((a.stageSortOrder ?? 999) - (b.stageSortOrder ?? 999));
-        case "createdAt":
+        case "updatedAt":
         default:
-          return dir * (new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime());
+          return dir * (new Date(a.updatedAt || a.createdAt || 0).getTime() - new Date(b.updatedAt || b.createdAt || 0).getTime());
       }
     });
   }, [filteredLeads, sortKey, sortDir]);
@@ -406,8 +406,9 @@ export function Dashboard() {
               </span>
             )}
           </td>
-          <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)", whiteSpace: "nowrap" }}>
-            {format(new Date(lead.createdAt), "MMM d, yyyy")}
+          <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)", whiteSpace: "nowrap" }}
+              title={`Last updated: ${format(new Date(lead.updatedAt || lead.createdAt), "MMM d, yyyy, h:mm a")}`}>
+            {format(new Date(lead.updatedAt || lead.createdAt), "MMM d, yyyy")}
           </td>
         </tr>
       );
@@ -723,7 +724,7 @@ export function Dashboard() {
                   { key: "dealValue",     label: "Value",     sortable: true  },
                   { key: null,            label: "Handler",   sortable: false },
                   { key: "stageSortOrder",label: "Stage",     sortable: true  },
-                  { key: "createdAt",     label: "Created",   sortable: true  },
+                  { key: "updatedAt",     label: "Updated On", sortable: true  },
                 ] as Array<{ key: SortKey | null; label: string; sortable: boolean }>).map(col => (
                   col.sortable && col.key ? (
                     <th
