@@ -1,0 +1,205 @@
+# 🚀 FEATURE: DISPLAY LATEST FOLLOW-UP DATE IN LEAD HEADER
+
+---
+
+# 🎯 OBJECTIVE
+
+Display the **Latest Follow-up Date** in the **Lead Details header section**, alongside:
+
+* Lead Type (Hot/Warm/Cold)
+* Deal Value (₹)
+
+This should reflect the **latest follow-up date selected via Notes**, not the legacy field.
+
+---
+
+# 📍 UI PLACEMENT (IMPORTANT)
+
+Add the Follow-up date in the top header section:
+
+### 📌 Placement Order:
+
+```
+[ Stage Tags ]   [ Status ]   [ Lead Type 🔥 ]   [ ₹ Value ]   [ 📅 Follow-up Date ]
+```
+
+---
+
+# 🧠 DATA SOURCE LOGIC
+
+---
+
+## ✅ SOURCE OF TRUTH
+
+Use:
+
+```ts
+getActiveFollowUpDate(lead)
+```
+
+---
+
+## 🔹 Helper Function (if not already implemented)
+
+```ts id="fup-logic"
+function getActiveFollowUpDate(lead) {
+  const notesWithDates = lead.notes
+    .filter(n => n.followUpDate)
+    .sort((a, b) => new Date(b.followUpDate) - new Date(a.followUpDate));
+
+  if (notesWithDates.length > 0) {
+    return notesWithDates[0].followUpDate;
+  }
+
+  return lead.followUpDate || null; // fallback (legacy safety)
+}
+```
+
+---
+
+# 🎨 UI IMPLEMENTATION
+
+---
+
+## 🔹 Header Component Update
+
+```tsx id="fup-header-ui"
+const followUpDate = getActiveFollowUpDate(lead);
+
+{followUpDate && (
+  <div className="flex items-center gap-2 px-3 py-1 rounded-md bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm font-medium">
+    📅 {formatDate(followUpDate)}
+  </div>
+)}
+```
+
+---
+
+## 🔹 POSITIONING (VERY IMPORTANT)
+
+Place this:
+
+* **Next to Deal Value**
+* Inside same flex container
+* Maintain spacing consistency
+
+---
+
+## 🔹 Example Layout
+
+```tsx id="layout-example"
+<div className="flex items-center gap-3">
+
+  <Badge>🔥 Hot</Badge>
+
+  <span className="text-green-400 font-semibold">
+    ₹{lead.value}
+  </span>
+
+  {/* NEW FOLLOW-UP DATE */}
+  {followUpDate && (
+    <FollowUpBadge date={followUpDate} />
+  )}
+
+</div>
+```
+
+---
+
+# 🎯 UX ENHANCEMENT (OPTIONAL BUT RECOMMENDED)
+
+---
+
+## 🔹 Add Status Color Logic
+
+```ts id="fup-color"
+if (isToday(followUpDate)) → yellow
+if (isPast(followUpDate)) → red
+if (isFuture(followUpDate)) → teal
+```
+
+---
+
+## 🔹 Example
+
+* 🔴 `2d overdue`
+* 🟡 `Due today`
+* 🟢 `Apr 12, 2026`
+
+---
+
+# 🔒 DATA SAFETY
+
+---
+
+## ❗ STRICT RULES
+
+* DO NOT modify database
+* DO NOT overwrite any followUpDate
+* READ-ONLY usage only
+* Use Notes as primary source
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Latest follow-up date shows correctly
+* Updates instantly after adding note
+* Works with multiple notes
+
+---
+
+## ✅ Edge Cases
+
+* No notes → fallback works
+* No follow-up at all → nothing shown
+* Same-day updates → correct display
+
+---
+
+## ✅ UI
+
+* No overlap with other elements
+* Responsive across screen sizes
+* Proper spacing maintained
+
+---
+
+## ✅ Regression
+
+* No break in header layout
+* No impact on existing components
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE
+
+❌ No visibility of follow-up in header
+❌ User must go to Notes to check
+
+---
+
+### AFTER
+
+✅ Follow-up date visible instantly
+✅ Better decision making
+✅ Cleaner CRM workflow
+
+---
+
+# ✅ SUCCESS CRITERIA
+
+* Follow-up date always visible in header
+* Accurate and synced with Notes
+* Clean UI with no clutter
+* Zero data impact
+
+---

@@ -4,7 +4,7 @@ import {
   useGetLead, useUpdateLead, useGetLeadNotes, useAddLeadNote,
   useDeleteLeadNote, useGetLeadActivities, useDeleteLead,
   useGetServices, useGetServiceCompanies, getGetLeadsQueryKey,
-  getGetLeadActivitiesQueryKey,
+  getGetLeadActivitiesQueryKey, getGetLeadQueryKey,
   useGetTeamMembers, useGetCompanies,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -212,6 +212,7 @@ function NotesSection({ leadId }: { leadId: string }) {
         queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
         queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
         queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetLeadQueryKey(leadId) });
         setNewNote("");
         setFollowUpDate(defaultFollowUpDate);
       },
@@ -223,6 +224,7 @@ function NotesSection({ leadId }: { leadId: string }) {
         queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/notes`] });
         queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
         queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetLeadQueryKey(leadId) });
       },
     },
   });
@@ -915,6 +917,34 @@ export function LeadDetailSheet({
                     {formatCurrency(lead.dealValue)}
                   </span>
                 )}
+                {(() => {
+                  const fup = (lead as any).activeFollowUpDate;
+                  if (!fup) return null;
+                  const today = new Date(); today.setHours(0,0,0,0);
+                  const d = new Date(fup); d.setHours(0,0,0,0);
+                  const diff = Math.round((d.getTime() - today.getTime()) / 86400000);
+                  const isOverdue = diff < 0;
+                  const isToday   = diff === 0;
+                  const color = isOverdue ? "hsl(0 80% 58%)" : isToday ? "hsl(45 95% 55%)" : "var(--teal)";
+                  const bg    = isOverdue ? "hsl(0 80% 58% / 0.12)" : isToday ? "hsl(45 95% 55% / 0.12)" : "var(--teal-dim)";
+                  const border= isOverdue ? "hsl(0 80% 58% / 0.25)" : isToday ? "hsl(45 95% 55% / 0.25)" : "hsl(172 75% 48% / 0.35)";
+                  const label = isOverdue
+                    ? `${Math.abs(diff)}d overdue`
+                    : isToday ? "Due today" : format(d, "MMM d, yyyy");
+                  return (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      fontSize: "var(--text-xs)", fontWeight: 600,
+                      color, background: bg,
+                      border: `1px solid ${border}`,
+                      borderRadius: 6, padding: "3px 9px",
+                      whiteSpace: "nowrap",
+                    }}>
+                      <CalendarClock size={11} />
+                      {label}
+                    </span>
+                  );
+                })()}
               </div>
             )}
           </div>
