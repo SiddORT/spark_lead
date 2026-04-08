@@ -385,7 +385,23 @@ function ActivityLog({ leadId }: { leadId: string }) {
           <div className="activity-avatar">{(a.actorName || "?")[0].toUpperCase()}</div>
           <div className="activity-content">
             <div className="activity-action">
-              {a.fieldName ? (
+              {a.action === "note_added" ? (
+                <>
+                  <strong>{a.actorName}</strong> added a note
+                  {a.noteContent && (
+                    <div style={{ marginTop: 4, padding: "4px 8px", background: "hsl(220 20% 12%)", borderRadius: 4, fontSize: "var(--text-xs)", color: "var(--text-secondary)", fontStyle: "italic", lineHeight: 1.4 }}>
+                      "{a.noteContent}"
+                    </div>
+                  )}
+                  {a.newValue && (
+                    <div style={{ marginTop: 4 }}>
+                      <span style={{ display: "inline-block", padding: "2px 7px", borderRadius: 4, fontSize: "var(--text-xs)", background: "hsl(35 100% 50% / 0.12)", color: "hsl(35 100% 62%)", border: "1px solid hsl(35 100% 50% / 0.25)" }}>
+                        📅 Follow-up: {format(new Date(a.newValue), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                  )}
+                </>
+              ) : a.fieldName ? (
                 <>
                   Updated <strong>{fieldLabel(a.fieldName)}</strong> from{" "}
                   <em style={{ opacity: 0.7 }}>{resolve(a.fieldName, a.oldValue) || "none"}</em> →{" "}
@@ -688,7 +704,24 @@ function TimelineTab({ leadId }: { leadId: string }) {
           </div>
           <div className="timeline-body">
             <div className="timeline-action">
-              {a.fieldName ? (
+              {a.action === "note_added" ? (
+                <>
+                  <strong>{a.actorName}</strong>
+                  <span style={{ color: "var(--text-secondary)" }}> added a note</span>
+                  {a.noteContent && (
+                    <div style={{ marginTop: 6, padding: "6px 10px", background: "hsl(220 20% 10%)", borderLeft: "2px solid hsl(172 75% 48% / 0.4)", borderRadius: "0 4px 4px 0", fontSize: "var(--text-xs)", color: "var(--text-secondary)", fontStyle: "italic", lineHeight: 1.5 }}>
+                      "{a.noteContent}"
+                    </div>
+                  )}
+                  {a.newValue && (
+                    <div style={{ marginTop: 6 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 4, fontSize: "var(--text-xs)", background: "hsl(35 100% 50% / 0.12)", color: "hsl(35 100% 62%)", border: "1px solid hsl(35 100% 50% / 0.25)" }}>
+                        📅 Follow-up: {format(new Date(a.newValue), "MMM d, yyyy")}
+                      </span>
+                    </div>
+                  )}
+                </>
+              ) : a.fieldName ? (
                 <>
                   <strong>{a.actorName}</strong> updated{" "}
                   <span className="timeline-field">{fieldLabel(a.fieldName)}</span>

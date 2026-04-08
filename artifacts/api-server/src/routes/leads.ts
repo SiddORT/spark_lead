@@ -578,6 +578,7 @@ router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
       userId: req.user!.userId,
       action: "note_added",
       noteContent: content,
+      newValue: followUpDate || null,
     });
 
     // Bump the lead's updatedAt so the table re-sorts to top
