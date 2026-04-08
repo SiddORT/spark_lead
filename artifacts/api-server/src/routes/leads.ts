@@ -107,6 +107,7 @@ function formatLead(lead: any) {
     dealHandler: lead.dealHandler,
     dealValue: lead.dealValue,
     value: lead.value,
+    description: lead.description || null,
     followUpDate: lead.followUpDate,
     activeFollowUpDate,
     nextAction: lead.nextAction,
@@ -278,6 +279,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res) => {
     await db.insert(leadsTable).values({
       id: leadId,
       leadName: data.leadName,
+      description: data.description || null,
       createdBy: req.user!.userId,
       stage: "discovery",
       pipelineStageId: data.pipelineStageId || null,
@@ -384,6 +386,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
 
     const dbUpdate: any = { updatedAt: new Date() };
     if (updateData.leadName !== undefined) dbUpdate.leadName = updateData.leadName;
+    if (updateData.description !== undefined) dbUpdate.description = updateData.description || null;
     if (updateData.pipelineStageId !== undefined) dbUpdate.pipelineStageId = updateData.pipelineStageId;
     if (updateData.pipelineStatusId !== undefined) dbUpdate.pipelineStatusId = updateData.pipelineStatusId;
     if (updateData.stage !== undefined) dbUpdate.stage = updateData.stage;

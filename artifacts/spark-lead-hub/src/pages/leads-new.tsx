@@ -148,6 +148,7 @@ export function NewLead() {
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [formData, setFormData] = useState<any>({
     leadName: "",
+    description: "",
     company: "",
     leadType: "cold",
     contactEmail: "",
@@ -173,6 +174,7 @@ export function NewLead() {
       setFormData((prev: any) => ({
         ...prev,
         leadName:        src.leadName ? `${src.leadName} (Copy)` : "",
+        description:     src.description    ?? "",
         company:         src.company        ?? "",
         leadType:        src.leadType       ?? "cold",
         contactEmail:    src.contactEmail   ?? "",
@@ -342,6 +344,17 @@ export function NewLead() {
                   placeholder="0.00"
                 />
               </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <FieldLabel>Description</FieldLabel>
+              <StyledTextarea
+                value={formData.description}
+                onChange={e => set("description", e.target.value)}
+                placeholder="Brief overview of this lead — context, source, or initial notes…"
+                rows={3}
+              />
             </div>
 
             {/* Pipeline Stage + Status */}

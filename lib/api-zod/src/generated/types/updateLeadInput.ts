@@ -16,6 +16,7 @@ import type { UpdateLeadInputStrategicTier } from "./updateLeadInputStrategicTie
 
 export interface UpdateLeadInput {
   leadName?: string | null;
+  description?: string | null;
   stage?: UpdateLeadInputStage;
   leadType?: UpdateLeadInputLeadType;
   contactEmail?: string | null;

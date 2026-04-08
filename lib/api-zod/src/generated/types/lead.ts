@@ -18,6 +18,7 @@ import type { LeadStrategicTier } from "./leadStrategicTier";
 export interface Lead {
   id: string;
   leadName: string;
+  description?: string | null;
   createdBy: string;
   stage: LeadStage;
   leadType?: LeadLeadType;

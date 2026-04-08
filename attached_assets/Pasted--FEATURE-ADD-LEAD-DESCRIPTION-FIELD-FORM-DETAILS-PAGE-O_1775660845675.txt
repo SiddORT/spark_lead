@@ -1,0 +1,274 @@
+# 🚀 FEATURE: ADD "LEAD DESCRIPTION" FIELD (FORM + DETAILS PAGE)
+
+---
+
+# 🎯 OBJECTIVE
+
+Add a new field **"Lead Description"**:
+
+1. In **Create Lead Form**
+2. In **Lead Details Page**
+3. Ensure it spans **full width (same as two-column fields above)**
+4. Ensure **ZERO impact on existing data**
+
+---
+
+# 🚨 CRITICAL RULES (DO NOT BREAK)
+
+❗ Existing lead data must remain unchanged
+❗ No overwriting or migration of old data
+❗ Field should be **optional**
+❗ Backward compatibility must be maintained
+
+---
+
+# 🏗️ BACKEND CHANGES
+
+---
+
+## 🔹 STEP 1: UPDATE LEAD SCHEMA
+
+```ts id="schema-update"
+Lead {
+  id
+  name
+  reference
+  type
+  value
+  ...
+
+  description: string | null   // ✅ NEW FIELD
+}
+```
+
+---
+
+## 🔹 STEP 2: DEFAULT HANDLING
+
+```ts id="default-handling"
+description = input.description || null;
+```
+
+---
+
+## 🔹 IMPORTANT
+
+* Do NOT add any required validation
+* Do NOT affect existing records
+* Old leads will simply have `description = null`
+
+---
+
+# 🎨 FRONTEND CHANGES
+
+---
+
+# ✅ 1. CREATE LEAD FORM UPDATE
+
+---
+
+## 🔹 PLACEMENT (VERY IMPORTANT)
+
+Place **below this row**:
+
+```id="placement"
+[ Lead Type ]   [ Deal Value ]
+```
+
+---
+
+## 🔹 FULL WIDTH FIELD
+
+```tsx id="lead-description-form"
+<div className="col-span-2">
+  <label className="form-label">Lead Description</label>
+  
+  <textarea
+    name="description"
+    placeholder="Enter lead description..."
+    className="w-full min-h-[100px] resize-none"
+  />
+</div>
+```
+
+---
+
+## 🔹 GRID NOTE
+
+Ensure parent grid supports:
+
+```tsx id="grid"
+grid-cols-2
+```
+
+And this field uses:
+
+```tsx id="span"
+col-span-2
+```
+
+---
+
+# ✅ 2. FORM SUBMISSION UPDATE
+
+---
+
+```ts id="submit-update"
+createLead({
+  ...formData,
+  description: formData.description
+});
+```
+
+---
+
+# ✅ 3. LEAD DETAILS PAGE UPDATE
+
+---
+
+## 🔹 PLACEMENT
+
+Add inside **Lead Information section**
+
+👉 Below:
+
+* Lead Name
+* Lead Reference
+
+---
+
+## 🔹 UI IMPLEMENTATION
+
+```tsx id="lead-description-display"
+{lead.description && (
+  <div className="mt-4">
+    <label className="text-xs text-gray-400">
+      Lead Description
+    </label>
+
+    <p className="mt-1 text-sm text-gray-200 leading-relaxed">
+      {lead.description}
+    </p>
+  </div>
+)}
+```
+
+---
+
+## 🔹 EMPTY STATE
+
+If no description:
+
+```tsx id="empty-state"
+<p className="text-gray-500 italic">
+  No description provided
+</p>
+```
+
+---
+
+# 🎨 UX IMPROVEMENTS (OPTIONAL BUT RECOMMENDED)
+
+---
+
+## 🔹 Limit Height + Scroll
+
+```tsx id="scroll"
+max-h-[120px] overflow-y-auto
+```
+
+---
+
+## 🔹 Preserve Formatting
+
+```tsx id="format"
+whitespace-pre-wrap
+```
+
+---
+
+# 🔒 DATA SAFETY
+
+---
+
+## ✅ GUARANTEES
+
+* Existing leads remain unchanged
+* No migration required
+* Field is nullable
+* No breaking API changes
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Form
+
+* Field visible in correct position
+* Full width working properly
+* Accepts long text
+* No UI break
+
+---
+
+## ✅ Submission
+
+* Data saved correctly
+* No errors when empty
+
+---
+
+## ✅ Details Page
+
+* Displays correctly
+* Handles long text
+* Handles null values
+
+---
+
+## ✅ Edge Cases
+
+* Very long description
+* Special characters
+* Empty submission
+
+---
+
+## ✅ Regression
+
+* No layout break
+* No impact on other fields
+* No API failures
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE
+
+❌ No place to store description
+❌ Limited context for leads
+
+---
+
+### AFTER
+
+✅ Full description support
+✅ Better lead context
+✅ Clean UI integration
+✅ Fully backward compatible
+
+---
+
+# ✅ SUCCESS CRITERIA
+
+* Field added without breaking system
+* UI clean and aligned
+* Data fully सुरक्षित (safe)
+* Works across form + details
+
+---

@@ -486,6 +486,18 @@ function DetailsTab({
               placeholder="e.g. Acme Corp"
             />
           </div>
+          <div className="form-field">
+            <label className="field-label">Description</label>
+            <textarea
+              className="field-input"
+              key={lead.id + "-desc"}
+              defaultValue={lead.description || ""}
+              onBlur={(e) => handleUpdate("description", e.target.value)}
+              placeholder="Brief overview of this lead — context, source, or initial notes…"
+              rows={3}
+              style={{ resize: "vertical", minHeight: "72px", fontFamily: "inherit", lineHeight: 1.5 }}
+            />
+          </div>
           <div className="details-row">
             <div className="form-field">
               <label className="field-label">Lead Type</label>

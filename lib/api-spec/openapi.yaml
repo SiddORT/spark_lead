@@ -1090,6 +1090,9 @@ components:
           type: string
         leadName:
           type: string
+        description:
+          type: string
+          nullable: true
         createdBy:
           type: string
         stage:
@@ -1195,6 +1198,9 @@ components:
       properties:
         leadName:
           type: string
+        description:
+          type: string
+          nullable: true
         leadType:
           type: string
           enum: [hot, warm, cold, ghosted]
@@ -1241,6 +1247,9 @@ components:
       type: object
       properties:
         leadName:
+          type: string
+          nullable: true
+        description:
           type: string
           nullable: true
         stage:

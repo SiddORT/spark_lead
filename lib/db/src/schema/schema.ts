@@ -191,6 +191,7 @@ export const pipelineStatusesTable = pgTable("pipeline_statuses", {
 export const leadsTable = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   leadName: text("lead_name").notNull(),
+  description: text("description"),
   createdBy: uuid("created_by").references(() => usersTable.id),
   pipelineStageId: uuid("pipeline_stage_id").references(() => pipelineStagesTable.id),
   pipelineStatusId: uuid("pipeline_status_id").references(() => pipelineStatusesTable.id),

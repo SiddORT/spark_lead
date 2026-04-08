@@ -9,6 +9,7 @@ import type { CreateLeadInputLeadType } from "./createLeadInputLeadType";
 
 export interface CreateLeadInput {
   leadName: string;
+  description?: string | null;
   leadType?: CreateLeadInputLeadType;
   contactEmail?: string | null;
   phone?: string | null;

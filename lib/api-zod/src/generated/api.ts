@@ -127,6 +127,7 @@ export const RejectAccessRequestResponse = zod.object({
 export const GetLeadsResponseItem = zod.object({
   id: zod.string(),
   leadName: zod.string(),
+  description: zod.string().nullish(),
   createdBy: zod.string(),
   stage: zod.enum(["discovery", "qualification", "strategy", "resolution"]),
   leadType: zod.enum(["hot", "warm", "cold", "ghosted"]).nullish(),
@@ -187,6 +188,7 @@ export const GetLeadsResponse = zod.array(GetLeadsResponseItem);
  */
 export const CreateLeadBody = zod.object({
   leadName: zod.string(),
+  description: zod.string().nullish(),
   leadType: zod.enum(["hot", "warm", "cold", "ghosted"]).nullish(),
   contactEmail: zod.string().nullish(),
   phone: zod.string().nullish(),
@@ -211,6 +213,7 @@ export const GetLeadParams = zod.object({
 export const GetLeadResponse = zod.object({
   id: zod.string(),
   leadName: zod.string(),
+  description: zod.string().nullish(),
   createdBy: zod.string(),
   stage: zod.enum(["discovery", "qualification", "strategy", "resolution"]),
   leadType: zod.enum(["hot", "warm", "cold", "ghosted"]).nullish(),
@@ -274,6 +277,7 @@ export const UpdateLeadParams = zod.object({
 
 export const UpdateLeadBody = zod.object({
   leadName: zod.string().nullish(),
+  description: zod.string().nullish(),
   stage: zod
     .enum(["discovery", "qualification", "strategy", "resolution"])
     .nullish(),
@@ -308,6 +312,7 @@ export const UpdateLeadBody = zod.object({
 export const UpdateLeadResponse = zod.object({
   id: zod.string(),
   leadName: zod.string(),
+  description: zod.string().nullish(),
   createdBy: zod.string(),
   stage: zod.enum(["discovery", "qualification", "strategy", "resolution"]),
   leadType: zod.enum(["hot", "warm", "cold", "ghosted"]).nullish(),

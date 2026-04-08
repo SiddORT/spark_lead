@@ -165,6 +165,7 @@ export interface Company {
 export interface Lead {
   id: string;
   leadName: string;
+  description?: string | null;
   createdBy: string;
   stage: LeadStage;
   leadType?: LeadLeadType;
@@ -209,6 +210,7 @@ export const CreateLeadInputLeadType = {
 
 export interface CreateLeadInput {
   leadName: string;
+  description?: string | null;
   leadType?: CreateLeadInputLeadType;
   contactEmail?: string | null;
   phone?: string | null;
@@ -308,6 +310,7 @@ export const UpdateLeadInputFrictionPoint = {
 
 export interface UpdateLeadInput {
   leadName?: string | null;
+  description?: string | null;
   stage?: UpdateLeadInputStage;
   leadType?: UpdateLeadInputLeadType;
   contactEmail?: string | null;
