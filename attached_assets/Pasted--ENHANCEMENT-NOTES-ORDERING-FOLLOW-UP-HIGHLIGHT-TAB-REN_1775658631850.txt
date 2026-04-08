@@ -1,0 +1,222 @@
+# 🚀 ENHANCEMENT: NOTES ORDERING + FOLLOW-UP HIGHLIGHT + TAB RENAME
+
+---
+
+# 🎯 OBJECTIVE
+
+Enhance Notes experience by:
+
+1. Showing **latest notes at the top**
+2. Clearly **highlighting follow-up dates**
+3. Renaming **"Notes" tab → "Notes and Follow-Up"** across the system
+4. Improving readability and UX without affecting any data
+
+---
+
+# 🚨 CRITICAL RULES
+
+❗ NO data modification
+❗ NO schema breaking changes
+❗ ONLY UI + sorting + naming updates
+❗ System must remain fully backward compatible
+
+---
+
+# 🧠 FEATURE 1: LATEST NOTES ON TOP
+
+---
+
+## 🔹 CURRENT ISSUE
+
+* Notes are not sorted properly
+* Latest note is not always visible first
+
+---
+
+## 🔹 REQUIRED FIX
+
+Sort notes in **descending order (latest first)**
+
+---
+
+## 🔹 IMPLEMENTATION
+
+```ts
+const sortedNotes = notes.sort(
+  (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+);
+```
+
+---
+
+## ✅ EXPECTED BEHAVIOR
+
+* Most recent note always appears on top
+* Older notes follow below
+
+---
+
+# 🎨 FEATURE 2: FOLLOW-UP DATE HIGHLIGHTING
+
+---
+
+## 🔹 CURRENT ISSUE
+
+* Follow-up date is not visually prominent
+* Hard to distinguish from normal note metadata
+
+---
+
+## 🔹 REQUIRED UX IMPROVEMENT
+
+Make follow-up date:
+
+* Visually distinct
+* Clearly labeled
+* Easily scannable
+
+---
+
+## 🔹 UI IMPLEMENTATION
+
+```tsx
+<div className="note-card flex justify-between items-start">
+
+  <div>
+    <p className="text-sm text-gray-300">{note.content}</p>
+  </div>
+
+  {note.followUpDate && (
+    <span className="ml-3 px-2 py-1 text-xs font-medium rounded-md bg-orange-500/10 text-orange-400 border border-orange-500/20">
+      📅 Follow-up: {formatDate(note.followUpDate)}
+    </span>
+  )}
+
+</div>
+```
+
+---
+
+## ✅ RESULT
+
+* Follow-up dates stand out immediately
+* Improves decision-making speed
+
+---
+
+# 🏷️ FEATURE 3: RENAME TAB GLOBALLY
+
+---
+
+## 🔹 CHANGE REQUIRED
+
+Rename:
+
+```
+"Notes" → "Notes and Follow-Up"
+```
+
+---
+
+## 🔹 WHERE TO UPDATE
+
+### 1. Lead Details Page Tabs
+
+```tsx
+<Tab label="Notes and Follow-Up" />
+```
+
+---
+
+### 2. Routing / Tab Config
+
+```ts
+{
+  key: "notes",
+  label: "Notes and Follow-Up"
+}
+```
+
+---
+
+### 3. Anywhere Else
+
+* Mobile view
+* Breadcrumbs (if any)
+* Header labels
+* Tooltips
+
+---
+
+## 🚨 IMPORTANT
+
+❗ Do NOT change API names
+❗ Do NOT change DB field names
+❗ Only change display labels
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Notes Sorting
+
+* Latest note always first
+* Order updates immediately after adding note
+
+---
+
+## ✅ Follow-Up Highlight
+
+* Visible on all notes with date
+* Color logic works (optional)
+* No UI overlap or break
+
+---
+
+## ✅ Tab Rename
+
+* Reflected everywhere
+* No broken navigation
+* No missing labels
+
+---
+
+## ✅ Edge Cases
+
+* Notes without follow-up date → no badge
+* Very long notes → layout intact
+* Multiple notes → spacing consistent
+
+---
+
+# 🎯 FINAL RESULT
+
+---
+
+### BEFORE
+
+❌ Notes unordered
+❌ Follow-up date unclear
+❌ Generic "Notes" label
+
+---
+
+### AFTER
+
+✅ Latest notes always on top
+✅ Follow-up dates clearly highlighted
+✅ Clear tab naming: "Notes and Follow-Up"
+✅ Improved usability and clarity
+
+---
+
+# 🚀 SUCCESS CRITERIA
+
+* Clean, readable notes list
+* Strong visual hierarchy
+* No regression in existing features
+* Zero UI/UX inconsistencies
+
+---

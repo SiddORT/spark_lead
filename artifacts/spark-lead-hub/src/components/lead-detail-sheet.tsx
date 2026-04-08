@@ -236,7 +236,9 @@ function NotesSection({ leadId }: { leadId: string }) {
     );
   };
 
-  const allNotes = notes || [];
+  const allNotes = (notes || []).slice().sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
   const filteredNotes = noteSearch.trim()
     ? allNotes.filter((n) => n.content.toLowerCase().includes(noteSearch.toLowerCase()))
     : allNotes;
@@ -321,11 +323,15 @@ function NotesSection({ leadId }: { leadId: string }) {
                   {(n as any).followUpDate && (
                     <span style={{
                       display: "inline-flex", alignItems: "center", gap: 4,
-                      fontSize: "var(--text-xs)", color: "var(--teal)",
-                      background: "var(--teal-dim)", borderRadius: 4, padding: "2px 7px",
+                      fontSize: "var(--text-xs)", fontWeight: 600,
+                      color: "hsl(30 95% 62%)",
+                      background: "hsl(30 95% 62% / 0.12)",
+                      border: "1px solid hsl(30 95% 62% / 0.25)",
+                      borderRadius: 5, padding: "2px 8px",
+                      whiteSpace: "nowrap",
                     }}>
                       <CalendarClock size={11} />
-                      {format(new Date((n as any).followUpDate), "MMM d, yyyy")}
+                      Follow-up: {format(new Date((n as any).followUpDate), "MMM d, yyyy")}
                     </span>
                   )}
                   {n.userId === user?.id && (
@@ -976,7 +982,7 @@ export function LeadDetailSheet({
         <div className="sheet-tabs">
           {[
             { id: "details",  label: "Details",       icon: <FileText size={13} /> },
-            { id: "notes",    label: "Notes",          icon: <MessageSquare size={13} /> },
+            { id: "notes",    label: "Notes & Follow-Up", icon: <MessageSquare size={13} /> },
             { id: "timeline", label: "Timeline",       icon: <History size={13} /> },
           ].map((tab) => (
             <button
