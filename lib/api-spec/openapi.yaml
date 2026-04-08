@@ -1147,6 +1147,9 @@ components:
           type: string
           enum: [high, med, low]
           nullable: true
+        activeFollowUpDate:
+          type: string
+          nullable: true
         customHook:
           type: string
           nullable: true
@@ -1334,6 +1337,9 @@ components:
         stageContext:
           type: string
           nullable: true
+        followUpDate:
+          type: string
+          nullable: true
         createdAt:
           type: string
         authorName:
@@ -1352,6 +1358,9 @@ components:
         content:
           type: string
         stageContext:
+          type: string
+          nullable: true
+        followUpDate:
           type: string
           nullable: true
       required:

@@ -8,10 +8,10 @@ import {
   useGetTeamMembers, useGetCompanies,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow, addDays } from "date-fns";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
-  FileText, MessageSquare, History, Copy,
+  FileText, MessageSquare, History, Copy, CalendarClock, Search,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useUserMap } from "@/hooks/use-user-map";
@@ -200,8 +200,11 @@ function NotesSection({ leadId }: { leadId: string }) {
   const { data: notes } = useGetLeadNotes(leadId);
   const queryClient    = useQueryClient();
   const { user }       = useAuth();
-  const [newNote, setNewNote] = useState("");
-  const submittingRef  = useRef(false);  // synchronous lock — prevents rapid-click double-submit
+  const [newNote, setNewNote]     = useState("");
+  const [noteSearch, setNoteSearch] = useState("");
+  const defaultFollowUpDate = format(addDays(new Date(), 2), "yyyy-MM-dd");
+  const [followUpDate, setFollowUpDate] = useState(defaultFollowUpDate);
+  const submittingRef  = useRef(false);
 
   const addMutation = useAddLeadNote({
     mutation: {
@@ -210,6 +213,7 @@ function NotesSection({ leadId }: { leadId: string }) {
         queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
         queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
         setNewNote("");
+        setFollowUpDate(defaultFollowUpDate);
       },
     },
   });
@@ -227,12 +231,15 @@ function NotesSection({ leadId }: { leadId: string }) {
     if (!newNote.trim() || submittingRef.current || addMutation.isPending) return;
     submittingRef.current = true;
     addMutation.mutate(
-      { id: leadId, data: { content: newNote, stageContext: null } },
+      { id: leadId, data: { content: newNote, stageContext: null, followUpDate: followUpDate || null } as any },
       { onSettled: () => { submittingRef.current = false; } },
     );
   };
 
   const allNotes = notes || [];
+  const filteredNotes = noteSearch.trim()
+    ? allNotes.filter((n) => n.content.toLowerCase().includes(noteSearch.toLowerCase()))
+    : allNotes;
 
   return (
     <div className="notes-tab">
@@ -249,28 +256,57 @@ function NotesSection({ leadId }: { leadId: string }) {
           }}
         />
         <div className="notes-input-footer">
-          <span className="notes-hint">⌘ + Enter to submit</span>
-          <button
-            className="btn btn-primary btn-sm"
-            onClick={handleAddNote}
-            disabled={!newNote.trim() || addMutation.isPending}
-            type="button"
-          >
-            <Send size={13} /> {addMutation.isPending ? "Adding…" : "Add Note"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
+            <CalendarClock size={13} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+            <input
+              type="date"
+              className="field-input"
+              style={{ fontSize: "var(--text-xs)", padding: "2px 6px", height: "auto", width: 140 }}
+              value={followUpDate}
+              onChange={(e) => setFollowUpDate(e.target.value)}
+              title="Follow-up date for this note"
+            />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginLeft: "auto" }}>
+            <span className="notes-hint">⌘ + Enter to submit</span>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={handleAddNote}
+              disabled={!newNote.trim() || addMutation.isPending}
+              type="button"
+            >
+              <Send size={13} /> {addMutation.isPending ? "Adding…" : "Add Note"}
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Search bar */}
+      {allNotes.length > 0 && (
+        <div style={{ padding: "var(--sp-2) var(--sp-4)", borderBottom: "1px solid var(--border)" }}>
+          <div style={{ position: "relative" }}>
+            <Search size={13} style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
+            <input
+              className="field-input"
+              style={{ paddingLeft: 28, fontSize: "var(--text-xs)", height: 30 }}
+              placeholder="Search notes…"
+              value={noteSearch}
+              onChange={(e) => setNoteSearch(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Notes list */}
       <div className="notes-list">
-        {allNotes.length === 0 ? (
+        {filteredNotes.length === 0 ? (
           <div className="empty-state" style={{ padding: "var(--sp-10) var(--sp-6)" }}>
             <div className="empty-state-icon"><MessageSquare size={20} /></div>
-            <div className="empty-state-title">No notes yet</div>
-            <div className="empty-state-desc">Add context, follow-up reminders, or any notes about this lead</div>
+            <div className="empty-state-title">{noteSearch ? "No matching notes" : "No notes yet"}</div>
+            <div className="empty-state-desc">{noteSearch ? "Try a different search term" : "Add context, follow-up reminders, or any notes about this lead"}</div>
           </div>
         ) : (
-          allNotes.map((n) => (
+          filteredNotes.map((n) => (
             <div key={n.id} className="note-item">
               <div className="note-header">
                 <div className="note-author">
@@ -281,17 +317,29 @@ function NotesSection({ leadId }: { leadId: string }) {
                     {format(new Date(n.createdAt), "MMM d, h:mm a")}
                   </span>
                 </div>
-                {n.userId === user?.id && (
-                  <div className="note-actions">
-                    <button
-                      className="icon-btn"
-                      onClick={() => deleteMutation.mutate({ id: leadId, noteId: n.id })}
-                      title="Delete note"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)" }}>
+                  {(n as any).followUpDate && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      fontSize: "var(--text-xs)", color: "var(--teal)",
+                      background: "var(--teal-dim)", borderRadius: 4, padding: "2px 7px",
+                    }}>
+                      <CalendarClock size={11} />
+                      {format(new Date((n as any).followUpDate), "MMM d, yyyy")}
+                    </span>
+                  )}
+                  {n.userId === user?.id && (
+                    <div className="note-actions">
+                      <button
+                        className="icon-btn"
+                        onClick={() => deleteMutation.mutate({ id: leadId, noteId: n.id })}
+                        title="Delete note"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
               <p className="note-content">{n.content}</p>
             </div>
@@ -366,18 +414,6 @@ function DetailsTab({
   users,
 }: any) {
   const { data: services = [] } = useGetServices();
-
-  const [followUpDate, setFollowUpDate] = useState<string>("");
-
-  useEffect(() => {
-    if (lead?.followUpDate) {
-      setFollowUpDate(lead.followUpDate.split("T")[0]);
-    } else {
-      const defaultDate = getDefaultFollowUpDate();
-      setFollowUpDate(defaultDate);
-      handleUpdate("followUpDate", defaultDate);
-    }
-  }, [lead?.id]);
 
   const selectedStage = stages.find((s: any) => s.id === localStageId) ?? null;
   const availableStatuses = selectedStage?.statuses?.filter((s: any) => s.isActive) ?? [];
@@ -580,19 +616,6 @@ function DetailsTab({
           </div>
         </div>
         <div className="details-row" style={{ marginTop: "var(--sp-4)" }}>
-          <div className="form-field">
-            <label className="field-label">Follow-up Date</label>
-            <input
-              className="field-input"
-              type="date"
-              value={followUpDate}
-              onChange={(e) => setFollowUpDate(e.target.value)}
-              onBlur={(e) => e.target.value && handleUpdate("followUpDate", e.target.value)}
-            />
-            <p style={{ margin: "4px 0 0", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
-              Default: 2 days from today
-            </p>
-          </div>
           <div className="form-field">
             <label className="field-label">Next Action</label>
             <input

@@ -241,6 +241,7 @@ export const leadNotesTable = pgTable("lead_notes", {
     .references(() => usersTable.id),
   content: text("content").notNull(),
   stageContext: text("stage_context"),
+  followUpDate: date("follow_up_date"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

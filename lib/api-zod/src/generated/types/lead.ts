@@ -36,6 +36,7 @@ export interface Lead {
   emotionalState?: LeadEmotionalState;
   decisionRole?: LeadDecisionRole;
   strategicTier?: LeadStrategicTier;
+  activeFollowUpDate?: string | null;
   customHook?: string | null;
   objection?: string | null;
   outcome?: LeadOutcome;

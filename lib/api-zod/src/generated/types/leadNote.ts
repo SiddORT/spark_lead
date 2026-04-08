@@ -12,6 +12,7 @@ export interface LeadNote {
   userId: string;
   content: string;
   stageContext?: string | null;
+  followUpDate?: string | null;
   createdAt: string;
   authorName: string;
 }

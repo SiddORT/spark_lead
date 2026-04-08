@@ -149,6 +149,7 @@ export const GetLeadsResponseItem = zod.object({
     .enum(["champion", "gatekeeper", "economic_buyer"])
     .nullish(),
   strategicTier: zod.enum(["high", "med", "low"]).nullish(),
+  activeFollowUpDate: zod.string().nullish(),
   customHook: zod.string().nullish(),
   objection: zod.string().nullish(),
   outcome: zod.enum(["closed", "lost", "wip", "delayed"]).nullish(),
@@ -232,6 +233,7 @@ export const GetLeadResponse = zod.object({
     .enum(["champion", "gatekeeper", "economic_buyer"])
     .nullish(),
   strategicTier: zod.enum(["high", "med", "low"]).nullish(),
+  activeFollowUpDate: zod.string().nullish(),
   customHook: zod.string().nullish(),
   objection: zod.string().nullish(),
   outcome: zod.enum(["closed", "lost", "wip", "delayed"]).nullish(),
@@ -328,6 +330,7 @@ export const UpdateLeadResponse = zod.object({
     .enum(["champion", "gatekeeper", "economic_buyer"])
     .nullish(),
   strategicTier: zod.enum(["high", "med", "low"]).nullish(),
+  activeFollowUpDate: zod.string().nullish(),
   customHook: zod.string().nullish(),
   objection: zod.string().nullish(),
   outcome: zod.enum(["closed", "lost", "wip", "delayed"]).nullish(),
@@ -384,6 +387,7 @@ export const GetLeadNotesResponseItem = zod.object({
   userId: zod.string(),
   content: zod.string(),
   stageContext: zod.string().nullish(),
+  followUpDate: zod.string().nullish(),
   createdAt: zod.string(),
   authorName: zod.string(),
 });
@@ -399,6 +403,7 @@ export const AddLeadNoteParams = zod.object({
 export const AddLeadNoteBody = zod.object({
   content: zod.string(),
   stageContext: zod.string().nullish(),
+  followUpDate: zod.string().nullish(),
 });
 
 /**
@@ -419,6 +424,7 @@ export const UpdateLeadNoteResponse = zod.object({
   userId: zod.string(),
   content: zod.string(),
   stageContext: zod.string().nullish(),
+  followUpDate: zod.string().nullish(),
   createdAt: zod.string(),
   authorName: zod.string(),
 });

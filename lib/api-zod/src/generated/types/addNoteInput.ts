@@ -9,4 +9,5 @@
 export interface AddNoteInput {
   content: string;
   stageContext?: string | null;
+  followUpDate?: string | null;
 }

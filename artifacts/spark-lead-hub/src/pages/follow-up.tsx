@@ -90,8 +90,8 @@ export function FollowUp() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return (leads as any[]).filter((l: any) => {
-      if (!l.followUpDate) return false;
-      const follow = new Date(l.followUpDate);
+      if (!l.activeFollowUpDate) return false;
+      const follow = new Date(l.activeFollowUpDate);
       follow.setHours(0, 0, 0, 0);
       return follow.getTime() <= today.getTime();
     });
@@ -137,7 +137,7 @@ export function FollowUp() {
           return dir * ((a.stageSortOrder ?? 999) - (b.stageSortOrder ?? 999));
         case "followUpDate":
         default:
-          return dir * (new Date(a.followUpDate || 0).getTime() - new Date(b.followUpDate || 0).getTime());
+          return dir * (new Date(a.activeFollowUpDate || 0).getTime() - new Date(b.activeFollowUpDate || 0).getTime());
       }
     });
   }, [filteredLeads, sortKey, sortDir]);
@@ -163,8 +163,8 @@ export function FollowUp() {
     .map((s: any) => ({ value: s.id, label: s.displayName || s.name }));
 
   // Stats
-  const overdueCount = followUpLeads.filter((l: any) => l.followUpDate && getOverdueDays(l.followUpDate) > 0).length;
-  const todayCount   = followUpLeads.filter((l: any) => l.followUpDate && getOverdueDays(l.followUpDate) === 0).length;
+  const overdueCount = followUpLeads.filter((l: any) => l.activeFollowUpDate && getOverdueDays(l.activeFollowUpDate) > 0).length;
+  const todayCount   = followUpLeads.filter((l: any) => l.activeFollowUpDate && getOverdueDays(l.activeFollowUpDate) === 0).length;
 
   return (
     <div className="page">
@@ -374,9 +374,9 @@ export function FollowUp() {
                   </tr>
                 )
                 : paginatedLeads.map((lead: any) => {
-                    const overdueDays   = lead.followUpDate ? getOverdueDays(lead.followUpDate) : 0;
+                    const overdueDays   = lead.activeFollowUpDate ? getOverdueDays(lead.activeFollowUpDate) : 0;
                     const leadIsOverdue = overdueDays > 0;
-                    const leadIsToday   = overdueDays === 0 && !!lead.followUpDate;
+                    const leadIsToday   = overdueDays === 0 && !!lead.activeFollowUpDate;
                     const urgencyColor  = overdueDays >= 3 ? "hsl(0 80% 55%)" : "hsl(15 90% 55%)";
                     const validCompanies = (lead.companies || []).filter((c: any) => c?.name);
 
@@ -519,15 +519,15 @@ export function FollowUp() {
                         </td>
 
                         {/* Follow-up date */}
-                        <td title={lead.followUpDate ? `Due: ${format(new Date(lead.followUpDate), "MMM d, yyyy")}${leadIsOverdue ? ` (${overdueDays}d ago)` : ""}` : undefined}>
-                          {lead.followUpDate ? (
+                        <td title={lead.activeFollowUpDate ? `Due: ${format(new Date(lead.activeFollowUpDate), "MMM d, yyyy")}${leadIsOverdue ? ` (${overdueDays}d ago)` : ""}` : undefined}>
+                          {lead.activeFollowUpDate ? (
                             <span style={{
                               color: leadIsOverdue ? urgencyColor : leadIsToday ? "var(--warning)" : "var(--text-muted)",
                               fontSize: "var(--text-xs)",
                               fontWeight: leadIsOverdue || leadIsToday ? 600 : 400,
                               whiteSpace: "nowrap",
                             }}>
-                              {format(new Date(lead.followUpDate), "MMM d, yyyy")}
+                              {format(new Date(lead.activeFollowUpDate), "MMM d, yyyy")}
                             </span>
                           ) : "—"}
                         </td>

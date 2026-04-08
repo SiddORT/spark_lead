@@ -183,6 +183,7 @@ export interface Lead {
   emotionalState?: LeadEmotionalState;
   decisionRole?: LeadDecisionRole;
   strategicTier?: LeadStrategicTier;
+  activeFollowUpDate?: string | null;
   customHook?: string | null;
   objection?: string | null;
   outcome?: LeadOutcome;
@@ -338,6 +339,7 @@ export interface LeadNote {
   userId: string;
   content: string;
   stageContext?: string | null;
+  followUpDate?: string | null;
   createdAt: string;
   authorName: string;
 }
@@ -345,6 +347,7 @@ export interface LeadNote {
 export interface AddNoteInput {
   content: string;
   stageContext?: string | null;
+  followUpDate?: string | null;
 }
 
 export interface UpdateNoteInput {

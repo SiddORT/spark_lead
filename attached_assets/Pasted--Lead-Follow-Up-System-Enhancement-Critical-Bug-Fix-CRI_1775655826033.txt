@@ -1,0 +1,88 @@
+# 🚀 Lead Follow-Up System Enhancement + Critical Bug Fix
+
+## 🔴 CRITICAL DATA SAFETY REQUIREMENT
+- ABSOLUTELY **NO modification, deletion, or corruption** of existing production data.
+- All existing leads, follow-up dates, and notes must remain **unchanged and intact**.
+- Changes must be **backward compatible**.
+- If required, use **non-destructive schema updates only** (additive changes, no breaking changes).
+- Take DB backup before any migration (if applicable).
+
+---
+
+## 📌 CURRENT SYSTEM BEHAVIOUR (REFERENCE)
+1. Follow-up date is captured during **lead creation**.
+2. It is shown in:
+   - Lead Details → **Details Tab**
+3. Follow-up tab logic:
+   - If follow-up date == today → appears in **Due Today**
+   - If follow-up date < today → appears as **Overdue**
+4. This logic is **CORRECT and must remain unchanged**.
+
+---
+
+## 🎯 REQUIRED CHANGES
+
+### 1. Move Follow-Up Date from Details Tab → Notes Tab
+- Remove Follow-up Date field from:
+  - ❌ Details Tab (UI only, do NOT delete data)
+- Add Follow-up Date input in:
+  - ✅ Notes Tab (while adding a note)
+
+---
+
+### 2. Notes + Follow-Up Date Binding (CORE LOGIC)
+When user adds a note:
+
+#### Case A: User selects follow-up date
+- Save:
+  - Note content
+  - Selected follow-up date
+
+#### Case B: User does NOT select follow-up date
+- System auto assigns:
+  - `follow_up_date = current_date + 2 days`
+
+---
+
+### 3. Follow-Up Source of Truth (IMPORTANT)
+- The **latest note’s follow-up date** becomes:
+  - The **active follow-up date for the lead**
+- This date will drive:
+  - Due Today logic
+  - Overdue logic
+  - Follow-Up tab visibility
+
+---
+
+### 4. Historical Tracking (VERY IMPORTANT)
+- Each note must store:
+  - note_text
+  - follow_up_date
+  - created_at
+  - created_by
+
+- UI must show:
+  - All past notes
+  - Each note with its respective follow-up date
+
+- BUT:
+  - Only the **latest note’s follow-up date** is used for system logic
+
+---
+
+### 5. Database / Backend Changes (SAFE APPROACH)
+
+#### DO NOT:
+- Remove existing follow_up_date column from leads table
+
+#### DO:
+Option A (Preferred):
+- Add follow_up_date inside notes table:
+```sql
+notes:
+- id
+- lead_id
+- note_text
+- follow_up_date
+- created_at
+- created_by

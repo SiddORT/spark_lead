@@ -56,18 +56,29 @@ async function getLeadWithRelations(leadId: string) {
     statusInfo = st[0] || null;
   }
 
+  // Compute activeFollowUpDate from latest note with a followUpDate set
+  const latestNoteWithDate = await db
+    .select({ followUpDate: leadNotesTable.followUpDate })
+    .from(leadNotesTable)
+    .where(and(eq(leadNotesTable.leadId, leadId), sql`${leadNotesTable.followUpDate} IS NOT NULL`))
+    .orderBy(desc(leadNotesTable.createdAt))
+    .limit(1);
+  const activeFollowUpDate = latestNoteWithDate[0]?.followUpDate ?? lead[0].followUpDate ?? null;
+
   return {
     ...lead[0],
     serviceName,
     companies: linkedCompanies.map((lc) => lc.company).filter(Boolean),
     stageInfo,
     statusInfo,
+    activeFollowUpDate,
   };
 }
 
 function formatLead(lead: any) {
   const stage = lead.stageInfo;
   const status = lead.statusInfo;
+  const activeFollowUpDate = lead.activeFollowUpDate ?? lead.followUpDate ?? null;
   return {
     id: lead.id,
     leadName: lead.leadName,
@@ -97,6 +108,7 @@ function formatLead(lead: any) {
     dealValue: lead.dealValue,
     value: lead.value,
     followUpDate: lead.followUpDate,
+    activeFollowUpDate,
     nextAction: lead.nextAction,
     sourceContext: lead.sourceContext,
     internalRating: lead.internalRating,
@@ -201,6 +213,23 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
     const allStages = await db.select().from(pipelineStagesTable);
     const allStatuses = await db.select().from(pipelineStatusesTable);
 
+    // Batch-fetch latest note followUpDate per lead
+    const leadIds = leads.map((l) => l.id);
+    const notesWithDates = leadIds.length > 0
+      ? await db
+          .select({ leadId: leadNotesTable.leadId, followUpDate: leadNotesTable.followUpDate, createdAt: leadNotesTable.createdAt })
+          .from(leadNotesTable)
+          .where(and(inArray(leadNotesTable.leadId, leadIds), sql`${leadNotesTable.followUpDate} IS NOT NULL`))
+          .orderBy(desc(leadNotesTable.createdAt))
+      : [];
+    // Build map: leadId → latest note followUpDate
+    const latestNoteFollowUpMap = new Map<string, string>();
+    for (const n of notesWithDates) {
+      if (!latestNoteFollowUpMap.has(n.leadId) && n.followUpDate) {
+        latestNoteFollowUpMap.set(n.leadId, n.followUpDate);
+      }
+    }
+
     const result = await Promise.all(
       leads.map(async (lead) => {
         const linkedCompanies = await db
@@ -228,6 +257,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
           companies: linkedCompanies.map((lc) => lc.company),
           stageInfo,
           statusInfo,
+          activeFollowUpDate: latestNoteFollowUpMap.get(lead.id) ?? lead.followUpDate ?? null,
         });
       })
     );
@@ -485,6 +515,7 @@ router.get("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
           userId: note.userId,
           content: note.content,
           stageContext: note.stageContext,
+          followUpDate: note.followUpDate || null,
           createdAt: note.createdAt.toISOString(),
           authorName: author[0]?.displayName || "Unknown",
         };
@@ -500,7 +531,7 @@ router.get("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
 
 router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const { content, stageContext } = req.body;
+    const { content, stageContext, followUpDate } = req.body;
     if (!content) {
       res.status(400).json({ message: "Content is required" });
       return;
@@ -535,6 +566,7 @@ router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
       userId: req.user!.userId,
       content,
       stageContext: stageContext || null,
+      followUpDate: followUpDate || null,
     });
 
     await db.insert(leadActivitiesTable).values({
@@ -580,6 +612,7 @@ router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
       userId: note[0].userId,
       content: note[0].content,
       stageContext: note[0].stageContext,
+      followUpDate: note[0].followUpDate || null,
       createdAt: note[0].createdAt.toISOString(),
       authorName: author[0]?.displayName || "Unknown",
     });
