@@ -1,0 +1,289 @@
+# 🚨 FIX: SESSION EXPIRY POPUP STUCK + WRONG BUTTON BEHAVIOR
+
+---
+
+# 🎯 OBJECTIVE
+
+Fix the session timeout modal so that:
+
+❌ Current Issues:
+
+* Popup stays even after session expires
+* "Stay Logged In" does NOT work
+* "Logout" button does nothing
+* User gets redirected to login but modal still visible
+* No proper session sync between frontend & backend
+
+---
+
+# ✅ EXPECTED BEHAVIOR
+
+✔ Modal appears **before session expiry (e.g., 60 sec prior)**
+✔ Countdown works correctly
+✔ "Stay Logged In":
+
+* Refreshes session
+* Closes modal
+* Keeps user logged in
+
+✔ "Logout":
+
+* Immediately logs out user
+* Clears session
+* Redirects to login
+
+✔ If session already expired:
+
+* Modal should **NOT stay visible**
+* User should be redirected cleanly to login
+
+---
+
+# 🧠 ROOT CAUSE
+
+* Session expiry not synced with UI state
+* Modal is not listening to auth/session state
+* Token refresh not implemented or failing silently
+* No cleanup when session expires
+
+---
+
+# 🏗️ BACKEND FIX
+
+---
+
+## 🔹 STEP 1: ADD SESSION REFRESH API
+
+```ts id="refresh-api"
+POST /auth/refresh
+
+Response:
+{
+  token: string,
+  expiresIn: number
+}
+```
+
+---
+
+## 🔹 STEP 2: VALIDATE SESSION
+
+* If token expired → return `401 Unauthorized`
+* If valid → return refreshed token
+
+---
+
+# 🎨 FRONTEND FIX
+
+---
+
+## 🔹 STEP 3: CENTRAL SESSION HANDLER
+
+```ts id="session-handler"
+let sessionTimeout;
+let warningTimeout;
+
+function startSessionTimer(expiresIn) {
+  clearTimeout(sessionTimeout);
+  clearTimeout(warningTimeout);
+
+  // Show popup before expiry (e.g., 60 sec)
+  warningTimeout = setTimeout(() => {
+    showSessionModal();
+  }, expiresIn - 60000);
+
+  // Auto logout on expiry
+  sessionTimeout = setTimeout(() => {
+    handleLogout();
+  }, expiresIn);
+}
+```
+
+---
+
+## 🔹 STEP 4: HANDLE "STAY LOGGED IN"
+
+```ts id="stay-logged-in"
+async function handleStayLoggedIn() {
+  try {
+    const res = await refreshSession();
+
+    updateToken(res.token);
+    startSessionTimer(res.expiresIn);
+
+    closeSessionModal();
+  } catch (err) {
+    handleLogout(); // fallback
+  }
+}
+```
+
+---
+
+## 🔹 STEP 5: HANDLE LOGOUT
+
+```ts id="logout"
+function handleLogout() {
+  clearSession();
+  closeSessionModal();
+  redirectToLogin();
+}
+```
+
+---
+
+## 🔹 STEP 6: AUTO CLOSE MODAL ON LOGOUT
+
+```ts id="modal-cleanup"
+useEffect(() => {
+  if (!isAuthenticated) {
+    closeSessionModal();
+  }
+}, [isAuthenticated]);
+```
+
+---
+
+## 🔹 STEP 7: HANDLE 401 GLOBALLY
+
+```ts id="axios-interceptor"
+axios.interceptors.response.use(
+  res => res,
+  err => {
+    if (err.response?.status === 401) {
+      handleLogout();
+    }
+    return Promise.reject(err);
+  }
+);
+```
+
+---
+
+# 🎨 UI FIXES
+
+---
+
+## 🔹 Prevent Modal Sticking
+
+```css id="modal-fix"
+.modal-overlay {
+  position: fixed;
+  z-index: 9999;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+```
+
+---
+
+## 🔹 Ensure Modal Unmounts Properly
+
+```tsx id="modal-render"
+{isSessionExpiring && isAuthenticated && (
+  <SessionModal />
+)}
+```
+
+---
+
+# 🔍 EDGE CASE HANDLING
+
+---
+
+## ✅ Case 1: Session already expired
+
+* Do NOT show modal
+* Direct logout
+
+---
+
+## ✅ Case 2: Multiple tabs
+
+* Sync using `localStorage` or `BroadcastChannel`
+
+```ts id="multi-tab"
+window.addEventListener("storage", (e) => {
+  if (e.key === "logout") {
+    handleLogout();
+  }
+});
+```
+
+---
+
+## ✅ Case 3: Refresh fails
+
+* Auto logout
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Modal appears before expiry
+* Countdown works
+* Stay Logged In refreshes session
+* Logout works instantly
+
+---
+
+## ✅ Edge Cases
+
+* Expired session → no modal
+* Multiple tabs sync
+* Network failure handled
+
+---
+
+## ✅ UI/UX
+
+* Modal disappears correctly
+* No stuck overlay
+* Buttons responsive
+
+---
+
+## ✅ Security
+
+* Token cleared properly
+* No unauthorized access after expiry
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE ❌
+
+* Modal stuck on screen
+* Buttons not working
+* User confusion
+* Broken session handling
+
+---
+
+### AFTER ✅
+
+* Smooth session expiry flow
+* Working buttons
+* Clean logout
+* Proper session refresh
+* No UI glitches
+
+---
+
+# ✅ SUCCESS CRITERIA
+
+* No stuck modal
+* Accurate session handling
+* Fully responsive buttons
+* Clean user experience
+
+---

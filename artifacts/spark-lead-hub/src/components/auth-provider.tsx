@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
-import { useGetMe, useGetPermissions } from "@workspace/api-client-react";
+import { useGetMe, useGetPermissions, setUnauthorizedHandler } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
 
 interface AuthContextType {
@@ -20,14 +20,16 @@ const IDLE_TIMEOUT  = 15 * 60 * 1000; // 15 min → auto logout
 const WARN_BEFORE   =  1 * 60 * 1000; // show popup 1 min before
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState(localStorage.getItem('slh_token'));
+  const [token, setTokenState] = useState(localStorage.getItem('slh_token'));
   const [, setLocation] = useLocation();
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const [refreshing, setRefreshing] = useState(false);
 
   const idleTimer    = useRef<NodeJS.Timeout | null>(null);
   const warnTimer    = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
+  const tokenRef     = useRef(token);
 
   const { data: user, isLoading: loadingUser, error } = useGetMe({
     query: { enabled: !!token, retry: false }
@@ -37,24 +39,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     query: { enabled: !!user && user.role !== 'admin', retry: false }
   });
 
-  useEffect(() => {
-    if (error) {
+  // Keep tokenRef in sync so timers can read the latest value
+  const setToken = useCallback((t: string | null) => {
+    tokenRef.current = t;
+    setTokenState(t);
+    if (t) {
+      localStorage.setItem('slh_token', t);
+    } else {
       localStorage.removeItem('slh_token');
-      setToken(null);
     }
-  }, [error]);
-
-  const signOut = useCallback(() => {
-    localStorage.removeItem('slh_token');
-    setToken(null);
-    setLocation('/auth');
-  }, [setLocation]);
+  }, []);
 
   const clearAllTimers = useCallback(() => {
     if (idleTimer.current)    clearTimeout(idleTimer.current);
     if (warnTimer.current)    clearTimeout(warnTimer.current);
     if (countdownRef.current) clearInterval(countdownRef.current);
+    idleTimer.current    = null;
+    warnTimer.current    = null;
+    countdownRef.current = null;
   }, []);
+
+  const signOut = useCallback(() => {
+    clearAllTimers();
+    setShowWarning(false);
+    setCountdown(60);
+    setToken(null);
+    // Broadcast logout to other tabs
+    try { localStorage.setItem('slh_logout', String(Date.now())); } catch {}
+    setLocation('/auth');
+  }, [clearAllTimers, setToken, setLocation]);
+
+  // Register global 401 handler — any API call returning 401 triggers sign-out
+  useEffect(() => {
+    setUnauthorizedHandler(signOut);
+    return () => setUnauthorizedHandler(null);
+  }, [signOut]);
+
+  // Close modal and redirect if auth error occurs (e.g. token rejected by /me)
+  useEffect(() => {
+    if (error) {
+      signOut();
+    }
+  }, [error, signOut]);
+
+  // Close modal if we ever lose the token (belt-and-suspenders)
+  useEffect(() => {
+    if (!token) {
+      setShowWarning(false);
+      clearAllTimers();
+    }
+  }, [token, clearAllTimers]);
+
+  // Multi-tab sync: if another tab logs out, log out here too
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'slh_logout') signOut();
+      if (e.key === 'slh_token' && !e.newValue) signOut();
+      if (e.key === 'slh_token' && e.newValue && e.newValue !== tokenRef.current) {
+        setTokenState(e.newValue);
+        tokenRef.current = e.newValue;
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [signOut]);
 
   const resetTimer = useCallback(() => {
     clearAllTimers();
@@ -68,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCountdown(prev => {
           if (prev <= 1) {
             clearInterval(countdownRef.current!);
+            countdownRef.current = null;
             return 0;
           }
           return prev - 1;
@@ -99,9 +148,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [token, resetTimer, clearAllTimers]);
 
-  const handleStayLoggedIn = () => {
-    resetTimer();
-  };
+  const handleStayLoggedIn = useCallback(async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      const currentToken = tokenRef.current;
+      if (!currentToken) { signOut(); return; }
+
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${currentToken}` },
+      });
+
+      if (!res.ok) {
+        signOut();
+        return;
+      }
+
+      const { token: newToken } = await res.json();
+      setToken(newToken);
+      resetTimer();
+    } catch {
+      signOut();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshing, signOut, setToken, resetTimer]);
 
   const hasPermission = (resource: string, action: string) => {
     if (user?.role === 'admin') return true;
@@ -117,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
 
       {/* ── Session timeout warning popup ── */}
-      {showWarning && (
+      {showWarning && !!token && (
         <div style={{
           position: "fixed", inset: 0, zIndex: 9999,
           display: "flex", alignItems: "center", justifyContent: "center",
@@ -194,22 +266,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             <div style={{ display: "flex", gap: "var(--space-3)", width: "100%" }}>
               <button
                 onClick={handleStayLoggedIn}
+                disabled={refreshing}
                 style={{
                   flex: 1, height: 42,
-                  background: "var(--teal)",
+                  background: refreshing ? "hsl(172 75% 48% / 0.5)" : "var(--teal)",
                   color: "hsl(222 22% 6%)",
                   border: "none",
                   borderRadius: "var(--radius-md)",
                   fontSize: "var(--text-sm)",
                   fontWeight: 700,
                   fontFamily: "var(--font-sans)",
-                  cursor: "pointer",
+                  cursor: refreshing ? "not-allowed" : "pointer",
                   transition: "filter 150ms ease",
                 }}
-                onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.1)"}
-                onMouseLeave={e => e.currentTarget.style.filter = "none"}
+                onMouseEnter={e => { if (!refreshing) e.currentTarget.style.filter = "brightness(1.1)"; }}
+                onMouseLeave={e => { e.currentTarget.style.filter = "none"; }}
               >
-                Stay Logged In
+                {refreshing ? "Refreshing…" : "Stay Logged In"}
               </button>
               <button
                 onClick={signOut}

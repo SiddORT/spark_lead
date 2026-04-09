@@ -161,6 +161,37 @@ router.post("/set-password", async (req, res) => {
   }
 });
 
+router.post("/refresh", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const data = await getUserWithRole(req.user!.userId);
+    if (!data || !data.whitelist || data.whitelist.status !== "active") {
+      res.status(401).json({ message: "Account not active" });
+      return;
+    }
+
+    const role = data.role;
+    const token = signToken({ userId: req.user!.userId, email: req.user!.email, role });
+
+    // Parse JWT_EXPIRES_IN to milliseconds for the frontend timer
+    const raw = process.env.JWT_EXPIRES_IN || "7d";
+    const match = raw.match(/^(\d+)([smhd])$/);
+    let expiresInMs = 7 * 24 * 60 * 60 * 1000; // default 7d
+    if (match) {
+      const n = parseInt(match[1], 10);
+      const unit = match[2];
+      if (unit === "s") expiresInMs = n * 1000;
+      else if (unit === "m") expiresInMs = n * 60 * 1000;
+      else if (unit === "h") expiresInMs = n * 60 * 60 * 1000;
+      else if (unit === "d") expiresInMs = n * 24 * 60 * 60 * 1000;
+    }
+
+    res.json({ token, expiresIn: expiresInMs });
+  } catch (err) {
+    req.log.error({ err }, "Refresh token error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 router.patch("/profile", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { displayName, avatarUrl } = req.body;
