@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   useGetLeads, useGetAnalyticsStats, useGetLeadTrend,
   useGetServices, useGetCompanies,
@@ -19,7 +19,7 @@ import { format } from "date-fns";
 import {
   Search, X, Download, Users, Flame, CheckCircle2,
   Activity, TrendingUp, LayoutDashboard,
-  ChevronUp, ChevronDown, ChevronsUpDown,
+  ChevronUp, ChevronDown, ChevronsUpDown, Layers,
 } from "lucide-react";
 import { PermissionCheck } from "@/components/auth-provider";
 
@@ -202,6 +202,19 @@ export function Dashboard() {
   }, [pipelineStages]);
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [showLegendPopover, setShowLegendPopover] = useState(false);
+  const legendBtnRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showLegendPopover) return;
+    const handler = (e: MouseEvent) => {
+      if (legendBtnRef.current && !legendBtnRef.current.contains(e.target as Node)) {
+        setShowLegendPopover(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showLegendPopover]);
 
   const handleExportCsv = async () => {
     const token = localStorage.getItem("slh_token");
@@ -564,9 +577,114 @@ export function Dashboard() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-        <div className="chart-card" style={{ display: "flex", flexDirection: "column" }}>
-          <div className="chart-title">Pipeline by Stage</div>
-          <div style={{ flex: 1, minHeight: 220 }}>
+        <div className="chart-card" style={{ display: "flex", flexDirection: "column", position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-3)" }}>
+            <div className="chart-title" style={{ margin: 0 }}>Pipeline by Stage</div>
+
+            {/* Legend popover trigger */}
+            <div ref={legendBtnRef} style={{ position: "relative" }}>
+              <button
+                onClick={() => setShowLegendPopover(v => !v)}
+                title="View Status Legend"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  height: 28,
+                  padding: "0 10px",
+                  background: showLegendPopover ? "hsl(172 75% 48% / 0.12)" : "transparent",
+                  border: `1px solid ${showLegendPopover ? "hsl(172 75% 48% / 0.4)" : "var(--border-default)"}`,
+                  borderRadius: "var(--radius-md)",
+                  color: showLegendPopover ? "var(--teal)" : "var(--text-muted)",
+                  fontSize: "var(--text-xs)",
+                  fontWeight: 600,
+                  fontFamily: "var(--font-sans)",
+                  cursor: "pointer",
+                  transition: "background 150ms ease, border-color 150ms ease, color 150ms ease",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={e => {
+                  if (!showLegendPopover) {
+                    e.currentTarget.style.background = "hsl(172 75% 48% / 0.06)";
+                    e.currentTarget.style.borderColor = "hsl(172 75% 48% / 0.25)";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!showLegendPopover) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.borderColor = "var(--border-default)";
+                    e.currentTarget.style.color = "var(--text-muted)";
+                  }
+                }}
+              >
+                <Layers size={12} />
+                Legend
+              </button>
+
+              {/* Floating legend popover */}
+              {showLegendPopover && (
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 6px)",
+                  right: 0,
+                  width: 220,
+                  maxHeight: 280,
+                  overflowY: "auto",
+                  background: "hsl(222, 20%, 11%)",
+                  border: "1px solid hsl(222, 15%, 26%)",
+                  borderRadius: 10,
+                  padding: "10px 12px",
+                  boxShadow: "0 8px 32px hsl(222 22% 3% / 0.65)",
+                  zIndex: 200,
+                }}>
+                  <div style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: "hsl(210, 14%, 45%)",
+                    marginBottom: 8,
+                    fontFamily: "var(--font-sans)",
+                  }}>
+                    Status Index
+                  </div>
+                  {stackedStatusKeys.length === 0 ? (
+                    <div style={{ fontSize: 12, color: "hsl(210, 14%, 45%)" }}>No statuses configured</div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                      {stackedStatusKeys.map(key => {
+                        const meta = statusMetaById.get(key) ?? { displayName: key, color: "hsl(210,14%,38%)" };
+                        return (
+                          <div key={key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{
+                              width: 10, height: 10,
+                              borderRadius: "50%",
+                              background: meta.color,
+                              flexShrink: 0,
+                              display: "inline-block",
+                              boxShadow: `0 0 6px ${meta.color}60`,
+                            }} />
+                            <span style={{
+                              fontSize: 12,
+                              color: "hsl(210, 22%, 72%)",
+                              fontFamily: "var(--font-sans)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}>
+                              {meta.displayName}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+          <div style={{ flex: 1, minHeight: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={stageChartData}
@@ -615,39 +733,6 @@ export function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* Status legend */}
-          {stackedStatusKeys.length > 0 && (
-            <div style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "6px 12px",
-              padding: "8px 4px 2px",
-              borderTop: "1px solid hsl(222, 15%, 18%)",
-              marginTop: 4,
-            }}>
-              {stackedStatusKeys.map(key => {
-                const meta = statusMetaById.get(key) ?? { displayName: key, color: "hsl(210,14%,38%)" };
-                return (
-                  <div key={key} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                    <span style={{
-                      width: 9, height: 9, borderRadius: 2,
-                      background: meta.color,
-                      flexShrink: 0,
-                      display: "inline-block",
-                    }} />
-                    <span style={{
-                      fontSize: 11,
-                      color: "hsl(210, 18%, 55%)",
-                      fontFamily: "DM Sans, sans-serif",
-                      whiteSpace: "nowrap",
-                    }}>
-                      {meta.displayName}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
 
