@@ -12,26 +12,14 @@ import { subDays, format, startOfWeek, endOfWeek, subWeeks } from "date-fns";
 
 const router = Router();
 
-// ── Role-based access helper ─────────────────────────────────────────────────
-function filterLeadsByAccess<T extends { leadOwner: string | null; dealHandler: string | null }>(
-  leads: T[],
-  role: string,
-  userId: string,
-): T[] {
-  if (role === "admin") return leads;
-  if (role === "lead_owner") return leads.filter((l) => l.leadOwner === userId);
-  if (role === "deal_handler") return leads.filter((l) => l.dealHandler === userId);
-  return [];
-}
-
 router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const allLeads = await db.select().from(leadsTable);
-    const leads = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
+    const leads = await db.select().from(leadsTable);
     const statuses = await db.select().from(pipelineStatusesTable);
 
     const totalLeads = leads.length;
 
+    // New pipeline-aware won/lost
     const wonStatusIds = new Set(statuses.filter((s) => s.isWon).map((s) => s.id));
     const lostStatusIds = new Set(statuses.filter((s) => s.isLost).map((s) => s.id));
 
@@ -48,6 +36,9 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
 
     const winRate = totalLeads > 0 ? (wonLeads.length / totalLeads) * 100 : 0;
 
+    // Avg conversion days: time from lead creation to resolution (won or lost).
+    // Use resolvedAt when available, fall back to updatedAt, then createdAt.
+    // Include all terminal leads — even same-day closes count as 0 days.
     const terminalLeads = [...wonLeads, ...lostLeads];
     let avgConversionDays: number | null = null;
     if (terminalLeads.length > 0) {
@@ -75,9 +66,8 @@ router.get("/lead-trend", requireAuth, async (req: AuthRequest, res) => {
   try {
     const { subDays: sdFn, format: fmtFn } = await import("date-fns");
     const since = subDays(new Date(), 30);
-    const allLeads = await db.select().from(leadsTable);
-    const accessible = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
-    const recent = accessible.filter((l) => l.createdAt >= since);
+    const leads = await db.select().from(leadsTable);
+    const recent = leads.filter((l) => l.createdAt >= since);
 
     const counts: Record<string, number> = {};
     for (let i = 0; i < 30; i++) {
@@ -99,6 +89,7 @@ router.get("/lead-trend", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
+// Dynamic stage distribution using new pipeline stages
 router.get("/stage-distribution", requireAuth, async (req: AuthRequest, res) => {
   try {
     const stages = await db
@@ -106,8 +97,7 @@ router.get("/stage-distribution", requireAuth, async (req: AuthRequest, res) => 
       .from(pipelineStagesTable)
       .where(eq(pipelineStagesTable.isActive, true))
       .orderBy(asc(pipelineStagesTable.sortOrder));
-    const allLeads = await db.select().from(leadsTable);
-    const leads = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
+    const leads = await db.select().from(leadsTable);
 
     const counts = stages.map((stage) => ({
       stage: stage.displayName,
@@ -123,10 +113,10 @@ router.get("/stage-distribution", requireAuth, async (req: AuthRequest, res) => 
   }
 });
 
+// Closure breakdown by terminal statuses
 router.get("/closure-breakdown", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const allLeads = await db.select().from(leadsTable);
-    const leads = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
+    const leads = await db.select().from(leadsTable);
     const statuses = await db
       .select()
       .from(pipelineStatusesTable)
@@ -150,8 +140,7 @@ router.get("/closure-breakdown", requireAuth, async (req: AuthRequest, res) => {
 
 router.get("/kill-reasons", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const allLeads = await db.select().from(leadsTable);
-    const leads = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
+    const leads = await db.select().from(leadsTable);
     const reasons = ["feature_gap", "price", "ghosted"];
     const counts = reasons.map((reason) => ({
       reason,
@@ -164,11 +153,11 @@ router.get("/kill-reasons", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
+// Closure performance trend — Won / Lost / Postponed per day
 router.get("/closure-trend", requireAuth, async (req: AuthRequest, res) => {
   try {
     const range = Math.min(Math.max(parseInt(String(req.query.range || "30"), 10), 7), 90);
-    const allLeads = await db.select().from(leadsTable);
-    const leads = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
+    const leads = await db.select().from(leadsTable);
     const statuses = await db.select().from(pipelineStatusesTable);
 
     const wonIds = new Set(statuses.filter((s) => s.isWon).map((s) => s.id));
@@ -213,8 +202,7 @@ router.get("/closure-trend", requireAuth, async (req: AuthRequest, res) => {
 
 router.get("/weekly-conversion", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const allLeads = await db.select().from(leadsTable);
-    const leads = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
+    const leads = await db.select().from(leadsTable);
     const statuses = await db.select().from(pipelineStatusesTable);
     const wonStatusIds = new Set(statuses.filter((s) => s.isWon).map((s) => s.id));
 

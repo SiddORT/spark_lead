@@ -127,33 +127,9 @@ function formatLead(lead: any) {
   };
 }
 
-// ── Role-based access helper ─────────────────────────────────────────────────
-function filterLeadsByAccess<T extends { leadOwner: string | null; dealHandler: string | null }>(
-  leads: T[],
-  role: string,
-  userId: string,
-): T[] {
-  if (role === "admin") return leads;
-  if (role === "lead_owner") return leads.filter((l) => l.leadOwner === userId);
-  if (role === "deal_handler") return leads.filter((l) => l.dealHandler === userId);
-  return []; // members / unknown roles see nothing
-}
-
-function canAccessLead(
-  lead: { leadOwner: string | null; dealHandler: string | null },
-  role: string,
-  userId: string,
-): boolean {
-  if (role === "admin") return true;
-  if (role === "lead_owner") return lead.leadOwner === userId;
-  if (role === "deal_handler") return lead.dealHandler === userId;
-  return false;
-}
-
 router.get("/export/csv", requireAuth, async (req: AuthRequest, res) => {
   try {
-    const allLeads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
-    const leads = filterLeadsByAccess(allLeads, req.user!.role, req.user!.userId);
+    const leads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
 
     const headers = [
       "Lead Name", "Contact Email", "Phone", "Lead Type",
@@ -224,8 +200,15 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
     const role = req.user!.role;
     const userId = req.user!.userId;
 
-    const allLeads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
-    let leads = filterLeadsByAccess(allLeads, role, userId);
+    let leads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
+
+    if (role === "lead_owner") {
+      leads = leads.filter(
+        (l) => l.leadOwner === userId || l.dealHandler === userId
+      );
+    } else if (role === "deal_handler") {
+      leads = leads.filter((l) => l.dealHandler === userId);
+    }
 
     // Fetch all pipeline stages/statuses once (batch for performance)
     const allStages = await db.select().from(pipelineStagesTable);
@@ -346,10 +329,6 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res) => {
       res.status(404).json({ message: "Lead not found" });
       return;
     }
-    if (!canAccessLead(lead, req.user!.role, req.user!.userId)) {
-      res.status(403).json({ message: "Access denied" });
-      return;
-    }
     res.json(formatLead(lead));
   } catch (err) {
     req.log.error({ err }, "Get lead error");
@@ -367,11 +346,6 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
 
     if (!existing[0]) {
       res.status(404).json({ message: "Lead not found" });
-      return;
-    }
-
-    if (!canAccessLead(existing[0], req.user!.role, req.user!.userId)) {
-      res.status(403).json({ message: "Access denied" });
       return;
     }
 
@@ -506,11 +480,6 @@ router.delete("/:id", requireAuth, async (req: AuthRequest, res) => {
     const lead = await db.select().from(leadsTable).where(eq(leadsTable.id, req.params.id)).limit(1);
     if (!lead[0]) {
       res.status(404).json({ message: "Lead not found" });
-      return;
-    }
-
-    if (!canAccessLead(lead[0], req.user!.role, req.user!.userId)) {
-      res.status(403).json({ message: "Access denied" });
       return;
     }
 
