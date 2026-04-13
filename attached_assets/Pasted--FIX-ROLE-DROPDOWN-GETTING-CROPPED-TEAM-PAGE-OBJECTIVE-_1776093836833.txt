@@ -1,0 +1,221 @@
+# 🧩 FIX: ROLE DROPDOWN GETTING CROPPED (TEAM PAGE)
+
+---
+
+# 🎯 OBJECTIVE
+
+Fix the issue where the **Role dropdown inside the Team table is getting cut/cropped**, ensuring:
+
+✔ Full visibility of dropdown
+✔ Smooth UX
+✔ No layout break
+✔ Works across all screen sizes
+
+---
+
+# 🔍 ROOT CAUSE
+
+This happens because:
+
+👉 Parent container has:
+
+```css
+overflow: hidden;
+```
+
+OR
+
+👉 Dropdown is inside a scrollable table container
+
+---
+
+# ✅ SOLUTION APPROACH (BEST PRACTICE)
+
+---
+
+## 🥇 OPTION 1 (RECOMMENDED): USE PORTAL / FIXED POSITION DROPDOWN
+
+Render dropdown outside table using **portal**
+
+---
+
+### ✅ IMPLEMENTATION (React)
+
+```jsx
+import { createPortal } from "react-dom";
+```
+
+```jsx
+{isOpen &&
+  createPortal(
+    <div className="dropdown-menu">
+      {options.map(option => (
+        <div onClick={() => select(option)}>
+          {option.label}
+        </div>
+      ))}
+    </div>,
+    document.body
+  )}
+```
+
+---
+
+### ✅ POSITIONING
+
+```js
+const rect = triggerRef.current.getBoundingClientRect();
+
+setStyle({
+  position: "fixed",
+  top: rect.bottom + 8,
+  left: rect.left,
+  width: rect.width
+});
+```
+
+---
+
+## 🥈 OPTION 2: FIX OVERFLOW (QUICK FIX)
+
+Update parent containers:
+
+```css
+.table-container {
+  overflow: visible !important;
+}
+```
+
+---
+
+⚠️ BUT this may break scroll behavior → use only if needed
+
+---
+
+## 🥉 OPTION 3: Z-INDEX FIX (SUPPORTING FIX)
+
+```css
+.dropdown-menu {
+  z-index: 9999;
+  position: absolute;
+}
+```
+
+---
+
+# 🎨 UI ENHANCEMENTS
+
+---
+
+## ✅ ADD MAX HEIGHT + SCROLL
+
+```css
+.dropdown-menu {
+  max-height: 240px;
+  overflow-y: auto;
+}
+```
+
+---
+
+## ✅ ADD SHADOW + BORDER
+
+```css
+.dropdown-menu {
+  background: #0f172a;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+```
+
+---
+
+## ✅ HOVER STATE
+
+```css
+.dropdown-item:hover {
+  background: rgba(255,255,255,0.05);
+}
+```
+
+---
+
+# 📍 EDGE CASES TO HANDLE
+
+---
+
+## 1. NEAR BOTTOM OF SCREEN
+
+If dropdown goes out of screen:
+
+```js
+if (rect.bottom + dropdownHeight > window.innerHeight) {
+  open upwards instead
+}
+```
+
+---
+
+## 2. SCROLL BEHAVIOUR
+
+* Dropdown should stay aligned while scrolling
+* Or close on scroll
+
+---
+
+## 3. CLICK OUTSIDE
+
+```js
+useEffect(() => {
+  const handleClick = (e) => {
+    if (!ref.current.contains(e.target)) close();
+  };
+  document.addEventListener("click", handleClick);
+}, []);
+```
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ UI TEST
+
+* Dropdown fully visible
+* No clipping
+* No layout shift
+
+---
+
+## ✅ POSITION TEST
+
+* Works at top/middle/bottom rows
+* Works on scroll
+
+---
+
+## ✅ RESPONSIVE TEST
+
+* Works on smaller screens
+* No overflow outside viewport
+
+---
+
+## ✅ MULTIPLE ROWS
+
+* Opening one dropdown does not affect others
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ Dropdown never gets cropped
+✔ Clean floating UI
+✔ Works inside tables
+✔ Scalable for all dropdowns in system
+
+---
