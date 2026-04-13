@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth, PermissionCheck } from "./auth-provider";
 import { useGetLeads, useGetCompanies, useGetServices } from "@workspace/api-client-react";
+import { CreateLeadDrawer } from "./create-lead-drawer";
 import {
   LayoutDashboard, Kanban, PlusCircle, Building2,
   Briefcase, BarChart3, Users, ShieldCheck, ScrollText,
@@ -11,6 +12,7 @@ import {
 export function Layout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
   const { user, token, signOut } = useAuth();
   const [location] = useLocation();
 
@@ -354,6 +356,48 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
         {children}
       </main>
+
+      {/* Floating Action Button — create lead from any page */}
+      <PermissionCheck resource="leads" action="create">
+        <button
+          onClick={() => setFabOpen(true)}
+          title="Create Lead"
+          aria-label="Create Lead"
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: "var(--teal)",
+            color: "hsl(222 22% 6%)",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 24px hsl(172 75% 48% / 0.45), 0 2px 8px hsl(222 22% 3% / 0.4)",
+            zIndex: 9990,
+            transition: "transform 150ms ease, box-shadow 150ms ease, filter 150ms ease",
+            flexShrink: 0,
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = "scale(1.1)";
+            e.currentTarget.style.boxShadow = "0 6px 32px hsl(172 75% 48% / 0.6), 0 2px 12px hsl(222 22% 3% / 0.5)";
+            e.currentTarget.style.filter = "brightness(1.1)";
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = "0 4px 24px hsl(172 75% 48% / 0.45), 0 2px 8px hsl(222 22% 3% / 0.4)";
+            e.currentTarget.style.filter = "none";
+          }}
+        >
+          <PlusCircle size={24} />
+        </button>
+      </PermissionCheck>
+
+      <CreateLeadDrawer open={fabOpen} onClose={() => setFabOpen(false)} />
     </div>
   );
 }

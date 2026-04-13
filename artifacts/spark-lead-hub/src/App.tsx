@@ -97,7 +97,7 @@ function App() {
           </AuthProvider>
         </WouterRouter>
         <Toaster
-          position="bottom-right"
+          position="bottom-center"
           richColors
           gap={8}
           toastOptions={{
