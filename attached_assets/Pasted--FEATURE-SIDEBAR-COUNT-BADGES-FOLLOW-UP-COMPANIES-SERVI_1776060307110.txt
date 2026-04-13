@@ -1,0 +1,280 @@
+# 🚀 FEATURE: SIDEBAR COUNT BADGES (FOLLOW UP, COMPANIES, SERVICES)
+
+---
+
+# 🎯 OBJECTIVE
+
+Display dynamic count badges in the left sidebar for:
+
+* 📌 **Follow Up** → Number of leads in Follow-Up tab
+* 🏢 **Companies** → Total companies count
+* 🛠 **Services** → Total services count
+
+These counts should be:
+✔ Real-time / near real-time
+✔ Accurate
+✔ Visible from all pages
+✔ UI consistent with design
+
+---
+
+# ✅ EXPECTED UI
+
+---
+
+### 📍 SIDEBAR VIEW
+
+```
+Follow Up        [ 8 ]
+Companies        [ 24 ]
+Services         [ 12 ]
+```
+
+* Badge should be:
+
+  * Rounded (pill style)
+  * Subtle glow / theme aligned
+  * Right aligned
+  * Not breaking layout
+
+---
+
+# 🧠 LOGIC DEFINITION
+
+---
+
+## 🔹 FOLLOW UP COUNT
+
+Count =
+
+* Leads where:
+
+  * followUpDate = today
+    OR
+  * followUpDate < today (overdue)
+
+```ts
+followUpCount = leads.filter(
+  lead => isToday(lead.followUpDate) || isPast(lead.followUpDate)
+).length;
+```
+
+---
+
+## 🔹 COMPANIES COUNT
+
+```ts
+companiesCount = totalCompanies.length;
+```
+
+---
+
+## 🔹 SERVICES COUNT
+
+```ts
+servicesCount = totalServices.length;
+```
+
+---
+
+# 🏗️ BACKEND (IF REQUIRED)
+
+---
+
+## 🔹 API ENDPOINT (OPTIONAL OPTIMIZATION)
+
+```ts
+GET /dashboard/sidebar-counts
+
+Response:
+{
+  followUp: number,
+  companies: number,
+  services: number
+}
+```
+
+✔ Reduces multiple API calls
+✔ Improves performance
+
+---
+
+# 🎨 FRONTEND IMPLEMENTATION
+
+---
+
+## 🔹 STEP 1: CREATE BADGE COMPONENT
+
+```tsx
+const SidebarBadge = ({ count }) => {
+  if (!count || count === 0) return null;
+
+  return (
+    <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-teal-500/10 text-teal-400">
+      {count}
+    </span>
+  );
+};
+```
+
+---
+
+## 🔹 STEP 2: APPLY TO SIDEBAR ITEMS
+
+```tsx
+<SidebarItem label="Follow Up">
+  <SidebarBadge count={followUpCount} />
+</SidebarItem>
+
+<SidebarItem label="Companies">
+  <SidebarBadge count={companiesCount} />
+</SidebarItem>
+
+<SidebarItem label="Services">
+  <SidebarBadge count={servicesCount} />
+</SidebarItem>
+```
+
+---
+
+## 🔹 STEP 3: GLOBAL STATE (IMPORTANT)
+
+Use centralized state (Redux / Context / React Query)
+
+```ts
+const { followUpCount, companiesCount, servicesCount } = useSidebarCounts();
+```
+
+---
+
+## 🔹 STEP 4: AUTO REFRESH
+
+Update counts when:
+
+* Lead created / updated
+* Follow-up date changed
+* Company added
+* Service added
+
+```ts
+useEffect(() => {
+  refetchCounts();
+}, [leadChanges, companyChanges, serviceChanges]);
+```
+
+---
+
+# 🎨 UI/UX REQUIREMENTS
+
+---
+
+✔ Badge should:
+
+* Not stretch sidebar
+* Not overlap text
+* Be responsive
+* Hide if count = 0 (optional)
+
+✔ Dark theme consistency:
+
+* Background: subtle (teal/green glow)
+* Text: readable
+* Size: small but visible
+
+---
+
+# 🔍 EDGE CASES
+
+---
+
+## ✅ Case 1: No follow-ups
+
+* Show nothing OR show `0` (decide UX)
+
+---
+
+## ✅ Case 2: Large numbers
+
+```ts
+count > 200 ? "200+" : count
+```
+
+---
+
+## ✅ Case 3: Slow API
+
+* Show skeleton / loading state
+
+---
+
+## ✅ Case 4: Navigation
+
+* Counts should NOT reset when changing pages
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Follow-up count matches Follow-Up tab
+* Companies count matches master data
+* Services count matches master data
+
+---
+
+## ✅ Real-time
+
+* Adding note with follow-up updates count
+* Changing follow-up date updates count
+* Adding company/service updates count
+
+---
+
+## ✅ UI
+
+* No layout break
+* Proper alignment
+* Responsive across screen sizes
+
+---
+
+## ✅ Regression
+
+* Sidebar navigation unaffected
+* No performance lag
+* No duplicate API calls
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE ❌
+
+* No visibility of pending follow-ups
+* User has to open tab to check
+* No quick system insight
+
+---
+
+### AFTER ✅
+
+* Instant visibility from sidebar
+* Better productivity
+* Cleaner UX
+* Faster decision making
+
+---
+
+# ✅ SUCCESS CRITERIA
+
+* Counts are accurate
+* Counts update dynamically
+* No UI/UX issues
+* No performance degradation
+
+---

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth, PermissionCheck } from "./auth-provider";
+import { useGetLeads, useGetCompanies, useGetServices } from "@workspace/api-client-react";
 import {
   LayoutDashboard, Kanban, PlusCircle, Building2,
   Briefcase, BarChart3, Users, ShieldCheck, ScrollText,
@@ -10,13 +11,32 @@ import {
 export function Layout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, token, signOut } = useAuth();
   const [location] = useLocation();
 
   // Close mobile sidebar on route change
   useEffect(() => { setMobileOpen(false); }, [location]);
 
-  const NavItem = ({ href, icon: Icon, label }: { href: string; icon: any; label: string }) => {
+  // ── Sidebar count badges ──────────────────────────────
+  const enabled = !!token;
+  const { data: allLeads = [] }     = useGetLeads({ query: { enabled, staleTime: 60_000 } });
+  const { data: allCompanies = [] } = useGetCompanies({ query: { enabled, staleTime: 60_000 } });
+  const { data: allServices = [] }  = useGetServices({ query: { enabled, staleTime: 60_000 } });
+
+  const followUpCount = (allLeads as any[]).filter((l: any) => {
+    if (!l.activeFollowUpDate) return false;
+    const d = new Date(l.activeFollowUpDate);
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return d <= today;
+  }).length;
+
+  const companiesCount = (allCompanies as any[]).length;
+  const servicesCount  = (allServices as any[]).length;
+
+  const fmtBadge = (n: number) => n > 99 ? "99+" : String(n);
+
+  const NavItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {
     const active = location === href || (href !== "/" && location.startsWith(href));
     return (
       <Link
@@ -61,9 +81,32 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <Icon size={18} />
         </span>
         {!collapsed && (
-          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {label}
-          </span>
+          <>
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1 }}>
+              {label}
+            </span>
+            {!!badge && badge > 0 && (
+              <span style={{
+                flexShrink: 0,
+                minWidth: 20,
+                height: 18,
+                padding: "0 6px",
+                borderRadius: 999,
+                background: "hsl(172 75% 48% / 0.12)",
+                border: "1px solid hsl(172 75% 48% / 0.3)",
+                color: "var(--teal)",
+                fontSize: 10,
+                fontWeight: 700,
+                fontFamily: "var(--font-sans)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                lineHeight: 1,
+              }}>
+                {fmtBadge(badge)}
+              </span>
+            )}
+          </>
         )}
       </Link>
     );
@@ -150,14 +193,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <PermissionCheck resource="leads" action="create">
             <NavItem href="/leads/new" icon={PlusCircle} label="New Lead" />
           </PermissionCheck>
-          <NavItem href="/follow-up" icon={CalendarClock} label="Follow Up" />
+          <NavItem href="/follow-up" icon={CalendarClock} label="Follow Up" badge={followUpCount} />
 
           <SectionLabel title="Master Data" />
           <PermissionCheck resource="companies" action="read">
-            <NavItem href="/master/companies" icon={Building2} label="Companies" />
+            <NavItem href="/master/companies" icon={Building2} label="Companies" badge={companiesCount} />
           </PermissionCheck>
           <PermissionCheck resource="services" action="read">
-            <NavItem href="/master/services" icon={Briefcase} label="Services" />
+            <NavItem href="/master/services" icon={Briefcase} label="Services" badge={servicesCount} />
           </PermissionCheck>
           <PermissionCheck resource="settings" action="read">
             <NavItem href="/master/pipeline" icon={GitBranch} label="Pipeline" />
