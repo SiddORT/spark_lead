@@ -164,21 +164,12 @@ export function Dashboard() {
         __meta: {} as Record<string, { count: number; value: number; displayName: string; color: string }>,
       };
 
-      const assignedStatusIds = new Set<string>();
       for (const status of stageStatuses) {
         const statusLeads = stageLeads.filter((l: any) => l.pipelineStatusId === status.id);
         const count = statusLeads.length;
         const value = statusLeads.reduce((s: number, l: any) => s + Number(l.dealValue || 0), 0);
         row[status.id] = count;
         row.__meta[status.id] = { count, value, displayName: status.displayName, color: status.color };
-        assignedStatusIds.add(status.id);
-      }
-
-      const unassigned = stageLeads.filter((l: any) => !l.pipelineStatusId || !assignedStatusIds.has(l.pipelineStatusId));
-      if (unassigned.length > 0) {
-        const value = unassigned.reduce((s: number, l: any) => s + Number(l.dealValue || 0), 0);
-        row["__unassigned"] = (row["__unassigned"] || 0) + unassigned.length;
-        row.__meta["__unassigned"] = { count: unassigned.length, value, displayName: "Unassigned", color: "hsl(210, 14%, 38%)" };
       }
 
       return row;
@@ -186,20 +177,20 @@ export function Dashboard() {
   }, [pipelineStages, leads]);
 
   // All unique status keys in display order (for rendering a <Bar> per status)
+  // Only includes statuses defined in Pipeline Master — no hardcoded extras
   const stackedStatusKeys = useMemo(() => {
     const seen = new Set<string>();
     const keys: string[] = [];
     for (const row of stageChartData) {
       for (const key of Object.keys(row)) {
-        if (["stage", "stageColor", "__meta", "__unassigned"].includes(key)) continue;
+        if (["stage", "stageColor", "__meta"].includes(key)) continue;
         if (!seen.has(key)) { seen.add(key); keys.push(key); }
       }
     }
-    if (stageChartData.some((r: any) => (r["__unassigned"] ?? 0) > 0)) keys.push("__unassigned");
     return keys;
   }, [stageChartData]);
 
-  // Map: status ID → { displayName, color } for legend + bar coloring
+  // Map: status ID → { displayName, color } — sourced purely from Pipeline Master
   const statusMetaById = useMemo(() => {
     const map = new Map<string, { displayName: string; color: string }>();
     for (const stage of (pipelineStages as any[])) {
@@ -207,7 +198,6 @@ export function Dashboard() {
         map.set(st.id, { displayName: st.displayName, color: st.color });
       }
     }
-    map.set("__unassigned", { displayName: "Unassigned", color: "hsl(210, 14%, 38%)" });
     return map;
   }, [pipelineStages]);
 

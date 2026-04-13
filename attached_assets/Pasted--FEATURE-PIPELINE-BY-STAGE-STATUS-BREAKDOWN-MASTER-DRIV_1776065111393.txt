@@ -1,0 +1,282 @@
+# 🚀 FEATURE: PIPELINE BY STAGE – STATUS BREAKDOWN (MASTER-DRIVEN)
+
+---
+
+# 🎯 OBJECTIVE
+
+Enhance the **“Pipeline by Stage”** chart to:
+
+✅ Show **status-level breakdown inside each stage**
+✅ Use **Pipeline Master as the ONLY source** for:
+
+* Stage names
+* Status names
+* Status colours
+  ✅ Display **lead count + total value per status**
+
+---
+
+# ⚠️ CRITICAL RULE (VERY IMPORTANT)
+
+---
+
+## ❗ SINGLE SOURCE OF TRUTH
+
+All of the below MUST come from **Pipeline Master configuration**:
+
+* Stage list
+* Status list per stage
+* Status colour
+
+❌ DO NOT:
+
+* Hardcode stage names
+* Hardcode statuses
+* Hardcode colours
+
+✔ ALWAYS fetch dynamically from Pipeline Master
+
+---
+
+# 🧩 DATA REQUIREMENT
+
+---
+
+## 🔹 Backend/API Response (EXPECTED)
+
+```json id="master-based"
+[
+  {
+    "stageId": "stage_1",
+    "stageName": "Qualification & Analysis",
+    "statuses": [
+      {
+        "statusId": "status_1",
+        "statusName": "Internal Discussion",
+        "color": "#F59E0B",
+        "count": 10,
+        "value": 2500000
+      }
+    ]
+  }
+]
+```
+
+---
+
+# 🔹 BACKEND LOGIC
+
+---
+
+## Step 1: Fetch Pipeline Master
+
+* Get all stages
+* Get all statuses under each stage
+* Get colour for each status
+
+---
+
+## Step 2: Map Leads
+
+For each lead:
+
+* Identify:
+
+  * Stage
+  * Status
+* Aggregate:
+
+  * Count
+  * Total deal value
+
+---
+
+## Step 3: Ensure FULL COVERAGE
+
+Even if a status has:
+
+* 0 leads
+  → It MUST still appear in chart (with value 0)
+
+---
+
+# 📊 CHART IMPLEMENTATION
+
+---
+
+## 🔹 Use Stacked Bar Chart
+
+Each Stage = 1 bar
+Each Status = stacked segment
+
+---
+
+## 🔹 Dynamic Bars (IMPORTANT)
+
+```tsx id="dynamic-bars"
+const allStatuses = getStatusesFromPipelineMaster();
+
+allStatuses.map((status) => (
+  <Bar
+    key={status.id}
+    dataKey={status.name}
+    stackId="a"
+    fill={status.color}
+  />
+));
+```
+
+---
+
+# 🔹 DATA TRANSFORMATION
+
+```ts id="transform-master"
+const formattedData = stagesFromMaster.map(stage => {
+  const obj = { stage: stage.name };
+
+  stage.statuses.forEach(status => {
+    const data = getAggregatedData(stage.id, status.id);
+
+    obj[status.name] = data.count || 0;
+  });
+
+  return obj;
+});
+```
+
+---
+
+# 🧠 TOOLTIP (ENHANCED)
+
+---
+
+## On Hover → Show:
+
+* Stage Name
+* Status Name
+* Number of Leads
+* Total Value (₹)
+
+---
+
+## Example:
+
+```id="tooltip-example"
+Qualification & Analysis
+• Internal Discussion
+  - Leads: 10
+  - Value: ₹25,00,000
+```
+
+---
+
+# 🎨 UI/UX RULES
+
+---
+
+## 🔹 Colors
+
+✔ MUST come from Pipeline Master
+✔ Consistent across system
+
+---
+
+## 🔹 Legend
+
+* Dynamically generated from master
+* Reflects all statuses
+* Matches exact colours
+
+---
+
+## 🔹 Ordering
+
+* Follow Pipeline Master order:
+
+  * Stage order
+  * Status order
+
+---
+
+# ⚠️ EDGE CASES
+
+---
+
+## ✅ New Status Added in Master
+
+→ Automatically reflect in chart
+(No code change required)
+
+---
+
+## ✅ Status Deleted
+
+→ Should not break chart
+→ Remove safely from UI
+
+---
+
+## ✅ No Leads in Status
+
+→ Show with value 0 (still visible)
+
+---
+
+# 🔒 DATA SAFETY
+
+---
+
+❌ DO NOT:
+
+* Modify Pipeline Master data
+* Change existing lead data
+
+✔ ONLY:
+
+* Read and aggregate
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Master Sync
+
+* Add new status → appears in chart
+* Change colour → updates instantly
+
+---
+
+## ✅ Accuracy
+
+* Count per status correct
+* Value per status correct
+
+---
+
+## ✅ UI
+
+* Proper stacking
+* Clean tooltip
+* No overlap
+
+---
+
+## ✅ Regression
+
+* Dashboard unaffected
+* Filters still working
+
+---
+
+# 🚀 FINAL OUTPUT
+
+---
+
+✔ Master-driven visualization
+✔ Dynamic stage + status rendering
+✔ No hardcoding
+✔ Fully scalable with Pipeline Master
+
+---
