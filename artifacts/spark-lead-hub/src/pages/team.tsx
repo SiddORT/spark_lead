@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import {
   useGetTeamMembers, useUpdateTeamMember, useDeleteTeamMember,
   useInviteUser, useGetAccessRequests, useApproveAccessRequest, useRejectAccessRequest,
-  useResendPasswordLink,
+  useResendPasswordLink, useGeneratePasswordLink,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch, Dialog } from "@/components/ui";
@@ -12,7 +12,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { format } from "date-fns";
 import {
   PlusCircle, Search, Mail, CheckCircle, XCircle, Trash2,
-  Users, ShieldCheck, UserCheck, Bell, X, Copy, Link2, KeyRound, Loader2,
+  Users, ShieldCheck, UserCheck, Bell, X, Copy, Link2, KeyRound, Loader2, ClipboardCopy,
 } from "lucide-react";
 import { useAuth, PermissionCheck } from "@/components/auth-provider";
 import { toast } from "sonner";
@@ -48,6 +48,7 @@ export function Team() {
   const approveRequest = useApproveAccessRequest();
   const rejectRequest = useRejectAccessRequest();
   const resendLink = useResendPasswordLink();
+  const generateLink = useGeneratePasswordLink();
 
   const [activeTab, setActiveTab] = useState<"members" | "requests">("members");
   const [searchRaw, setSearchRaw] = useState("");
@@ -57,6 +58,7 @@ export function Team() {
   const [inviteData, setInviteData] = useState({ email: "", role: "deal_handler" });
   const [pendingLink, setPendingLink] = useState<{ url: string; email: string; emailSent: boolean } | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [copyingId, setCopyingId] = useState<string | null>(null);
 
   const search = useDebounce(searchRaw, 300);
   const hasFilters = !!(searchRaw || roleFilter);
@@ -132,6 +134,27 @@ export function Team() {
       onError: () => {
         setResendingId(null);
         toast.error("Failed to send reset link. Please try again.");
+      },
+    });
+  };
+
+  const handleCopyLink = (id: string) => {
+    setCopyingId(id);
+    generateLink.mutate({ id }, {
+      onSuccess: async (res: any) => {
+        setCopyingId(null);
+        const url: string = res?.setPasswordUrl || "";
+        if (!url) { toast.error("Failed to generate link"); return; }
+        try {
+          await navigator.clipboard.writeText(url);
+          toast.success("Password setup link copied to clipboard");
+        } catch {
+          setPendingLink({ url, email: "", emailSent: false });
+        }
+      },
+      onError: () => {
+        setCopyingId(null);
+        toast.error("Failed to generate link. Please try again.");
       },
     });
   };
@@ -233,7 +256,7 @@ export function Team() {
                 <th>Role</th>
                 <th>Status</th>
                 <th>Joined</th>
-                {isAdmin && <th style={{ width: 100 }}>Actions</th>}
+                {isAdmin && <th style={{ width: 130 }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -293,6 +316,18 @@ export function Team() {
                           {resendingId === m.id
                             ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
                             : <KeyRound size={15} />
+                          }
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-icon"
+                          title="Copy password setup link"
+                          disabled={copyingId === m.id}
+                          onClick={() => handleCopyLink(m.id)}
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {copyingId === m.id
+                            ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                            : <ClipboardCopy size={15} />
                           }
                         </button>
                         {m.id !== user?.id && (

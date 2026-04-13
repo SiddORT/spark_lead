@@ -156,6 +156,59 @@ router.delete("/members/:id", requireAuth, requireAdmin, async (req: AuthRequest
   }
 });
 
+// ── Shared helper: invalidate old tokens + create a fresh one ────────────────
+async function generateFreshToken(
+  userId: string,
+  origin: string,
+): Promise<{ token: string; setPasswordUrl: string }> {
+  await db
+    .update(passwordResetTokensTable)
+    .set({ used: true })
+    .where(eq(passwordResetTokensTable.userId, userId));
+
+  const token = uuidv4();
+  await db.insert(passwordResetTokensTable).values({
+    id: uuidv4(),
+    userId,
+    token,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+  });
+
+  const baseUrl = origin.replace(/\/$/, "") || process.env.FRONTEND_URL || "";
+  const frontendUrl = baseUrl || "http://localhost:5173";
+  const setPasswordUrl = `${frontendUrl}/set-password?token=${token}`;
+  return { token, setPasswordUrl };
+}
+
+// ── Generate link only (no email) ────────────────────────────────────────────
+router.post("/members/:id/generate-password-link", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+  try {
+    const user = await db.select().from(usersTable).where(eq(usersTable.id, req.params.id)).limit(1);
+    if (!user[0]) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const origin = (req.headers.origin as string) || (req.headers.referer as string) || "";
+    const { setPasswordUrl } = await generateFreshToken(user[0].id, origin);
+
+    await db.insert(auditLogTable).values({
+      id: uuidv4(),
+      userId: req.user!.userId,
+      action: "password_link_generated",
+      resource: "team",
+      resourceId: req.params.id,
+      details: { email: user[0].email },
+    });
+
+    res.json({ success: true, setPasswordUrl, message: "Link generated" });
+  } catch (err) {
+    req.log.error({ err }, "Generate password link error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ── Resend via email ──────────────────────────────────────────────────────────
 router.post("/members/:id/resend-password-link", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const user = await db.select().from(usersTable).where(eq(usersTable.id, req.params.id)).limit(1);
@@ -164,29 +217,11 @@ router.post("/members/:id/resend-password-link", requireAuth, requireAdmin, asyn
       return;
     }
 
-    // Invalidate any existing unused tokens for this user
-    await db
-      .update(passwordResetTokensTable)
-      .set({ used: true })
-      .where(eq(passwordResetTokensTable.userId, req.params.id));
-
-    // Generate a fresh token (24 hr expiry)
-    const token = uuidv4();
-    await db.insert(passwordResetTokensTable).values({
-      id: uuidv4(),
-      userId: user[0].id,
-      token,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-    });
-
     const origin = (req.headers.origin as string) || (req.headers.referer as string) || "";
-    const baseUrl = origin.replace(/\/$/, "") || process.env.FRONTEND_URL || "";
-    const frontendUrl = baseUrl || "http://localhost:5173";
-    const setPasswordUrl = `${frontendUrl}/set-password?token=${token}`;
+    const { setPasswordUrl } = await generateFreshToken(user[0].id, origin);
 
     const roleRow = await db.select().from(userRolesTable).where(eq(userRolesTable.userId, user[0].id)).limit(1);
     const role = roleRow[0]?.role || "member";
-
     const adminUser = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
 
     const emailSent = await sendPasswordSetupEmail({

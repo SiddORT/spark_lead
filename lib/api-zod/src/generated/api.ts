@@ -703,6 +703,18 @@ export const DeleteTeamMemberResponse = zod.object({
 });
 
 /**
+ * @summary Generate a password setup link without sending email
+ */
+export const GeneratePasswordLinkParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GeneratePasswordLinkResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
  * @summary Resend password setup link to a team member
  */
 export const ResendPasswordLinkParams = zod.object({

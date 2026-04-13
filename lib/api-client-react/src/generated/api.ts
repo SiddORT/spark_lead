@@ -2718,6 +2718,90 @@ export const useDeleteTeamMember = <
 };
 
 /**
+ * @summary Generate a password setup link without sending email
+ */
+export const getGeneratePasswordLinkUrl = (id: string) => {
+  return `/api/team/members/${id}/generate-password-link`;
+};
+
+export const generatePasswordLink = async (
+  id: string,
+  options?: RequestInit,
+): Promise<SuccessResponse> => {
+  return customFetch<SuccessResponse>(getGeneratePasswordLinkUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getGeneratePasswordLinkMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePasswordLink>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generatePasswordLink>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["generatePasswordLink"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generatePasswordLink>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return generatePasswordLink(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GeneratePasswordLinkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generatePasswordLink>>
+>;
+
+export type GeneratePasswordLinkMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate a password setup link without sending email
+ */
+export const useGeneratePasswordLink = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generatePasswordLink>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generatePasswordLink>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getGeneratePasswordLinkMutationOptions(options));
+};
+
+/**
  * @summary Resend password setup link to a team member
  */
 export const getResendPasswordLinkUrl = (id: string) => {

@@ -731,6 +731,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /team/members/{id}/generate-password-link:
+    post:
+      operationId: generatePasswordLink
+      tags: [team]
+      summary: Generate a password setup link without sending email
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Link generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
   /team/members/{id}/resend-password-link:
     post:
       operationId: resendPasswordLink
