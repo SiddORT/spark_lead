@@ -104,11 +104,13 @@ export function FollowUp() {
       if (q) {
         const handlerName  = l.dealHandler ? resolveName(l.dealHandler).toLowerCase() : "";
         const ownerName    = l.leadOwner   ? resolveName(l.leadOwner).toLowerCase()   : "";
+        const serviceName  = (l.serviceName || "").toLowerCase();
         const nameMatch    = (l.leadName || "").toLowerCase().includes(q);
         const companyMatch = (l.companies || []).some((c: any) => (c?.name || "").toLowerCase().includes(q));
         const handlerMatch = handlerName.includes(q);
         const ownerMatch   = ownerName.includes(q);
-        if (!nameMatch && !companyMatch && !handlerMatch && !ownerMatch) return false;
+        const serviceMatch = serviceName.includes(q);
+        if (!nameMatch && !companyMatch && !handlerMatch && !ownerMatch && !serviceMatch) return false;
       }
       if (serviceFilter.length && !serviceFilter.includes(l.serviceId)) return false;
       if (companyFilter.length && !(l.companies || []).some((c: any) => companyFilter.includes(c?.id))) return false;
@@ -238,7 +240,7 @@ export function FollowUp() {
           <input
             value={searchRaw}
             onChange={e => setSearchRaw(e.target.value)}
-            placeholder="Search by lead, company, handler, owner…"
+            placeholder="Search by lead, company, service, handler, owner…"
             style={{
               width: "100%", height: 40,
               paddingLeft: 38, paddingRight: searchRaw ? 34 : "var(--space-3)",

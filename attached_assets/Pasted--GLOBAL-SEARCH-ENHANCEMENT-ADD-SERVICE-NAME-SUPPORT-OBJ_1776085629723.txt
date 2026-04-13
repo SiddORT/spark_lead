@@ -1,0 +1,221 @@
+# 🔍 GLOBAL SEARCH ENHANCEMENT – ADD SERVICE NAME SUPPORT
+
+---
+
+# 🎯 OBJECTIVE
+
+Enhance the existing **global search bar** to allow users to search leads using:
+
+* Lead Name ✅
+* Company Name ✅
+* Handler Name ✅
+* Owner Name ✅
+* **Service Name** 🆕
+
+👉 Service is already visible in the table, so search must include it.
+
+---
+
+# 🧠 EXPECTED BEHAVIOUR
+
+---
+
+## ✅ SEARCH SHOULD MATCH AGAINST:
+
+```js
+[
+  lead.leadName,
+  lead.companyName,
+  lead.handlerName,
+  lead.ownerName,
+  lead.serviceName   // NEW
+]
+```
+
+---
+
+## ✅ SEARCH FEATURES
+
+* Case insensitive
+* Partial match supported
+  ("crm" → CRM Implementation)
+* Works in real-time
+* Ignores null/undefined values
+
+---
+
+# 🔧 BACKEND / DATA REQUIREMENTS
+
+---
+
+## 1. ENSURE SERVICE NAME EXISTS
+
+Each lead object must include:
+
+```json
+{
+  "leadName": "RVNL Dashboard Project",
+  "companyName": "OneRoof Technologies",
+  "handlerName": "Chirag",
+  "ownerName": "Admin",
+  "serviceName": "Software Application"
+}
+```
+
+---
+
+## ⚠️ IMPORTANT CASE
+
+If service is stored as ID:
+
+```json
+"serviceId": "123"
+```
+
+👉 Then map before filtering:
+
+```js
+lead.serviceName = servicesMap[lead.serviceId]?.name;
+```
+
+---
+
+# 🔧 SEARCH FUNCTION (FINAL)
+
+---
+
+```js
+const searchText = input.toLowerCase().trim();
+
+const filteredLeads = leads.filter((lead) => {
+  return [
+    lead.leadName,
+    lead.companyName,
+    lead.handlerName,
+    lead.ownerName,
+    lead.serviceName   // added
+  ]
+    .filter(Boolean)
+    .some(field =>
+      field.toLowerCase().includes(searchText)
+    );
+});
+```
+
+---
+
+# 🎨 UI / UX IMPROVEMENTS
+
+---
+
+## ✅ UPDATE PLACEHOLDER TEXT
+
+```text
+Search by lead, company, service, handler, owner...
+```
+
+---
+
+## ✅ OPTIONAL TOOLTIP
+
+```text
+You can search using Lead Name, Company, Service, Handler, or Owner
+```
+
+---
+
+# 🔗 FILTER COMPATIBILITY (CRITICAL)
+
+---
+
+Search must work seamlessly with:
+
+* Service filter
+* Company filter
+* Type filter
+* Stage filter
+
+---
+
+## ✅ FINAL FILTER LOGIC
+
+```js
+finalLeads = leads
+  .filter(applyFilters)   // dropdown filters
+  .filter(applySearch);   // global search
+```
+
+---
+
+# ⚠️ EDGE CASES
+
+---
+
+## 1. EMPTY SERVICE
+
+* If service is missing → ignore safely
+
+---
+
+## 2. PARTIAL MATCHES
+
+* "soft" → Software Application
+* "crm" → CRM Implementation
+
+---
+
+## 3. MULTIPLE WORD SEARCH (OPTIONAL IMPROVEMENT)
+
+Split words:
+
+```js
+const terms = searchText.split(" ");
+
+return terms.every(term =>
+  fields.some(field =>
+    field.toLowerCase().includes(term)
+  )
+);
+```
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Search by service name → works
+* Partial search → works
+* Mixed search (service + lead) → works
+
+---
+
+## ✅ Integration
+
+* Works on:
+
+  * Dashboard
+  * Leads table
+  * Follow-up page
+
+---
+
+## ✅ Performance
+
+* No lag on typing
+* No unnecessary re-renders
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ Powerful unified search
+✔ Better usability for large datasets
+✔ Faster lead discovery
+✔ Fully consistent across system
+
+---

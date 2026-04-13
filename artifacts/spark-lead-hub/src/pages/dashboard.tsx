@@ -334,11 +334,13 @@ export function Dashboard() {
       const companyNames: string[] = (l.companies || []).map((c: any) => c.name as string);
       const handlerName = l.dealHandler ? resolveName(l.dealHandler).toLowerCase() : "";
       const ownerName   = l.leadOwner   ? resolveName(l.leadOwner).toLowerCase()   : "";
+      const serviceName = (l.serviceName || "").toLowerCase();
       const matchSearch = !q
         || l.leadName.toLowerCase().includes(q)
         || companyNames.some(n => n.toLowerCase().includes(q))
         || handlerName.includes(q)
-        || ownerName.includes(q);
+        || ownerName.includes(q)
+        || serviceName.includes(q);
       const matchService = !serviceFilter.length || serviceFilter.includes(l.serviceId);
       const matchCompany = !companyFilter.length || companyNames.some(n => companyFilter.includes(n));
       const matchType    = !typeFilter.length    || typeFilter.includes(l.leadType);
@@ -813,7 +815,7 @@ export function Dashboard() {
           <input
             value={searchRaw}
             onChange={e => setSearchRaw(e.target.value)}
-            placeholder="Search by lead, company, handler, owner…"
+            placeholder="Search by lead, company, service, handler, owner…"
             style={{
               width: "100%",
               height: 40,
