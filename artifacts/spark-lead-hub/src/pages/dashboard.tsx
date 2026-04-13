@@ -250,12 +250,12 @@ export function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  // Filter state
-  const [searchRaw, setSearchRaw] = useState("");
-  const [serviceFilter, setServiceFilter] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [stageFilter, setStageFilter] = useState("");
+  // Filter state — multi-select (arrays)
+  const [searchRaw, setSearchRaw]         = useState("");
+  const [serviceFilter, setServiceFilter] = useState<string[]>([]);
+  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
+  const [typeFilter, setTypeFilter]       = useState<string[]>([]);
+  const [stageFilter, setStageFilter]     = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(() => {
     const saved = Number(localStorage.getItem("slh_rows_per_page"));
@@ -264,15 +264,15 @@ export function Dashboard() {
 
   const search = useDebounce(searchRaw, 300);
   const isDebouncing = searchRaw !== search;
-  const hasFilters = !!(searchRaw || serviceFilter || companyFilter || typeFilter || stageFilter);
-  const activeFilterCount = [searchRaw, serviceFilter, companyFilter, typeFilter, stageFilter].filter(Boolean).length;
+  const hasFilters = !!(searchRaw || serviceFilter.length || companyFilter.length || typeFilter.length || stageFilter.length);
+  const activeFilterCount = [!!searchRaw, serviceFilter.length > 0, companyFilter.length > 0, typeFilter.length > 0, stageFilter.length > 0].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchRaw("");
-    setServiceFilter("");
-    setCompanyFilter("");
-    setTypeFilter("");
-    setStageFilter("");
+    setServiceFilter([]);
+    setCompanyFilter([]);
+    setTypeFilter([]);
+    setStageFilter([]);
     setPage(1);
   };
 
@@ -302,21 +302,26 @@ export function Dashboard() {
   // Reset page on filter change
   useEffect(() => { setPage(1); }, [search, serviceFilter, companyFilter, typeFilter, stageFilter]);
 
-  // Cascade: clear invalid company when service changes
+  // Cascade: remove companies no longer linked to any selected service
   useEffect(() => {
-    if (!serviceFilter) return;
-    const svc = services.find((s: any) => s.id === serviceFilter);
-    const valid = new Set((svc?.companies || []).map((c: any) => c.name));
-    if (companyFilter && !valid.has(companyFilter)) setCompanyFilter("");
+    if (!serviceFilter.length) return;
+    const validNames = new Set<string>();
+    for (const svcId of serviceFilter) {
+      const svc = (services as any[]).find((s: any) => s.id === svcId);
+      if (svc) (svc.companies || []).forEach((c: any) => validNames.add(c.name));
+    }
+    setCompanyFilter(prev => prev.filter(n => validNames.has(n)));
   }, [serviceFilter]);
 
   // Available companies (cascades from service selection)
   const availableCompanies = useMemo(() => {
-    if (!serviceFilter) return allCompanies;
-    const svc = services.find((s: any) => s.id === serviceFilter);
-    if (!svc) return allCompanies;
-    const linked = new Set((svc.companies || []).map((c: any) => c.name));
-    return allCompanies.filter((c: any) => linked.has(c.name));
+    if (!serviceFilter.length) return allCompanies;
+    const validNames = new Set<string>();
+    for (const svcId of serviceFilter) {
+      const svc = (services as any[]).find((s: any) => s.id === svcId);
+      if (svc) (svc.companies || []).forEach((c: any) => validNames.add(c.name));
+    }
+    return (allCompanies as any[]).filter((c: any) => validNames.has(c.name));
   }, [serviceFilter, services, allCompanies]);
 
   const serviceOptions = services.map((s: any) => ({ value: s.id, label: s.name }));
@@ -330,10 +335,10 @@ export function Dashboard() {
       const matchSearch = !q
         || l.leadName.toLowerCase().includes(q)
         || companyNames.some(n => n.toLowerCase().includes(q));
-      const matchService = !serviceFilter || l.serviceId === serviceFilter;
-      const matchCompany = !companyFilter || companyNames.some(n => n === companyFilter);
-      const matchType = !typeFilter || l.leadType === typeFilter;
-      const matchStage = !stageFilter || l.pipelineStageId === stageFilter;
+      const matchService = !serviceFilter.length || serviceFilter.includes(l.serviceId);
+      const matchCompany = !companyFilter.length || companyNames.some(n => companyFilter.includes(n));
+      const matchType    = !typeFilter.length    || typeFilter.includes(l.leadType);
+      const matchStage   = !stageFilter.length   || stageFilter.includes(l.pipelineStageId);
       return matchSearch && matchService && matchCompany && matchType && matchStage;
     });
   }, [leads, search, serviceFilter, companyFilter, typeFilter, stageFilter]);
@@ -854,7 +859,7 @@ export function Dashboard() {
         {/* Custom dropdowns — right side, gap-3 between them */}
         <FilterSelect
           value={serviceFilter}
-          onChange={v => { setServiceFilter(v); setCompanyFilter(""); }}
+          onChange={setServiceFilter}
           options={serviceOptions}
           placeholder="All Services"
           width={165}

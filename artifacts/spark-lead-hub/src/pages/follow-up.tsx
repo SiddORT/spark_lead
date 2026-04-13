@@ -47,12 +47,12 @@ export function FollowUp() {
   const { data: stages = [] }                          = usePipelineStages();
   const { resolveName }                                = useUserMap();
 
-  // Filters
+  // Filters — multi-select (arrays)
   const [searchRaw, setSearchRaw]         = useState("");
-  const [serviceFilter, setServiceFilter] = useState("");
-  const [companyFilter, setCompanyFilter] = useState("");
-  const [typeFilter, setTypeFilter]       = useState("");
-  const [stageFilter, setStageFilter]     = useState("");
+  const [serviceFilter, setServiceFilter] = useState<string[]>([]);
+  const [companyFilter, setCompanyFilter] = useState<string[]>([]);
+  const [typeFilter, setTypeFilter]       = useState<string[]>([]);
+  const [stageFilter, setStageFilter]     = useState<string[]>([]);
 
   const debouncedSearch = useDebounce(searchRaw, 250);
 
@@ -106,10 +106,10 @@ export function FollowUp() {
         const companyMatch = (l.companies || []).some((c: any) => (c?.name || "").toLowerCase().includes(q));
         if (!nameMatch && !companyMatch) return false;
       }
-      if (serviceFilter && l.serviceId !== serviceFilter) return false;
-      if (companyFilter && !(l.companies || []).some((c: any) => c?.id === companyFilter)) return false;
-      if (typeFilter    && l.leadType !== typeFilter) return false;
-      if (stageFilter   && l.pipelineStageId !== stageFilter) return false;
+      if (serviceFilter.length && !serviceFilter.includes(l.serviceId)) return false;
+      if (companyFilter.length && !(l.companies || []).some((c: any) => companyFilter.includes(c?.id))) return false;
+      if (typeFilter.length    && !typeFilter.includes(l.leadType)) return false;
+      if (stageFilter.length   && !stageFilter.includes(l.pipelineStageId)) return false;
       return true;
     });
   }, [followUpLeads, debouncedSearch, serviceFilter, companyFilter, typeFilter, stageFilter]);
@@ -148,11 +148,11 @@ export function FollowUp() {
   // Lead detail sheet
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
-  const hasFilters = !!(searchRaw || serviceFilter || companyFilter || typeFilter || stageFilter);
+  const hasFilters = !!(searchRaw || serviceFilter.length || companyFilter.length || typeFilter.length || stageFilter.length);
   const clearFilters = () => {
-    setSearchRaw(""); setServiceFilter(""); setCompanyFilter(""); setTypeFilter(""); setStageFilter("");
+    setSearchRaw(""); setServiceFilter([]); setCompanyFilter([]); setTypeFilter([]); setStageFilter([]);
   };
-  const activeFilterCount = [searchRaw, serviceFilter, companyFilter, typeFilter, stageFilter].filter(Boolean).length;
+  const activeFilterCount = [!!searchRaw, serviceFilter.length > 0, companyFilter.length > 0, typeFilter.length > 0, stageFilter.length > 0].filter(Boolean).length;
 
   // Filter options
   const serviceOptions = (services as any[]).map((s: any) => ({ value: s.id, label: s.name }));
@@ -270,7 +270,7 @@ export function FollowUp() {
           )}
         </div>
 
-        <FilterSelect value={serviceFilter} onChange={v => { setServiceFilter(v); setCompanyFilter(""); }} options={serviceOptions} placeholder="All Services" width={165} />
+        <FilterSelect value={serviceFilter} onChange={setServiceFilter} options={serviceOptions} placeholder="All Services" width={165} />
         <FilterSelect value={companyFilter} onChange={setCompanyFilter} options={companyOptions} placeholder="All Companies" width={165} />
         <FilterSelect value={typeFilter}    onChange={setTypeFilter}    options={LEAD_TYPE_OPTIONS} placeholder="All Types" width={145} />
         <FilterSelect value={stageFilter}   onChange={setStageFilter}   options={stageOptions} placeholder="All Stages" width={175} />
