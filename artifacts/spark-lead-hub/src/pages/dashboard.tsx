@@ -732,21 +732,20 @@ export function Dashboard() {
                 {stackedStatusKeys.map((key, idx) => {
                   const meta = statusMetaById.get(key) ?? { displayName: key, color: "hsl(210,14%,38%)" };
                   const isLast = idx === stackedStatusKeys.length - 1;
-                  const isHighlighted = activeStatus === null || activeStatus === key;
+                  const dimmed = activeStatus !== null && activeStatus !== key;
                   return (
                     <Bar
                       key={key}
                       dataKey={key}
                       stackId="pipeline"
-                      fill={isHighlighted ? meta.color : "hsl(210, 14%, 32%)"}
-                      fillOpacity={isHighlighted ? 0.92 : 0.55}
+                      fill={meta.color}
+                      fillOpacity={dimmed ? 0.28 : 0.88}
                       maxBarSize={64}
                       radius={isLast ? [5, 5, 0, 0] : [0, 0, 0, 0]}
                       name={meta.displayName}
-                      stroke={activeStatus === key ? meta.color : "none"}
-                      strokeWidth={activeStatus === key ? 1.5 : 0}
+                      stroke={activeStatus === key ? "#fff" : "none"}
+                      strokeWidth={activeStatus === key ? 0.8 : 0}
                       isAnimationActive={false}
-                      style={{ transition: "fill-opacity 180ms ease" }}
                     />
                   );
                 })}
