@@ -706,6 +706,7 @@ export function Dashboard() {
           <div style={{ flex: 1, minHeight: 240 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
+                key={activeStatus ?? "__all"}
                 data={stageChartData}
                 margin={{ top: 6, right: 16, left: -10, bottom: 0 }}
               >
