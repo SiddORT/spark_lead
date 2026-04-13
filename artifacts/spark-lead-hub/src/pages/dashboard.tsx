@@ -203,6 +203,7 @@ export function Dashboard() {
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [showLegendPopover, setShowLegendPopover] = useState(false);
+  const [activeStatus, setActiveStatus] = useState<string | null>(null);
   const legendBtnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -652,26 +653,44 @@ export function Dashboard() {
                   {stackedStatusKeys.length === 0 ? (
                     <div style={{ fontSize: 12, color: "hsl(210, 14%, 45%)" }}>No statuses configured</div>
                   ) : (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       {stackedStatusKeys.map(key => {
                         const meta = statusMetaById.get(key) ?? { displayName: key, color: "hsl(210,14%,38%)" };
+                        const isActive = activeStatus === key;
                         return (
-                          <div key={key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div
+                            key={key}
+                            onMouseEnter={() => setActiveStatus(key)}
+                            onMouseLeave={() => setActiveStatus(null)}
+                            onClick={() => setActiveStatus(prev => prev === key ? null : key)}
+                            style={{
+                              display: "flex", alignItems: "center", gap: 8,
+                              padding: "4px 6px",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                              background: isActive ? `${meta.color}22` : "transparent",
+                              border: `1px solid ${isActive ? `${meta.color}55` : "transparent"}`,
+                              transition: "background 150ms ease, border-color 150ms ease",
+                            }}
+                          >
                             <span style={{
                               width: 10, height: 10,
                               borderRadius: "50%",
                               background: meta.color,
                               flexShrink: 0,
                               display: "inline-block",
-                              boxShadow: `0 0 6px ${meta.color}60`,
+                              boxShadow: isActive ? `0 0 8px ${meta.color}` : `0 0 4px ${meta.color}50`,
+                              transition: "box-shadow 150ms ease",
                             }} />
                             <span style={{
                               fontSize: 12,
-                              color: "hsl(210, 22%, 72%)",
+                              color: isActive ? "hsl(210, 30%, 90%)" : "hsl(210, 22%, 68%)",
                               fontFamily: "var(--font-sans)",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
+                              fontWeight: isActive ? 600 : 400,
+                              transition: "color 150ms ease, font-weight 150ms ease",
                             }}>
                               {meta.displayName}
                             </span>
@@ -713,16 +732,21 @@ export function Dashboard() {
                 {stackedStatusKeys.map((key, idx) => {
                   const meta = statusMetaById.get(key) ?? { displayName: key, color: "hsl(210,14%,38%)" };
                   const isLast = idx === stackedStatusKeys.length - 1;
+                  const isHighlighted = activeStatus === null || activeStatus === key;
                   return (
                     <Bar
                       key={key}
                       dataKey={key}
                       stackId="pipeline"
                       fill={meta.color}
-                      fillOpacity={0.9}
+                      fillOpacity={isHighlighted ? 0.92 : 0.12}
                       maxBarSize={64}
                       radius={isLast ? [5, 5, 0, 0] : [0, 0, 0, 0]}
                       name={meta.displayName}
+                      stroke={activeStatus === key ? meta.color : "none"}
+                      strokeWidth={activeStatus === key ? 1.5 : 0}
+                      isAnimationActive={false}
+                      style={{ transition: "fill-opacity 180ms ease" }}
                     />
                   );
                 })}

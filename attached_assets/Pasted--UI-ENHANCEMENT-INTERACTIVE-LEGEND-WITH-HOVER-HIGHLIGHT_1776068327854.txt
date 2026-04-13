@@ -1,0 +1,246 @@
+# 🚀 UI ENHANCEMENT: INTERACTIVE LEGEND WITH HOVER HIGHLIGHT (PIPELINE BY STAGE)
+
+---
+
+# 🎯 OBJECTIVE
+
+Enhance the **Pipeline by Stage chart** with:
+
+✅ Compact legend (via Index button)
+✅ Interactive legend panel
+✅ **Hover on legend → highlight corresponding chart segments**
+✅ Improve visual clarity & UX
+
+---
+
+# 🧩 FEATURES INCLUDED
+
+---
+
+## ✅ 1. INDEX BUTTON (LEGEND TRIGGER)
+
+* Replace static legend with:
+
+  * 🎨 "Index" button (top-right of card)
+
+---
+
+## ✅ 2. POPOVER LEGEND
+
+* On click → show legend panel
+* Dynamically populated from **Pipeline Master**
+
+---
+
+## ✅ 3. HOVER INTERACTION (NEW FEATURE ⭐)
+
+---
+
+# 🆕 HOVER BEHAVIOUR
+
+---
+
+## 🔹 When user hovers on a STATUS in legend:
+
+✔ Highlight:
+
+* All corresponding segments in chart
+
+✔ Fade:
+
+* All other statuses
+
+---
+
+## 🔹 When hover ends:
+
+✔ Chart returns to normal
+
+---
+
+# 🧠 IMPLEMENTATION LOGIC
+
+---
+
+## 🔹 Step 1: Maintain Hover State
+
+```tsx id="hover-state"
+const [activeStatus, setActiveStatus] = useState(null);
+```
+
+---
+
+## 🔹 Step 2: Attach Hover Events to Legend
+
+```tsx id="legend-hover"
+<div
+  onMouseEnter={() => setActiveStatus(status.name)}
+  onMouseLeave={() => setActiveStatus(null)}
+>
+  {status.name}
+</div>
+```
+
+---
+
+## 🔹 Step 3: Update Chart Bars Dynamically
+
+---
+
+### Apply conditional opacity:
+
+```tsx id="bar-opacity"
+<Bar
+  dataKey={status.name}
+  stackId="a"
+  fill={status.color}
+  opacity={
+    activeStatus === null
+      ? 1
+      : activeStatus === status.name
+      ? 1
+      : 0.2
+  }
+/>
+```
+
+---
+
+# 🎨 VISUAL BEHAVIOUR
+
+---
+
+## 🔹 Default State
+
+* All statuses fully visible
+
+---
+
+## 🔹 On Hover
+
+| Element         | Behaviour        |
+| --------------- | ---------------- |
+| Selected Status | Full opacity (1) |
+| Other Statuses  | Dimmed (0.2–0.3) |
+
+---
+
+## 🔹 Smooth UX
+
+* Add transition:
+
+```css id="smooth-transition"
+transition: opacity 0.2s ease-in-out;
+```
+
+---
+
+# 📊 OPTIONAL ENHANCEMENT (HIGHLY RECOMMENDED)
+
+---
+
+## 🔹 Highlight Border / Glow
+
+Add subtle glow to active segments:
+
+```tsx id="highlight-style"
+stroke={activeStatus === status.name ? "#fff" : "none"}
+strokeWidth={activeStatus === status.name ? 1 : 0}
+```
+
+---
+
+# ⚠️ IMPORTANT RULES
+
+---
+
+## 🔹 MASTER-DRIVEN SYSTEM
+
+✔ All statuses and colours must come from:
+
+→ Pipeline Master
+
+❌ No hardcoding
+
+---
+
+## 🔹 PERFORMANCE
+
+* Should not re-render entire chart unnecessarily
+* Use memoization if required
+
+---
+
+## 🔹 ACCESSIBILITY
+
+* Hover + Click both supported (for touch devices)
+
+---
+
+# 📱 MOBILE BEHAVIOUR
+
+---
+
+## 🔹 Since hover is not available:
+
+✔ Tap on legend item → toggle highlight
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Interaction
+
+* Hover works correctly
+* Only selected status highlighted
+
+---
+
+## ✅ UI
+
+* Smooth transitions
+* No flickering
+
+---
+
+## ✅ Accuracy
+
+* Correct mapping of status ↔ chart
+
+---
+
+## ✅ Edge Cases
+
+* Multiple statuses
+* No data scenario
+
+---
+
+## ✅ Regression
+
+* Chart tooltip still works
+* Filters unaffected
+* Dashboard layout intact
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ Clean dashboard (no bulky legend)
+✔ On-demand legend panel
+✔ Interactive highlighting
+✔ Premium UX for demos & client presentations
+
+---
+
+# 💡 BONUS (OPTIONAL FUTURE)
+
+* Click legend → isolate (filter mode)
+* Double click → reset
+* Sync with table below
+
+---
