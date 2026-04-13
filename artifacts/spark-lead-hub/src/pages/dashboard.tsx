@@ -738,8 +738,8 @@ export function Dashboard() {
                       key={key}
                       dataKey={key}
                       stackId="pipeline"
-                      fill={meta.color}
-                      fillOpacity={isHighlighted ? 0.92 : 0.12}
+                      fill={isHighlighted ? meta.color : "hsl(210, 14%, 32%)"}
+                      fillOpacity={isHighlighted ? 0.92 : 0.55}
                       maxBarSize={64}
                       radius={isLast ? [5, 5, 0, 0] : [0, 0, 0, 0]}
                       name={meta.displayName}
