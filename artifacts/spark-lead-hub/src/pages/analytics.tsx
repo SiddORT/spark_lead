@@ -100,7 +100,11 @@ export function Analytics() {
   const hasClosureTrendData = closureTrend.some(d => d.won > 0 || d.lost > 0 || d.postponed > 0);
 
   const avgDays = stats?.avgConversionDays;
-  const avgDisplay = (avgDays != null && avgDays > 0) ? Math.round(avgDays) : "N/A";
+  const avgDisplay = avgDays == null
+    ? "N/A"
+    : avgDays < 1
+    ? "< 1d"
+    : `${Math.round(avgDays)}d`;
 
   const formattedKillReasons = killReasons.map(r => ({
     ...r,
@@ -130,7 +134,7 @@ export function Analytics() {
       {/* Stat cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
         <AnalyticStatCard label="Win Rate" value={`${Math.round(stats?.winRate || 0)}%`} sub="Leads marked Won / Total" icon={<Target size={16} />} iconClass="stat-icon-success" />
-        <AnalyticStatCard label="Avg Conversion" value={typeof avgDisplay === "number" ? `${avgDisplay}d` : avgDisplay} sub="Avg days to Won status" icon={<Clock size={16} />} iconClass="stat-icon-teal" />
+        <AnalyticStatCard label="Avg Conversion" value={avgDisplay} sub="Avg days to Won/Lost status" icon={<Clock size={16} />} iconClass="stat-icon-teal" />
         <AnalyticStatCard label="Active Pipeline" value={stats?.activePipelineCount ?? 0} sub="Leads without Won/Lost status" icon={<Layers size={16} />} iconClass="stat-icon-purple" />
         <AnalyticStatCard label="Lost Deals" value={stats?.lostCount ?? 0} sub="Leads marked Lost" icon={<XCircle size={16} />} iconClass="stat-icon-danger" />
       </div>
