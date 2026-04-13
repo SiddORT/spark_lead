@@ -1,0 +1,206 @@
+# 🚀 FEATURE UPDATE: DISPLAY PIPELINE VALUE IN CRORES (₹ Cr)
+
+---
+
+# 🎯 OBJECTIVE
+
+Convert the **Pipeline Value card** on Dashboard:
+
+❌ Current: Displayed in **Lakhs (L)**
+✅ Required: Display in **Crores (Cr)**
+
+---
+
+# 🧠 BUSINESS LOGIC
+
+---
+
+## 🔹 CONVERSION RULE
+
+```
+1 Crore = 100 Lakhs
+```
+
+So:
+
+```ts
+valueInCrores = valueInLakhs / 100
+```
+
+---
+
+## 🔹 EXAMPLES
+
+| Current (Lakhs) | Expected (Crores) |
+| --------------- | ----------------- |
+| ₹121.70L        | ₹1.22Cr           |
+| ₹50.00L         | ₹0.50Cr           |
+| ₹5.00L          | ₹0.05Cr           |
+
+---
+
+# 🏗️ IMPLEMENTATION
+
+---
+
+## 🔹 STEP 1: UPDATE FORMAT FUNCTION
+
+```ts id="format-currency"
+function formatToCrores(valueInRupees) {
+  const valueInCrores = valueInRupees / 10000000; // 1 Cr = 1e7
+
+  return `₹${valueInCrores.toFixed(2)}Cr`;
+}
+```
+
+---
+
+## 🔹 STEP 2: APPLY TO PIPELINE VALUE CARD
+
+```tsx id="pipeline-value"
+<h2 className="text-2xl font-bold">
+  {formatToCrores(totalPipelineValue)}
+</h2>
+```
+
+---
+
+## 🔹 IMPORTANT NOTE
+
+✔ Ensure source value is in **Rupees (not Lakhs)**
+✔ If currently stored in Lakhs, adjust accordingly:
+
+```ts
+valueInCrores = valueInLakhs / 100;
+```
+
+---
+
+# 🎨 UI/UX REQUIREMENTS
+
+---
+
+✔ Maintain same:
+
+* Font size
+* Card layout
+* Alignment
+
+✔ Only change:
+
+* Unit → `Cr`
+* Value format
+
+✔ Ensure:
+
+* No overflow for large numbers
+* Proper spacing between ₹ and value
+
+---
+
+# 🔍 EDGE CASE HANDLING
+
+---
+
+## ✅ Case 1: Small values
+
+```ts
+₹2L → ₹0.02Cr
+```
+
+✔ Still show 2 decimal places
+
+---
+
+## ✅ Case 2: Zero value
+
+```ts
+₹0 → ₹0.00Cr
+```
+
+---
+
+## ✅ Case 3: Large values
+
+```ts
+₹12Cr+ → ₹12.34Cr
+```
+
+✔ Ensure no UI break
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Value correctly converted to Crores
+* No calculation mismatch
+
+---
+
+## ✅ UI
+
+* No layout breaking
+* Proper alignment
+* Consistent styling
+
+---
+
+## ✅ Data Safety
+
+* No backend data changes
+* Only display logic updated
+
+---
+
+## ✅ Regression
+
+* Other cards (Total Leads, Hot Leads etc.) unaffected
+* Export CSV unaffected (still in base unit if required)
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+### BEFORE ❌
+
+```
+₹121.70L
+```
+
+---
+
+### AFTER ✅
+
+```
+₹1.22Cr
+```
+
+---
+
+# ✅ SUCCESS CRITERIA
+
+* Accurate conversion
+* Clean UI
+* No data impact
+* No regression issues
+
+---
+
+# ⚠️ IMPORTANT
+
+DO NOT:
+
+* Modify stored data
+* Change backend calculations
+* Affect reports/export
+
+ONLY update:
+✔ Display logic
+
+---

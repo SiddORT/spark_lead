@@ -261,6 +261,9 @@ export function Dashboard() {
   );
   const activePipeline = filteredLeads.filter((l: any) => !isTerminal(l)).length;
 
+  const formatCrores = (rupees: number) =>
+    `₹${(rupees / 10_000_000).toFixed(2)}Cr`;
+
   // Dynamic column sort (default: newest first)
   const sortedLeads = useMemo(() => {
     const TYPE_ORDER: Record<string, number> = { hot: 0, warm: 1, cold: 2, ghosted: 3 };
@@ -473,7 +476,7 @@ export function Dashboard() {
             <StatCard label="Hot Leads" value={hotCount} icon={<Flame size={16} />} iconClass="stat-icon-warning" sub="High priority" />
             <StatCard label="Closed Deals" value={closedCount} icon={<CheckCircle2 size={16} />} iconClass="stat-icon-success" sub="Won opportunities" />
             <StatCard label="Active Pipeline" value={activePipeline} icon={<Activity size={16} />} iconClass="stat-icon-purple" sub="In progress" />
-            <StatCard label="Pipeline Value" value={formatValue(pipelineValue)} icon={<TrendingUp size={16} />} iconClass="stat-icon-teal" sub="Total deal value" />
+            <StatCard label="Pipeline Value" value={formatCrores(pipelineValue)} icon={<TrendingUp size={16} />} iconClass="stat-icon-teal" sub="Total deal value" />
           </>
         )}
       </div>
