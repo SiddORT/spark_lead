@@ -117,10 +117,10 @@ Optional env vars: `ADMIN_EMAIL`, `ADMIN_PASSWORD`
 ## RBAC Roles
 
 - **admin** — Full access to everything (always)
-- **manager** — Leads CRUD, analytics, team view
-- **lead_owner** — Own leads only (create, read, update, export)
-- **deal_handler** — Assigned leads only (read, update)
-- **member** — Read-only leads + analytics
+- **manager** — Sees leads where they are owner OR handler (create, read, update, export). Also has analytics read access.
+- **member** — Limited access (no leads access by default)
+
+> **Note:** `lead_owner` and `deal_handler` remain in the `app_role` DB enum for backward-compat but are no longer assigned to any user. All existing users with those roles were migrated to `manager`.
 
 ## API Proxy
 

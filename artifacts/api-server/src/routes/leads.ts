@@ -202,7 +202,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
 
     let leads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
 
-    if (role === "lead_owner") {
+    if (role === "manager" || role === "lead_owner") {
       leads = leads.filter(
         (l) => l.leadOwner === userId || l.dealHandler === userId
       );

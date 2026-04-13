@@ -20,18 +20,17 @@ import { toast } from "sonner";
 const PAGE_SIZE = 10;
 
 const ROLE_OPTIONS = [
-  { value: "admin",        label: "Admin" },
-  { value: "lead_owner",   label: "Lead Owner" },
-  { value: "deal_handler", label: "Deal Handler" },
-  { value: "member",       label: "Member" },
+  { value: "admin",   label: "Admin" },
+  { value: "manager", label: "Manager" },
+  { value: "member",  label: "Member" },
 ];
 
 const ROLE_BADGE: Record<string, string> = {
   admin:        "badge-admin",
-  lead_owner:   "badge-lead-owner",
-  deal_handler: "badge-deal-handler",
   manager:      "badge-teal",
   member:       "badge-muted",
+  lead_owner:   "badge-lead-owner",
+  deal_handler: "badge-deal-handler",
 };
 
 export function Team() {
@@ -55,7 +54,7 @@ export function Team() {
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteData, setInviteData] = useState({ email: "", role: "deal_handler" });
+  const [inviteData, setInviteData] = useState({ email: "", role: "manager" });
   const [pendingLink, setPendingLink] = useState<{ url: string; email: string; emailSent: boolean } | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [copyingId, setCopyingId] = useState<string | null>(null);
@@ -197,7 +196,7 @@ export function Team() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
         <TeamStatCard label="Total Members" value={members.length} icon={<Users size={16} />} iconClass="stat-icon-teal" />
         <TeamStatCard label="Admins" value={members.filter(m => m.role === "admin").length} icon={<ShieldCheck size={16} />} iconClass="stat-icon-purple" />
-        <TeamStatCard label="Lead Owners" value={members.filter(m => m.role === "lead_owner").length} icon={<UserCheck size={16} />} iconClass="stat-icon-success" />
+        <TeamStatCard label="Managers" value={members.filter(m => m.role === "manager").length} icon={<UserCheck size={16} />} iconClass="stat-icon-success" />
         {isAdmin && (
           <TeamStatCard label="Pending Requests" value={pendingRequests.length} icon={<Bell size={16} />} iconClass="stat-icon-warning" />
         )}

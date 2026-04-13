@@ -1,0 +1,402 @@
+# 🔁 ROLE MERGE: LEAD OWNER + DEAL HANDLER → MANAGER
+
+---
+
+# 🎯 OBJECTIVE
+
+Refactor the system by:
+
+👉 Merging roles:
+
+* ❌ Lead Owner
+* ❌ Deal Handler
+
+➡️ Into:
+
+* ✅ Manager
+
+---
+
+# ⚠️ CRITICAL REQUIREMENTS (NON-NEGOTIABLE)
+
+---
+
+## ❗ DATA SAFETY
+
+* ❌ DO NOT delete or modify existing lead records
+* ❌ DO NOT overwrite ownerId / handlerId
+* ❌ DO NOT break historical data
+
+---
+
+## ✅ MUST:
+
+* Keep existing data EXACTLY as is
+* Apply only **role + access logic changes**
+* Ensure full backward compatibility
+
+---
+
+# 🧠 FINAL ROLE STRUCTURE
+
+---
+
+## BEFORE
+
+```plaintext
+Admin
+Lead Owner
+Deal Handler
+Member
+```
+
+---
+
+## AFTER
+
+```plaintext
+Admin
+Manager   ← (merged role)
+Member
+```
+
+---
+
+# 🔄 DATA MAPPING (IMPORTANT)
+
+---
+
+## EXISTING USERS
+
+| Old Role     | New Role |
+| ------------ | -------- |
+| Lead Owner   | Manager  |
+| Deal Handler | Manager  |
+| Both         | Manager  |
+
+---
+
+## ❗ DO NOT CHANGE:
+
+```js
+lead.ownerId
+lead.handlerId
+```
+
+These remain unchanged
+
+---
+
+# 🔧 BACKEND IMPLEMENTATION
+
+---
+
+## ✅ ROLE MIGRATION SCRIPT
+
+```js
+await User.updateMany(
+  { role: { $in: ["LEAD_OWNER", "DEAL_HANDLER"] } },
+  { $set: { role: "MANAGER" } }
+);
+```
+
+---
+
+## ✅ ACCESS CONTROL LOGIC
+
+---
+
+### ADMIN
+
+```js
+// Full access
+return {};
+```
+
+---
+
+### MANAGER
+
+```js
+return {
+  $or: [
+    { ownerId: user.id },
+    { handlerId: user.id }
+  ]
+};
+```
+
+---
+
+### MEMBER
+
+```js
+// Optional: no access or limited access
+return {};
+```
+
+---
+
+# 🔐 APPLY ACCESS CONTROL IN ALL APIs
+
+---
+
+```plaintext
+GET /leads
+GET /dashboard
+GET /follow-up
+GET /kanban
+GET /analytics
+```
+
+---
+
+## FINAL QUERY STRUCTURE
+
+```js
+const accessQuery = buildAccessQuery(user);
+
+const finalQuery = {
+  $and: [
+    accessQuery,
+    filters,
+    search
+  ]
+};
+```
+
+---
+
+# 🎨 FRONTEND CHANGES
+
+---
+
+## ✅ TEAM PAGE
+
+---
+
+### ROLE DROPDOWN
+
+Replace:
+
+```plaintext
+Lead Owner ❌
+Deal Handler ❌
+```
+
+With:
+
+```plaintext
+Admin
+Manager ✅
+Member
+```
+
+---
+
+## ✅ PERMISSIONS PAGE
+
+---
+
+### REMOVE COLUMNS:
+
+* Lead Owner ❌
+* Deal Handler ❌
+
+---
+
+### ADD:
+
+```plaintext
+Manager ✅
+```
+
+---
+
+## ✅ UPDATE PERMISSION MATRIX
+
+---
+
+| Action       | Admin | Manager        | Member |
+| ------------ | ----- | -------------- | ------ |
+| Read Leads   | ✅     | ✅ (restricted) | ❌      |
+| Create Leads | ✅     | ✅              | ❌      |
+| Update Leads | ✅     | ✅ (own only)   | ❌      |
+| Delete Leads | ✅     | ❌              | ❌      |
+
+---
+
+# 📊 DASHBOARD LOGIC
+
+---
+
+## MANAGER VIEW
+
+* Only sees assigned leads
+* Metrics based on filtered data
+
+---
+
+## ADMIN VIEW
+
+* Sees all leads
+* Full dashboard
+
+---
+
+# 👁️ UI IMPROVEMENTS
+
+---
+
+## SHOW ROLE
+
+```plaintext
+Manager
+```
+
+---
+
+## SHOW ASSIGNMENT
+
+If same user:
+
+```plaintext
+Ajay (Owner & Handler)
+```
+
+---
+
+# ⚠️ EDGE CASES
+
+---
+
+## 1. USER WAS BOTH OWNER + HANDLER
+
+✔ Now becomes Manager
+✔ Still sees same leads
+
+---
+
+## 2. LEAD WITHOUT ASSIGNMENT
+
+✔ Visible ONLY to Admin
+
+---
+
+## 3. OLD DATA
+
+✔ No migration needed for leads
+
+---
+
+# 🔍 SEARCH + FILTER
+
+---
+
+Ensure:
+
+* Works with Manager role
+* Filters respect access control
+
+---
+
+# 🔒 SECURITY RULES
+
+---
+
+## ❗ BACKEND ENFORCEMENT ONLY
+
+Even if user tries:
+
+```http
+GET /leads?ownerId=someoneElse
+```
+
+👉 Must still restrict
+
+---
+
+# 🧪 RIGOROUS TESTING CHECKLIST
+
+---
+
+## ✅ ROLE MIGRATION
+
+* All old roles converted correctly
+* No user left without role
+
+---
+
+## ✅ DATA SAFETY
+
+* Leads unchanged
+* ownerId intact
+* handlerId intact
+
+---
+
+## ✅ ACCESS CONTROL
+
+* Manager sees only assigned leads
+* Admin sees all
+
+---
+
+## ✅ DASHBOARD
+
+* Metrics correct
+* No mismatch
+
+---
+
+## ✅ UI TEST
+
+* No broken dropdowns
+* No missing labels
+* Clean layout
+
+---
+
+## ✅ FILTER TEST
+
+* Multi-select works
+* Combined filters work
+
+---
+
+## ✅ SEARCH TEST
+
+* Works for:
+
+  * Lead name
+  * Company
+  * Handler
+  * Owner
+
+---
+
+## ✅ EDGE CASE TEST
+
+* No assignment → hidden from Manager
+* Same user both roles → no duplicate
+
+---
+
+## ✅ PERFORMANCE TEST
+
+* Queries optimized
+* No lag
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ Clean role structure
+✔ No data loss
+✔ Simplified permissions
+✔ Accurate access control
+✔ Scalable architecture
+
+---

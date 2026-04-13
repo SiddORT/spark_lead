@@ -431,8 +431,6 @@ export const UpdateTeamMemberInputRole = {
   admin: "admin",
   manager: "manager",
   member: "member",
-  lead_owner: "lead_owner",
-  deal_handler: "deal_handler",
 } as const;
 
 export type UpdateTeamMemberInputStatus =
@@ -454,8 +452,8 @@ export type InviteUserInputRole =
 
 export const InviteUserInputRole = {
   admin: "admin",
-  lead_owner: "lead_owner",
-  deal_handler: "deal_handler",
+  manager: "manager",
+  member: "member",
 } as const;
 
 export interface InviteUserInput {

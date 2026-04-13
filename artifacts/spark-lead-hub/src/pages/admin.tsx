@@ -34,7 +34,7 @@ export function Permissions() {
     return acc;
   }, {});
 
-  const roles = ["lead_owner", "deal_handler", "manager", "member"];
+  const roles = ["manager", "member"];
 
   const handleToggle = (perm: any) => {
     updatePermission.mutate({ data: { ...perm, allowed: !perm.allowed } }, {

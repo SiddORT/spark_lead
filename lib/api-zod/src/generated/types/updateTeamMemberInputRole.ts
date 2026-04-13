@@ -14,6 +14,4 @@ export const UpdateTeamMemberInputRole = {
   admin: "admin",
   manager: "manager",
   member: "member",
-  lead_owner: "lead_owner",
-  deal_handler: "deal_handler",
 } as const;

@@ -1631,7 +1631,7 @@ components:
       properties:
         role:
           type: string
-          enum: [admin, manager, member, lead_owner, deal_handler]
+          enum: [admin, manager, member]
           nullable: true
         status:
           type: string
@@ -1645,7 +1645,7 @@ components:
           type: string
         role:
           type: string
-          enum: [admin, lead_owner, deal_handler]
+          enum: [admin, manager, member]
       required:
         - email
         - role

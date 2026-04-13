@@ -679,9 +679,7 @@ export const UpdateTeamMemberParams = zod.object({
 });
 
 export const UpdateTeamMemberBody = zod.object({
-  role: zod
-    .enum(["admin", "manager", "member", "lead_owner", "deal_handler"])
-    .nullish(),
+  role: zod.enum(["admin", "manager", "member"]).nullish(),
   status: zod.enum(["active", "disabled"]).nullish(),
 });
 
@@ -731,7 +729,7 @@ export const ResendPasswordLinkResponse = zod.object({
  */
 export const InviteUserBody = zod.object({
   email: zod.string(),
-  role: zod.enum(["admin", "lead_owner", "deal_handler"]),
+  role: zod.enum(["admin", "manager", "member"]),
 });
 
 /**

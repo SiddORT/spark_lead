@@ -11,6 +11,6 @@ export type InviteUserInputRole =
 
 export const InviteUserInputRole = {
   admin: "admin",
-  lead_owner: "lead_owner",
-  deal_handler: "deal_handler",
+  manager: "manager",
+  member: "member",
 } as const;
