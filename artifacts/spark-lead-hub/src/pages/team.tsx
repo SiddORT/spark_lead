@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import {
   useGetTeamMembers, useUpdateTeamMember, useDeleteTeamMember,
   useInviteUser, useGetAccessRequests, useApproveAccessRequest, useRejectAccessRequest,
+  useResendPasswordLink,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch, Dialog } from "@/components/ui";
@@ -11,7 +12,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { format } from "date-fns";
 import {
   PlusCircle, Search, Mail, CheckCircle, XCircle, Trash2,
-  Users, ShieldCheck, UserCheck, Bell, X, Copy, Link2,
+  Users, ShieldCheck, UserCheck, Bell, X, Copy, Link2, KeyRound, Loader2,
 } from "lucide-react";
 import { useAuth, PermissionCheck } from "@/components/auth-provider";
 import { toast } from "sonner";
@@ -46,6 +47,7 @@ export function Team() {
   const inviteUser = useInviteUser();
   const approveRequest = useApproveAccessRequest();
   const rejectRequest = useRejectAccessRequest();
+  const resendLink = useResendPasswordLink();
 
   const [activeTab, setActiveTab] = useState<"members" | "requests">("members");
   const [searchRaw, setSearchRaw] = useState("");
@@ -54,6 +56,7 @@ export function Team() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteData, setInviteData] = useState({ email: "", role: "deal_handler" });
   const [pendingLink, setPendingLink] = useState<{ url: string; email: string; emailSent: boolean } | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
 
   const search = useDebounce(searchRaw, 300);
   const hasFilters = !!(searchRaw || roleFilter);
@@ -113,6 +116,24 @@ export function Team() {
         onError: (err: any) => toast.error(err.message),
       });
     }
+  };
+
+  const handleResendLink = (id: string, email: string) => {
+    setResendingId(id);
+    resendLink.mutate({ id }, {
+      onSuccess: (res: any) => {
+        setResendingId(null);
+        if (res?.emailSent) {
+          toast.success("Password setup link sent successfully");
+        } else {
+          setPendingLink({ url: res?.setPasswordUrl || "", email, emailSent: false });
+        }
+      },
+      onError: () => {
+        setResendingId(null);
+        toast.error("Failed to send reset link. Please try again.");
+      },
+    });
   };
 
   const handleRequestAction = (id: string, action: "approve" | "reject", userEmail?: string) => {
@@ -261,15 +282,30 @@ export function Team() {
                   </td>
                   {isAdmin && (
                     <td>
-                      {m.id !== user?.id && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-1)" }}>
                         <button
                           className="btn btn-ghost btn-icon"
-                          onClick={() => handleDelete(m.id)}
-                          style={{ color: "var(--danger)" }}
+                          title="Resend password setup link"
+                          disabled={resendingId === m.id}
+                          onClick={() => handleResendLink(m.id, m.email)}
+                          style={{ color: "var(--teal)" }}
                         >
-                          <Trash2 size={15} />
+                          {resendingId === m.id
+                            ? <Loader2 size={15} style={{ animation: "spin 1s linear infinite" }} />
+                            : <KeyRound size={15} />
+                          }
                         </button>
-                      )}
+                        {m.id !== user?.id && (
+                          <button
+                            className="btn btn-ghost btn-icon"
+                            title="Delete member"
+                            onClick={() => handleDelete(m.id)}
+                            style={{ color: "var(--danger)" }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )}
                 </tr>

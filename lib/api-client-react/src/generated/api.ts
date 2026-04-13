@@ -2718,6 +2718,90 @@ export const useDeleteTeamMember = <
 };
 
 /**
+ * @summary Resend password setup link to a team member
+ */
+export const getResendPasswordLinkUrl = (id: string) => {
+  return `/api/team/members/${id}/resend-password-link`;
+};
+
+export const resendPasswordLink = async (
+  id: string,
+  options?: RequestInit,
+): Promise<SuccessResponse> => {
+  return customFetch<SuccessResponse>(getResendPasswordLinkUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getResendPasswordLinkMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resendPasswordLink>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof resendPasswordLink>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["resendPasswordLink"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof resendPasswordLink>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return resendPasswordLink(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ResendPasswordLinkMutationResult = NonNullable<
+  Awaited<ReturnType<typeof resendPasswordLink>>
+>;
+
+export type ResendPasswordLinkMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Resend password setup link to a team member
+ */
+export const useResendPasswordLink = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof resendPasswordLink>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof resendPasswordLink>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getResendPasswordLinkMutationOptions(options));
+};
+
+/**
  * @summary Invite a new user
  */
 export const getInviteUserUrl = () => {

@@ -731,6 +731,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/SuccessResponse"
 
+  /team/members/{id}/resend-password-link:
+    post:
+      operationId: resendPasswordLink
+      tags: [team]
+      summary: Resend password setup link to a team member
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Link sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
   /team/invite:
     post:
       operationId: inviteUser

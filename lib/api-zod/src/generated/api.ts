@@ -703,6 +703,18 @@ export const DeleteTeamMemberResponse = zod.object({
 });
 
 /**
+ * @summary Resend password setup link to a team member
+ */
+export const ResendPasswordLinkParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ResendPasswordLinkResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
  * @summary Invite a new user
  */
 export const InviteUserBody = zod.object({
