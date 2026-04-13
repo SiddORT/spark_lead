@@ -157,6 +157,7 @@ export function Dashboard() {
       const stageStatuses = (stage.statuses as any[])
         .filter((st: any) => st.isActive)
         .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+      const activeStatusIds = new Set(stageStatuses.map((st: any) => st.id));
 
       const row: any = {
         stage: stage.displayName,
@@ -172,12 +173,23 @@ export function Dashboard() {
         row.__meta[status.id] = { count, value, displayName: status.displayName, color: status.color };
       }
 
+      // Bucket: leads in this stage with no status or an unrecognised status
+      const noStatusLeads = stageLeads.filter(
+        (l: any) => !l.pipelineStatusId || !activeStatusIds.has(l.pipelineStatusId)
+      );
+      if (noStatusLeads.length > 0) {
+        const count = noStatusLeads.length;
+        const value = noStatusLeads.reduce((s: number, l: any) => s + Number(l.dealValue || 0), 0);
+        row["__no_status"] = count;
+        row.__meta["__no_status"] = { count, value, displayName: "No Status", color: "#6B7280" };
+      }
+
       return row;
     });
   }, [pipelineStages, leads]);
 
   // All unique status keys in display order (for rendering a <Bar> per status)
-  // Only includes statuses defined in Pipeline Master — no hardcoded extras
+  // __no_status is always pinned last so it stacks consistently at the top
   const stackedStatusKeys = useMemo(() => {
     const seen = new Set<string>();
     const keys: string[] = [];
@@ -187,10 +199,13 @@ export function Dashboard() {
         if (!seen.has(key)) { seen.add(key); keys.push(key); }
       }
     }
-    return keys;
+    const withoutNoStatus = keys.filter(k => k !== "__no_status");
+    const hasNoStatus = keys.includes("__no_status");
+    return hasNoStatus ? [...withoutNoStatus, "__no_status"] : withoutNoStatus;
   }, [stageChartData]);
 
   // Map: status ID → { displayName, color } — sourced purely from Pipeline Master
+  // __no_status is injected as a system fallback (not from master)
   const statusMetaById = useMemo(() => {
     const map = new Map<string, { displayName: string; color: string }>();
     for (const stage of (pipelineStages as any[])) {
@@ -198,6 +213,7 @@ export function Dashboard() {
         map.set(st.id, { displayName: st.displayName, color: st.color });
       }
     }
+    map.set("__no_status", { displayName: "No Status", color: "#6B7280" });
     return map;
   }, [pipelineStages]);
 

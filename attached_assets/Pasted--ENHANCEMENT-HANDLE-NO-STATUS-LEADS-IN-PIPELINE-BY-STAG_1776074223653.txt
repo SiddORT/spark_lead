@@ -1,0 +1,275 @@
+# 🚀 ENHANCEMENT: HANDLE "NO STATUS" LEADS IN PIPELINE BY STAGE
+
+---
+
+# 🎯 OBJECTIVE
+
+Update the **Pipeline by Stage chart** to:
+
+✅ Include leads where:
+
+* Stage is selected
+* Status is **NOT assigned (null / empty)**
+
+✅ Ensure:
+
+* These leads are **visible in chart**
+* Not ignored or lost in aggregation
+
+---
+
+# ⚠️ CURRENT ISSUE
+
+* Leads without status are:
+  ❌ Not shown in chart
+  ❌ Not counted in any segment
+* This leads to:
+
+  * Incorrect totals
+  * Misleading dashboard insights
+
+---
+
+# 🆕 REQUIRED SOLUTION
+
+---
+
+## 🔹 1. INTRODUCE "NO STATUS" BUCKET
+
+For every stage:
+
+👉 If a lead has:
+
+* Stage = X
+* Status = null / undefined
+
+➡️ Assign it to:
+
+```id="no-status"
+"No Status"
+```
+
+---
+
+## 🔹 2. DATA STRUCTURE UPDATE
+
+---
+
+### Backend Response Example:
+
+```json id="no-status-json"
+{
+  "stageName": "Qualification & Analysis",
+  "statuses": [
+    {
+      "statusName": "Internal Discussion",
+      "color": "#F59E0B",
+      "count": 10,
+      "value": 2500000
+    },
+    {
+      "statusName": "No Status",
+      "color": "#6B7280",
+      "count": 3,
+      "value": 500000
+    }
+  ]
+}
+```
+
+---
+
+# 🔹 3. COLOR RULE (IMPORTANT)
+
+---
+
+## For "No Status":
+
+* Use neutral color:
+
+```ts id="no-status-color"
+const NO_STATUS_COLOR = "#6B7280"; // Gray
+```
+
+✔ Should be clearly distinguishable
+✔ Not clash with master-defined colors
+
+---
+
+# 🔹 4. CHART IMPLEMENTATION
+
+---
+
+## Include "No Status" as a stacked segment
+
+```tsx id="no-status-bar"
+<Bar
+  dataKey="No Status"
+  stackId="a"
+  fill="#6B7280"
+/>
+```
+
+---
+
+## Ensure:
+
+✔ Appears only when count > 0
+✔ Included in stacking logic
+
+---
+
+# 🔹 5. LEGEND / INDEX UPDATE
+
+---
+
+## Include in legend:
+
+```id="legend-no-status"
+● No Status (Gray)
+```
+
+---
+
+✔ Should appear in:
+
+* Index popover
+* Hover interactions
+
+---
+
+# 🔹 6. TOOLTIP UPDATE
+
+---
+
+## On hover:
+
+```id="tooltip-no-status"
+Qualification & Analysis
+• No Status
+  - Leads: 3
+  - Value: ₹5,00,000
+```
+
+---
+
+# 🔹 7. DATA AGGREGATION LOGIC
+
+---
+
+## Backend Logic:
+
+```ts id="aggregation-no-status"
+if (!lead.statusId) {
+  assignTo("No Status");
+}
+```
+
+---
+
+✔ Must:
+
+* Count leads correctly
+* Sum deal values correctly
+
+---
+
+# ⚠️ IMPORTANT RULES
+
+---
+
+## 🔹 MASTER INTEGRATION
+
+✔ All real statuses → from Pipeline Master
+
+❗ "No Status" is:
+
+* System-generated fallback
+* NOT stored in master
+
+---
+
+## 🔹 DO NOT BREAK EXISTING DATA
+
+❌ Do not modify:
+
+* Existing leads
+* Status mappings
+
+✔ Only adjust aggregation logic
+
+---
+
+# ⚠️ EDGE CASES
+
+---
+
+## ✅ Entire Stage Has No Status
+
+* Show:
+  → Single gray bar (No Status)
+
+---
+
+## ✅ Mixed Data
+
+* Show:
+  → Normal statuses + No Status segment
+
+---
+
+## ✅ No Leads at All
+
+* Show empty chart / placeholder
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Leads without status are counted
+* Values aggregated correctly
+
+---
+
+## ✅ UI
+
+* Gray segment visible
+* Proper stacking
+* Legend updated
+
+---
+
+## ✅ Tooltip
+
+* Correct data for No Status
+
+---
+
+## ✅ Regression
+
+* Existing statuses unaffected
+* Filters still working
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ No data loss
+✔ Accurate pipeline representation
+✔ Better visibility for incomplete leads
+✔ Improved decision-making
+
+---
+
+# 💡 OPTIONAL FUTURE
+
+* Highlight "No Status" leads as actionable
+* Add quick filter → "Leads without status"
+
+---
