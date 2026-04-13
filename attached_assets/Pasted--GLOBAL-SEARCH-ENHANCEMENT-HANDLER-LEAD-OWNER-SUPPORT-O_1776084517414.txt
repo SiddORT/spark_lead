@@ -1,0 +1,185 @@
+# 🔍 GLOBAL SEARCH ENHANCEMENT (HANDLER + LEAD OWNER SUPPORT)
+
+---
+
+# 🎯 OBJECTIVE
+
+Enhance the existing **search bar (Search leads or companies…)** so that users can search leads using:
+
+* Lead Name ✅ (already working)
+* Company Name ✅ (already working)
+* **Handler Name** 🆕
+* **Lead Owner Name** 🆕
+
+👉 Even if Handler / Owner is NOT visible in the table, search should still work.
+
+---
+
+# 🧠 EXPECTED BEHAVIOUR
+
+---
+
+## ✅ SEARCH SHOULD MATCH AGAINST:
+
+```js
+[
+  lead.name,
+  lead.companyName,
+  lead.handlerName,
+  lead.ownerName
+]
+```
+
+---
+
+## ✅ SEARCH SHOULD BE:
+
+* Case insensitive
+* Partial match supported
+  ("chi" → chirag)
+* Trimmed input
+* Real-time filtering
+
+---
+
+# 🔧 BACKEND / DATA LOGIC
+
+---
+
+## 1. ENSURE DATA AVAILABILITY
+
+Each lead object must include:
+
+```json
+{
+  "leadName": "RVNL Dashboard Project",
+  "companyName": "OneRoof Technologies",
+  "handlerName": "Chirag",
+  "ownerName": "Admin"
+}
+```
+
+👉 If handler/owner is stored as ID → map to name before filtering
+
+---
+
+## 2. SEARCH FILTER FUNCTION
+
+```js
+const searchText = input.toLowerCase().trim();
+
+const filteredLeads = leads.filter((lead) => {
+  return [
+    lead.leadName,
+    lead.companyName,
+    lead.handlerName,
+    lead.ownerName
+  ]
+    .filter(Boolean)
+    .some(field =>
+      field.toLowerCase().includes(searchText)
+    );
+});
+```
+
+---
+
+# 🎨 UI / UX REQUIREMENTS
+
+---
+
+## ✅ NO UI CHANGE REQUIRED
+
+* Search bar remains same
+* No extra fields needed
+
+---
+
+## ✅ OPTIONAL (RECOMMENDED IMPROVEMENT)
+
+Show hint in placeholder:
+
+```
+Search by lead, company, handler, owner...
+```
+
+---
+
+## ✅ TOOLTIP (OPTIONAL)
+
+Add info icon:
+
+```
+You can search by Lead Name, Company, Handler, or Owner
+```
+
+---
+
+# ⚠️ EDGE CASES
+
+---
+
+## 1. NULL VALUES
+
+* If handler or owner is missing → ignore safely
+* No crash / undefined error
+
+---
+
+## 2. LARGE DATA
+
+* Ensure debounce (300ms) if dataset is large
+
+---
+
+## 3. MULTI FILTER COMPATIBILITY
+
+Search must work **together with:**
+
+* Service filter
+* Company filter
+* Stage filter
+* Type filter
+
+👉 Apply search AFTER filters OR combine both logically
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Search by handler name → works
+* Search by owner name → works
+* Search by partial text → works
+* Search mixed (lead + handler) → works
+
+---
+
+## ✅ Edge Cases
+
+* Empty search → shows all
+* Special characters → no break
+* Case insensitive → works
+
+---
+
+## ✅ Integration
+
+* Works with multi-select filters
+* Works on Dashboard + Follow-up + Leads page
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ More powerful search
+✔ Better usability for teams
+✔ No UI clutter
+✔ Faster lead discovery
+
+---

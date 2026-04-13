@@ -102,9 +102,13 @@ export function FollowUp() {
     return followUpLeads.filter((l: any) => {
       const q = debouncedSearch.toLowerCase();
       if (q) {
+        const handlerName  = l.dealHandler ? resolveName(l.dealHandler).toLowerCase() : "";
+        const ownerName    = l.leadOwner   ? resolveName(l.leadOwner).toLowerCase()   : "";
         const nameMatch    = (l.leadName || "").toLowerCase().includes(q);
         const companyMatch = (l.companies || []).some((c: any) => (c?.name || "").toLowerCase().includes(q));
-        if (!nameMatch && !companyMatch) return false;
+        const handlerMatch = handlerName.includes(q);
+        const ownerMatch   = ownerName.includes(q);
+        if (!nameMatch && !companyMatch && !handlerMatch && !ownerMatch) return false;
       }
       if (serviceFilter.length && !serviceFilter.includes(l.serviceId)) return false;
       if (companyFilter.length && !(l.companies || []).some((c: any) => companyFilter.includes(c?.id))) return false;
@@ -234,7 +238,7 @@ export function FollowUp() {
           <input
             value={searchRaw}
             onChange={e => setSearchRaw(e.target.value)}
-            placeholder="Search leads or companies…"
+            placeholder="Search by lead, company, handler, owner…"
             style={{
               width: "100%", height: 40,
               paddingLeft: 38, paddingRight: searchRaw ? 34 : "var(--space-3)",
