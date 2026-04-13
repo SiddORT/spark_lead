@@ -12,7 +12,7 @@ import { TablePagination } from "@/components/table-pagination";
 import { FilterSelect } from "@/components/filter-select";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell, CartesianGrid,
+  BarChart, Bar, Cell, CartesianGrid, Legend,
 } from "recharts";
 import { formatValue } from "@/lib/utils";
 import { format } from "date-fns";
@@ -72,29 +72,48 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 // ─── Custom Pipeline Tooltip ──────────────────────────
-function PipelineTooltip({ active, payload, label }: any) {
+function StackedPipelineTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
-  const count = payload[0]?.value ?? 0;
-  const color = payload[0]?.payload?.fill ?? "var(--teal)";
+  const meta: Record<string, { count: number; value: number; displayName: string; color: string }> =
+    payload[0]?.payload?.__meta ?? {};
+  const entries = Object.entries(meta).filter(([, v]) => v.count > 0);
+  const total = entries.reduce((s, [, v]) => s + v.count, 0);
   return (
     <div style={{
       background: "hsl(222, 20%, 11%)",
       border: "1px solid hsl(222, 15%, 26%)",
       borderRadius: 10,
-      padding: "8px 14px",
+      padding: "10px 14px",
       boxShadow: "0 8px 32px hsla(222, 22%, 2%, 0.65)",
       fontFamily: "DM Sans, sans-serif",
-      minWidth: 140,
+      minWidth: 180,
+      maxWidth: 260,
     }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "hsl(210, 30%, 92%)", marginBottom: 4 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "hsl(210, 30%, 92%)", marginBottom: 2 }}>
         {label}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0, display: "inline-block" }} />
-        <span style={{ fontSize: 13, color: "hsl(210, 20%, 68%)", fontWeight: 500 }}>
-          {count} {count === 1 ? "Lead" : "Leads"}
-        </span>
+      <div style={{ fontSize: 11, color: "hsl(210, 14%, 50%)", marginBottom: 8 }}>
+        {total} {total === 1 ? "lead" : "leads"} total
       </div>
+      {entries.map(([key, v]) => (
+        <div key={key} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+          <span style={{ width: 8, height: 8, borderRadius: 2, background: v.color, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, color: "hsl(210, 18%, 65%)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {v.displayName}
+          </span>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "hsl(210, 30%, 88%)", flexShrink: 0 }}>
+            {v.count}
+          </span>
+          {v.value > 0 && (
+            <span style={{ fontSize: 11, color: "hsl(172, 65%, 48%)", flexShrink: 0, marginLeft: 4 }}>
+              ₹{(v.value / 10_000_000).toFixed(2)}Cr
+            </span>
+          )}
+        </div>
+      ))}
+      {entries.length === 0 && (
+        <div style={{ fontSize: 12, color: "hsl(210, 14%, 45%)" }}>No leads</div>
+      )}
     </div>
   );
 }
@@ -127,18 +146,70 @@ export function Dashboard() {
   const { data: allCompanies = [] } = useGetCompanies();
   const { resolveName } = useUserMap();
 
-  // Compute chart data from pipeline stages + leads
-  const stageChartData = useMemo(() =>
-    pipelineStages
-      .filter((s) => s.isActive)
-      .sort((a, b) => a.sortOrder - b.sortOrder)
-      .map((stage) => ({
+  // ─── Stacked Pipeline Chart Data ───────────────────────────
+  const stageChartData = useMemo(() => {
+    const activeStages = (pipelineStages as any[])
+      .filter((s: any) => s.isActive)
+      .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+
+    return activeStages.map((stage: any) => {
+      const stageLeads = (leads as any[]).filter((l: any) => l.pipelineStageId === stage.id);
+      const stageStatuses = (stage.statuses as any[])
+        .filter((st: any) => st.isActive)
+        .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+
+      const row: any = {
         stage: stage.displayName,
-        count: leads.filter((l: any) => l.pipelineStageId === stage.id).length,
-        fill: stage.color,
-      })),
-    [pipelineStages, leads]
-  );
+        stageColor: stage.color,
+        __meta: {} as Record<string, { count: number; value: number; displayName: string; color: string }>,
+      };
+
+      const assignedStatusIds = new Set<string>();
+      for (const status of stageStatuses) {
+        const statusLeads = stageLeads.filter((l: any) => l.pipelineStatusId === status.id);
+        const count = statusLeads.length;
+        const value = statusLeads.reduce((s: number, l: any) => s + Number(l.dealValue || 0), 0);
+        row[status.id] = count;
+        row.__meta[status.id] = { count, value, displayName: status.displayName, color: status.color };
+        assignedStatusIds.add(status.id);
+      }
+
+      const unassigned = stageLeads.filter((l: any) => !l.pipelineStatusId || !assignedStatusIds.has(l.pipelineStatusId));
+      if (unassigned.length > 0) {
+        const value = unassigned.reduce((s: number, l: any) => s + Number(l.dealValue || 0), 0);
+        row["__unassigned"] = (row["__unassigned"] || 0) + unassigned.length;
+        row.__meta["__unassigned"] = { count: unassigned.length, value, displayName: "Unassigned", color: "hsl(210, 14%, 38%)" };
+      }
+
+      return row;
+    });
+  }, [pipelineStages, leads]);
+
+  // All unique status keys in display order (for rendering a <Bar> per status)
+  const stackedStatusKeys = useMemo(() => {
+    const seen = new Set<string>();
+    const keys: string[] = [];
+    for (const row of stageChartData) {
+      for (const key of Object.keys(row)) {
+        if (["stage", "stageColor", "__meta", "__unassigned"].includes(key)) continue;
+        if (!seen.has(key)) { seen.add(key); keys.push(key); }
+      }
+    }
+    if (stageChartData.some((r: any) => (r["__unassigned"] ?? 0) > 0)) keys.push("__unassigned");
+    return keys;
+  }, [stageChartData]);
+
+  // Map: status ID → { displayName, color } for legend + bar coloring
+  const statusMetaById = useMemo(() => {
+    const map = new Map<string, { displayName: string; color: string }>();
+    for (const stage of (pipelineStages as any[])) {
+      for (const st of (stage.statuses ?? [])) {
+        map.set(st.id, { displayName: st.displayName, color: st.color });
+      }
+    }
+    map.set("__unassigned", { displayName: "Unassigned", color: "hsl(210, 14%, 38%)" });
+    return map;
+  }, [pipelineStages]);
 
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
@@ -503,44 +574,90 @@ export function Dashboard() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
-        <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
+        <div className="chart-card" style={{ display: "flex", flexDirection: "column" }}>
           <div className="chart-title">Pipeline by Stage</div>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={stageChartData}
-              margin={{ top: 10, right: 16, left: -10, bottom: 0 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 20%)" vertical={false} />
-              <XAxis
-                dataKey="stage"
-                tick={{ fill: "hsl(210, 18%, 55%)", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}
-                axisLine={false}
-                tickLine={false}
-                interval={0}
-                tickFormatter={(val: string) => val.length > 14 ? val.slice(0, 13) + "…" : val}
-              />
-              <YAxis
-                tick={{ fill: "hsl(210, 14%, 45%)", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-                width={28}
-              />
-              <Tooltip
-                cursor={{ fill: "hsla(222, 15%, 25%, 0.4)" }}
-                content={<PipelineTooltip />}
-              />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={60}>
-                {stageChartData.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.fill}
-                    fillOpacity={0.9}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ flex: 1, minHeight: 220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={stageChartData}
+                margin={{ top: 6, right: 16, left: -10, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 20%)" vertical={false} />
+                <XAxis
+                  dataKey="stage"
+                  tick={{ fill: "hsl(210, 18%, 55%)", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                  tickFormatter={(val: string) => val.length > 14 ? val.slice(0, 13) + "…" : val}
+                />
+                <YAxis
+                  tick={{ fill: "hsl(210, 14%, 45%)", fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                  width={28}
+                />
+                <Tooltip
+                  cursor={{ fill: "hsla(222, 15%, 25%, 0.4)" }}
+                  content={<StackedPipelineTooltip />}
+                />
+                {stackedStatusKeys.map((key, idx) => {
+                  const meta = statusMetaById.get(key) ?? { displayName: key, color: "hsl(210,14%,38%)" };
+                  const isLast = idx === stackedStatusKeys.length - 1;
+                  return (
+                    <Bar
+                      key={key}
+                      dataKey={key}
+                      stackId="pipeline"
+                      fill={meta.color}
+                      fillOpacity={0.9}
+                      maxBarSize={64}
+                      radius={isLast ? [5, 5, 0, 0] : [0, 0, 0, 0]}
+                      name={meta.displayName}
+                    />
+                  );
+                })}
+                {stackedStatusKeys.length === 0 && (
+                  <Bar dataKey="__empty" stackId="pipeline" fill="transparent" maxBarSize={64} />
+                )}
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Status legend */}
+          {stackedStatusKeys.length > 0 && (
+            <div style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "6px 12px",
+              padding: "8px 4px 2px",
+              borderTop: "1px solid hsl(222, 15%, 18%)",
+              marginTop: 4,
+            }}>
+              {stackedStatusKeys.map(key => {
+                const meta = statusMetaById.get(key) ?? { displayName: key, color: "hsl(210,14%,38%)" };
+                return (
+                  <div key={key} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                    <span style={{
+                      width: 9, height: 9, borderRadius: 2,
+                      background: meta.color,
+                      flexShrink: 0,
+                      display: "inline-block",
+                    }} />
+                    <span style={{
+                      fontSize: 11,
+                      color: "hsl(210, 18%, 55%)",
+                      fontFamily: "DM Sans, sans-serif",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {meta.displayName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

@@ -1,0 +1,275 @@
+# 🚀 FEATURE: PIPELINE BY STAGE – STATUS BREAKDOWN VISUALIZATION
+
+---
+
+# 🎯 OBJECTIVE
+
+Enhance the **“Pipeline by Stage”** dashboard chart to:
+
+✅ Show **status-level breakdown within each stage**
+✅ Display **lead count + total deal value per status**
+✅ Improve hover insights for better decision-making
+
+---
+
+# 🧩 CURRENT BEHAVIOUR
+
+* Chart displays:
+
+  * Total leads per **Stage**
+* Missing:
+
+  * Status-level visibility inside each stage
+  * Value (₹) insights per stage/status
+
+---
+
+# 🆕 REQUIRED ENHANCEMENT
+
+---
+
+## 🔹 1. STACKED BAR CHART (MANDATORY)
+
+Convert existing chart into:
+
+### 👉 **Stacked Bar Chart**
+
+Each **Stage bar → split into multiple sections (Statuses)**
+
+Example:
+
+| Stage         | Status Breakdown                                |
+| ------------- | ----------------------------------------------- |
+| Qualification | Internal Discussion, Requirement Analysis, etc. |
+| Proposal      | Proposal Shared, Negotiation, etc.              |
+
+---
+
+## 🔹 2. DATA STRUCTURE
+
+Backend/API should return:
+
+```json
+[
+  {
+    "stage": "Qualification & Analysis",
+    "statuses": [
+      {
+        "status": "Internal Discussion",
+        "count": 10,
+        "value": 2500000
+      },
+      {
+        "status": "Requirement Analysis",
+        "count": 8,
+        "value": 1800000
+      }
+    ]
+  }
+]
+```
+
+---
+
+## 🔹 3. CHART IMPLEMENTATION
+
+If using Recharts / Chart.js:
+
+### Example (Recharts):
+
+```tsx
+<BarChart data={data}>
+  <XAxis dataKey="stage" />
+  <YAxis />
+  <Tooltip content={<CustomTooltip />} />
+  
+  {allStatuses.map((status) => (
+    <Bar
+      key={status}
+      dataKey={status}
+      stackId="a"
+      fill={statusColorMap[status]}
+    />
+  ))}
+</BarChart>
+```
+
+---
+
+## 🔹 4. TOOLTIP (VERY IMPORTANT)
+
+### On Hover → Show:
+
+* Stage Name
+* Status Name
+* Number of Leads
+* Total Value (₹ formatted)
+
+### Example:
+
+```
+Qualification & Analysis
+• Internal Discussion
+  - Leads: 10
+  - Value: ₹25,00,000
+```
+
+---
+
+## 🔹 5. COLOR MAPPING
+
+* Each **status → unique color**
+* Should remain consistent across system
+
+Example:
+
+```ts
+const statusColorMap = {
+  "Internal Discussion": "#F59E0B",
+  "Requirement Analysis": "#10B981",
+  "Proposal Shared": "#6366F1",
+};
+```
+
+---
+
+## 🔹 6. DATA TRANSFORMATION
+
+Transform backend data into chart format:
+
+```ts
+const formattedData = stages.map(stage => {
+  const obj = { stage: stage.name };
+
+  stage.statuses.forEach(status => {
+    obj[status.name] = status.count;
+  });
+
+  return obj;
+});
+```
+
+---
+
+# 🎨 UI/UX REQUIREMENTS
+
+---
+
+## 🔹 VISUAL
+
+* Each stage = 1 bar
+* Each status = stacked segment
+* Smooth hover effect
+* Tooltip clean & readable
+
+---
+
+## 🔹 LEGEND
+
+* Show all statuses with color mapping
+* Clickable (optional enhancement):
+  → Toggle visibility
+
+---
+
+## 🔹 RESPONSIVENESS
+
+* Works on:
+
+  * Desktop
+  * Tablet
+* No overflow or clipping
+
+---
+
+# ⚠️ EDGE CASES
+
+---
+
+## ✅ No Status Data
+
+* Show:
+  → “No data available”
+
+---
+
+## ✅ Stage with No Leads
+
+* Show empty/zero bar
+
+---
+
+## ✅ Too Many Statuses
+
+* Auto-scroll legend OR group lesser ones
+
+---
+
+# 🔒 DATA SAFETY
+
+---
+
+❌ DO NOT:
+
+* Modify existing lead data
+* Change database schema destructively
+
+✔ ONLY:
+
+* Read existing stage + status mapping
+* Aggregate safely
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ Functional
+
+* Correct count per status
+* Correct value aggregation
+* Tooltip shows accurate data
+
+---
+
+## ✅ UI
+
+* Proper stacking
+* Color consistency
+* No overlap issues
+
+---
+
+## ✅ Performance
+
+* Works with large datasets
+* No lag in rendering
+
+---
+
+## ✅ Regression
+
+* Other dashboard cards unaffected
+* Filters still working
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ Stage-wise visualization
+✔ Status-level breakdown
+✔ Lead count + value insights
+✔ Strong decision-making visibility
+
+---
+
+# 💡 OPTIONAL FUTURE ENHANCEMENTS
+
+* Drill-down on click → open filtered leads
+* Export chart as image
+* Filter by date range
+
+---
