@@ -3,10 +3,12 @@ import { Link, useLocation } from "wouter";
 import { useAuth, PermissionCheck } from "./auth-provider";
 import { useGetLeads, useGetCompanies, useGetServices } from "@workspace/api-client-react";
 import { CreateLeadDrawer } from "./create-lead-drawer";
+import { useTheme } from "./theme-provider";
 import {
   LayoutDashboard, Kanban, PlusCircle, Building2,
   Briefcase, BarChart3, Users, ShieldCheck, ScrollText,
-  LogOut, Zap, ChevronLeft, ChevronRight, Menu, X, GitBranch, CalendarClock
+  LogOut, Zap, ChevronLeft, ChevronRight, Menu, X, GitBranch, CalendarClock,
+  Sun, Moon
 } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -14,6 +16,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const { user, token, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
 
   // Close mobile sidebar on route change
@@ -63,7 +66,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         }}
         onMouseEnter={e => {
           if (!active) {
-            e.currentTarget.style.background = "hsl(222 16% 16%)";
+            e.currentTarget.style.background = theme === "light" ? "hsl(210 16% 90%)" : "hsl(222 16% 16%)";
             e.currentTarget.style.color = "var(--text-primary)";
           }
         }}
@@ -279,6 +282,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {user?.role?.replace("_", " ")}
                 </span>
                 <button
+                  onClick={toggleTheme}
+                  className="btn btn-ghost btn-icon"
+                  title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+                  style={{ width: 28, height: 28 }}
+                >
+                  {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
+                </button>
+                <button
                   onClick={() => setCollapsed(true)}
                   className="btn btn-ghost btn-icon"
                   title="Collapse sidebar"
@@ -309,6 +320,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   }
                 </div>
               </Link>
+              <button
+                onClick={toggleTheme}
+                className="btn btn-ghost btn-icon"
+                title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+              >
+                {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
+              </button>
               <button
                 onClick={() => setCollapsed(false)}
                 className="btn btn-ghost btn-icon"

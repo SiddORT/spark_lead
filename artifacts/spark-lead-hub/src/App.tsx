@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, ProtectedRoute } from "@/components/auth-provider";
 import { Layout } from "@/components/layout";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Dashboard } from "@/pages/dashboard";
 import { KanbanBoard } from "@/pages/kanban";
 import { NewLead } from "@/pages/leads-new";
@@ -89,6 +90,7 @@ function Router() {
 
 function App() {
   return (
+    <ThemeProvider>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
@@ -119,6 +121,7 @@ function App() {
         />
       </TooltipProvider>
     </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
