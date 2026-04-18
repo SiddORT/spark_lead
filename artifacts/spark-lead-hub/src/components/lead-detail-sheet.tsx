@@ -9,6 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, addDays } from "date-fns";
+import { formatFullDate } from "@/lib/utils";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
   FileText, MessageSquare, History, Copy, CalendarClock, Search,
@@ -269,8 +270,13 @@ function NotesSection({ leadId }: { leadId: string }) {
               style={{ fontSize: "var(--text-xs)", padding: "2px 6px", height: "auto", width: 140 }}
               value={followUpDate}
               onChange={(e) => setFollowUpDate(e.target.value)}
-              title="Follow-up date for this note"
+              title={followUpDate ? formatFullDate(followUpDate) : "Follow-up date for this note"}
             />
+            {followUpDate && (
+              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                {formatFullDate(followUpDate)}
+              </span>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "var(--sp-2)", marginLeft: "auto" }}>
             <span className="notes-hint">⌘ + Enter to submit</span>
@@ -334,7 +340,7 @@ function NotesSection({ leadId }: { leadId: string }) {
                       whiteSpace: "nowrap",
                     }}>
                       <CalendarClock size={11} />
-                      Follow-up: {format(new Date((n as any).followUpDate), "MMM d, yyyy")}
+                      Follow-up: {formatFullDate((n as any).followUpDate)}
                     </span>
                   )}
                   {n.userId === user?.id && (

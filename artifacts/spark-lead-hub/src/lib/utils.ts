@@ -16,3 +16,21 @@ export const parseDealValue = (val: string | null | undefined) => {
   const num = parseFloat(val.replace(/[^0-9.]/g, ''));
   return isNaN(num) ? 0 : num;
 };
+
+export function formatFullDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    weekday: "long", day: "2-digit", month: "short", year: "numeric",
+  }).format(d);
+}
+
+export function formatShortDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    weekday: "short", day: "2-digit", month: "short", year: "numeric",
+  }).format(d);
+}

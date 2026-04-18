@@ -1,0 +1,269 @@
+# 📅 NOTES & FOLLOW-UP: DISPLAY DAY ALONG WITH DATE
+
+---
+
+# 🎯 OBJECTIVE
+
+Enhance the **Notes & Follow-Up** feature in Lead Details to display:
+
+```plaintext
+Day + Date
+```
+
+Instead of only:
+
+```plaintext
+20/04/2026 ❌
+```
+
+Show:
+
+```plaintext
+Monday, 20 Apr 2026 ✅
+```
+
+---
+
+# ⚠️ REQUIREMENTS
+
+* ❌ Do NOT modify existing stored dates
+* ❌ Do NOT break existing notes data
+* ✅ Only enhance display layer
+* ✅ Ensure consistency across:
+
+  * Note input field
+  * Note cards
+  * Follow-up badges
+
+---
+
+# 🧠 IMPLEMENTATION STRATEGY
+
+---
+
+## ✅ STEP 1: DATE FORMAT UTILITY FUNCTION
+
+Create a reusable formatter:
+
+```js
+function formatFullDate(date) {
+  return new Intl.DateTimeFormat('en-IN', {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(new Date(date));
+}
+```
+
+---
+
+## ✅ STEP 2: UPDATE DATE INPUT DISPLAY
+
+---
+
+### CURRENT
+
+```plaintext
+20/04/2026
+```
+
+---
+
+### UPDATED DISPLAY
+
+```plaintext
+Monday, 20 Apr 2026
+```
+
+---
+
+### IMPLEMENTATION
+
+```js
+const formattedDate = formatFullDate(selectedDate);
+```
+
+Use this for:
+
+* Date picker preview
+* Selected date field
+
+---
+
+# 🧾 STEP 3: UPDATE NOTE CARD (CRITICAL)
+
+---
+
+## CURRENT UI
+
+```plaintext
+Follow-up: Apr 20, 2026
+```
+
+---
+
+## UPDATED UI
+
+```plaintext
+Follow-up: Monday, 20 Apr 2026
+```
+
+---
+
+## IMPLEMENTATION
+
+```js
+<span>
+  Follow-up: {formatFullDate(note.followUpDate)}
+</span>
+```
+
+---
+
+# 🎯 STEP 4: TOOLTIP (OPTIONAL BUT RECOMMENDED)
+
+---
+
+On hover:
+
+```plaintext
+Monday, 20 April 2026
+```
+
+---
+
+# 🎨 STEP 5: UI IMPROVEMENT
+
+---
+
+## FOLLOW-UP BADGE
+
+---
+
+### BEFORE
+
+```plaintext
+Apr 20, 2026
+```
+
+---
+
+### AFTER
+
+```plaintext
+Mon, 20 Apr 2026
+```
+
+---
+
+### SHORT FORMAT FUNCTION
+
+```js
+function formatShortDate(date) {
+  return new Intl.DateTimeFormat('en-IN', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(new Date(date));
+}
+```
+
+---
+
+# 🔄 STEP 6: APPLY CONSISTENCY
+
+---
+
+Ensure this format is used in:
+
+* Notes list
+* Follow-up tags
+* Timeline (if present)
+* Any tooltip or hover state
+
+---
+
+# ⚠️ EDGE CASE HANDLING
+
+---
+
+## INVALID DATE
+
+```js
+if (!date) return "-";
+```
+
+---
+
+## TIMEZONE SAFETY
+
+```js
+new Date(date) // ensure ISO format from backend
+```
+
+---
+
+## EXISTING DATA
+
+* No migration required
+* Works automatically
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ DISPLAY
+
+* Day appears correctly (Monday, Tuesday, etc.)
+* Matches actual calendar date
+
+---
+
+## ✅ INPUT
+
+* Date picker works normally
+* Display updates instantly
+
+---
+
+## ✅ NOTES LIST
+
+* All existing notes show correct day
+* No broken formatting
+
+---
+
+## ✅ FOLLOW-UP BADGE
+
+* Day visible
+* No overflow UI issue
+
+---
+
+## ✅ RESPONSIVENESS
+
+* No text overflow on small screens
+* Proper truncation if needed
+
+---
+
+## ✅ PERFORMANCE
+
+* No lag in rendering
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ Day visible across system
+✔ Better clarity for follow-ups
+✔ No backend changes required
+✔ Clean and consistent UX
+
+---

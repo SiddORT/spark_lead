@@ -8,6 +8,7 @@ import { LeadDetailSheet } from "@/components/lead-detail-sheet";
 import { TablePagination } from "@/components/table-pagination";
 import { FilterSelect } from "@/components/filter-select";
 import { format, differenceInCalendarDays } from "date-fns";
+import { formatFullDate, formatShortDate } from "@/lib/utils";
 import {
   CalendarClock, AlertCircle, Search, CheckCircle2,
   ChevronsUpDown, ChevronUp, ChevronDown, X,
@@ -525,7 +526,7 @@ export function FollowUp() {
                         </td>
 
                         {/* Follow-up date */}
-                        <td title={lead.activeFollowUpDate ? `Due: ${format(new Date(lead.activeFollowUpDate), "MMM d, yyyy")}${leadIsOverdue ? ` (${overdueDays}d ago)` : ""}` : undefined}>
+                        <td title={lead.activeFollowUpDate ? `Due: ${formatFullDate(lead.activeFollowUpDate)}${leadIsOverdue ? ` (${overdueDays}d ago)` : ""}` : undefined}>
                           {lead.activeFollowUpDate ? (
                             <span style={{
                               color: leadIsOverdue ? urgencyColor : leadIsToday ? "var(--warning)" : "var(--text-muted)",
@@ -533,7 +534,7 @@ export function FollowUp() {
                               fontWeight: leadIsOverdue || leadIsToday ? 600 : 400,
                               whiteSpace: "nowrap",
                             }}>
-                              {format(new Date(lead.activeFollowUpDate), "MMM d, yyyy")}
+                              {formatShortDate(lead.activeFollowUpDate)}
                             </span>
                           ) : "—"}
                         </td>
