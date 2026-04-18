@@ -484,7 +484,7 @@ export function FollowUp() {
 
                         {/* Value */}
                         <td style={{ fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--teal)", fontWeight: 600 }}>
-                          {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
+                          {lead.dealValue ? `₹${Math.round(Number(lead.dealValue)).toLocaleString("en-IN")}` : "—"}
                         </td>
 
                         {/* Handler */}

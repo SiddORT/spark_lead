@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import {
   useCreateLead, useGetServices, useGetServiceCompanies,
   useGetTeamMembers, useCreateService, useLinkServiceCompanies,
-  useGetCompanies,
+  useGetCompanies, getGetLeadsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -202,7 +202,11 @@ export function NewLead() {
     e.preventDefault();
     if (!formData.leadName) { toast.error("Lead name is required"); return; }
     createLead.mutate({ data: formData }, {
-      onSuccess: () => { toast.success("Lead created successfully"); setLocation("/"); },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetLeadsQueryKey() });
+        toast.success("Lead created successfully");
+        setLocation("/");
+      },
       onError: (err: any) => toast.error(err.message || "Failed to create lead"),
     });
   };

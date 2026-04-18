@@ -17,7 +17,7 @@ import {
 import { formatValue } from "@/lib/utils";
 import { format } from "date-fns";
 import {
-  Search, X, Download, Users, Flame, CheckCircle2,
+  Search, X, Users, Flame, CheckCircle2,
   Activity, TrendingUp, LayoutDashboard,
   ChevronUp, ChevronDown, ChevronsUpDown, Layers,
 } from "lucide-react";
@@ -51,6 +51,11 @@ const LEAD_TYPE_OPTIONS = [
   { value: "warm",    label: "☀️ Warm" },
   { value: "cold",    label: "🧊 Cold" },
   { value: "ghosted", label: "👻 Ghosted" },
+];
+
+const OUTCOME_OPTIONS = [
+  { value: "won",  label: "✅ Won" },
+  { value: "lost", label: "❌ Lost" },
 ];
 
 const tooltipStyle = {
@@ -233,29 +238,13 @@ export function Dashboard() {
     return () => document.removeEventListener("mousedown", handler);
   }, [showLegendPopover]);
 
-  const handleExportCsv = async () => {
-    const token = localStorage.getItem("slh_token");
-    const res = await fetch("/api/leads/export/csv", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) return;
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `leads-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   // Filter state — multi-select (arrays)
   const [searchRaw, setSearchRaw]         = useState("");
   const [serviceFilter, setServiceFilter] = useState<string[]>([]);
   const [companyFilter, setCompanyFilter] = useState<string[]>([]);
   const [typeFilter, setTypeFilter]       = useState<string[]>([]);
   const [stageFilter, setStageFilter]     = useState<string[]>([]);
+  const [outcomeFilter, setOutcomeFilter] = useState<string[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<number>(() => {
     const saved = Number(localStorage.getItem("slh_rows_per_page"));
@@ -264,8 +253,8 @@ export function Dashboard() {
 
   const search = useDebounce(searchRaw, 300);
   const isDebouncing = searchRaw !== search;
-  const hasFilters = !!(searchRaw || serviceFilter.length || companyFilter.length || typeFilter.length || stageFilter.length);
-  const activeFilterCount = [!!searchRaw, serviceFilter.length > 0, companyFilter.length > 0, typeFilter.length > 0, stageFilter.length > 0].filter(Boolean).length;
+  const hasFilters = !!(searchRaw || serviceFilter.length || companyFilter.length || typeFilter.length || stageFilter.length || outcomeFilter.length);
+  const activeFilterCount = [!!searchRaw, serviceFilter.length > 0, companyFilter.length > 0, typeFilter.length > 0, stageFilter.length > 0, outcomeFilter.length > 0].filter(Boolean).length;
 
   const clearFilters = () => {
     setSearchRaw("");
@@ -273,6 +262,7 @@ export function Dashboard() {
     setCompanyFilter([]);
     setTypeFilter([]);
     setStageFilter([]);
+    setOutcomeFilter([]);
     setPage(1);
   };
 
@@ -327,6 +317,11 @@ export function Dashboard() {
   const serviceOptions = services.map((s: any) => ({ value: s.id, label: s.name }));
   const companyOptions = availableCompanies.map((c: any) => ({ value: c.name, label: c.name }));
 
+  // Outcome helpers — defined before filteredLeads so useMemo can use them
+  const isWon      = (l: any) => l.statusIsWon  === true || l.outcome === "closed";
+  const isLost     = (l: any) => l.statusIsLost === true || l.outcome === "lost";
+  const isTerminal = (l: any) => isWon(l) || isLost(l);
+
   // Filtered leads
   const filteredLeads = useMemo(() => {
     const q = search.toLowerCase();
@@ -345,16 +340,13 @@ export function Dashboard() {
       const matchCompany = !companyFilter.length || companyNames.some(n => companyFilter.includes(n));
       const matchType    = !typeFilter.length    || typeFilter.includes(l.leadType);
       const matchStage   = !stageFilter.length   || stageFilter.includes(l.pipelineStageId);
-      return matchSearch && matchService && matchCompany && matchType && matchStage;
+      const matchOutcome = !outcomeFilter.length  || outcomeFilter.some(o =>
+        (o === "won"  && isWon(l)) ||
+        (o === "lost" && isLost(l))
+      );
+      return matchSearch && matchService && matchCompany && matchType && matchStage && matchOutcome;
     });
-  }, [leads, search, serviceFilter, companyFilter, typeFilter, stageFilter]);
-
-  // Stats from filtered data
-  // A lead is Won if EITHER the new pipeline statusIsWon flag OR the legacy outcome === "closed"
-  // A lead is Lost if EITHER the new pipeline statusIsLost flag OR the legacy outcome === "lost"
-  const isWon  = (l: any) => l.statusIsWon  === true || l.outcome === "closed";
-  const isLost = (l: any) => l.statusIsLost === true || l.outcome === "lost";
-  const isTerminal = (l: any) => isWon(l) || isLost(l);
+  }, [leads, search, serviceFilter, companyFilter, typeFilter, stageFilter, outcomeFilter]);
 
   const hotCount       = filteredLeads.filter((l: any) => l.leadType === "hot").length;
   const closedCount    = filteredLeads.filter(isWon).length;
@@ -476,7 +468,7 @@ export function Dashboard() {
             );
           })()}
           <td style={{ fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--teal)", fontWeight: 600 }}>
-            {lead.dealValue ? `₹${Number(lead.dealValue).toLocaleString("en-IN")}` : "—"}
+            {lead.dealValue ? `₹${Math.round(Number(lead.dealValue)).toLocaleString("en-IN")}` : "—"}
           </td>
           <td>
             {lead.dealHandler ? (
@@ -553,13 +545,6 @@ export function Dashboard() {
             Dashboard
           </h1>
           <p className="page-subtitle">Pipeline overview — filtered in real-time</p>
-        </div>
-        <div className="page-actions">
-          <PermissionCheck resource="leads" action="export">
-            <button className="btn btn-secondary" onClick={handleExportCsv}>
-              <Download size={15} /> Export CSV
-            </button>
-          </PermissionCheck>
         </div>
       </div>
 
@@ -893,6 +878,13 @@ export function Dashboard() {
             .map((s: any) => ({ value: s.id, label: s.displayName }))}
           placeholder="All Stages"
           width={175}
+        />
+        <FilterSelect
+          value={outcomeFilter}
+          onChange={setOutcomeFilter}
+          options={OUTCOME_OPTIONS}
+          placeholder="All Outcomes"
+          width={150}
         />
 
         {/* Clear button + active count */}

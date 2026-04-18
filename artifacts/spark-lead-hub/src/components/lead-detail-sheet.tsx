@@ -30,8 +30,9 @@ function getDefaultFollowUpDate(): string {
 
 function formatCurrency(val: string | number | null | undefined): string {
   if (val === null || val === undefined || val === "") return "—";
-  const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.]/g, "")) : val;
-  if (isNaN(num)) return String(val);
+  const raw = typeof val === "string" ? parseFloat(val.replace(/[^0-9.]/g, "")) : val;
+  if (isNaN(raw)) return String(val);
+  const num = Math.round(raw);
   if (num >= 10000000) return `₹${(num / 10000000).toFixed(2)}Cr`;
   if (num >= 100000)   return `₹${(num / 100000).toFixed(2)}L`;
   if (num >= 1000)     return `₹${(num / 1000).toFixed(1)}K`;
@@ -760,6 +761,8 @@ export function LeadDetailSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const { data: lead }                 = useGetLead(leadId || "", { query: { enabled: !!leadId } });
+  const { data: notesData }            = useGetLeadNotes(leadId || "", { query: { enabled: !!leadId } });
+  const notesCount                     = (notesData as any[])?.length ?? 0;
   const { users }                      = useUserMap();
   const { data: teamMembers = [] }     = useGetTeamMembers();
   const whitelistedUsers               = (teamMembers as any[]).filter((m: any) => m.whitelistStatus === "active");
@@ -1057,7 +1060,7 @@ export function LeadDetailSheet({
         <div className="sheet-tabs">
           {[
             { id: "details",  label: "Details",       icon: <FileText size={13} /> },
-            { id: "notes",    label: "Notes & Follow-Up", icon: <MessageSquare size={13} /> },
+            { id: "notes",    label: notesCount > 0 ? `Notes & Follow-Up (${notesCount})` : "Notes & Follow-Up", icon: <MessageSquare size={13} /> },
             { id: "timeline", label: "Timeline",       icon: <History size={13} /> },
           ].map((tab) => (
             <button

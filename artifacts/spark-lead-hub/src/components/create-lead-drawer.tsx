@@ -322,7 +322,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
                   <StyledInput
                     type="number"
                     value={formData.dealValue}
-                    onChange={e => set("dealValue", e.target.value)}
+                    onChange={e => set("dealValue", e.target.value.replace(/[^0-9.]/g, ""))}
                     placeholder="0.00"
                   />
                 </div>
