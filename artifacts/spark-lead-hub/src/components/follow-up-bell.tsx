@@ -61,7 +61,7 @@ export function FollowUpBell({ onLeadClick }: Props) {
       const order: Record<Status, number> = { OVERDUE: 0, TODAY: 1, UPCOMING: 2 };
       if (order[a._status as Status] !== order[b._status as Status])
         return order[a._status as Status] - order[b._status as Status];
-      return new Date(a.activeFollowUpDate).getTime() - new Date(b.activeFollowUpDate).getTime();
+      return new Date(b.activeFollowUpDate).getTime() - new Date(a.activeFollowUpDate).getTime();
     });
 
   const badgeCount   = enriched.filter((l: any) => l._status === "OVERDUE" || l._status === "TODAY").length;
