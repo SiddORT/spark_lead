@@ -1,0 +1,287 @@
+# 🔴 FEATURE: LEAD KILL REASON (Closed - Lost Flow)
+
+---
+
+# 🎯 OBJECTIVE
+
+When:
+
+* Stage = **Closure**
+* Status = **Closed - Lost**
+
+Then:
+
+✅ Force user to enter **Lead Kill Reason**
+✅ Store it safely in DB
+✅ Display it in Lead Details
+✅ Subtly highlight such leads in table
+✅ Ensure ZERO impact on existing data
+
+---
+
+# ⚙️ 1. DATA MODEL UPDATE (SAFE & BACKWARD COMPATIBLE)
+
+---
+
+## ADD NEW FIELD
+
+```ts
+leadKillReason?: string | null
+```
+
+---
+
+## RULES
+
+* Optional (for old data)
+* Required ONLY when:
+
+  * stage = "Closure"
+  * status = "Closed - Lost"
+
+---
+
+# 🧠 2. VALIDATION LOGIC (CRITICAL)
+
+---
+
+## WHEN USER SELECTS:
+
+```ts
+stage === "Closure" && status === "Closed - Lost"
+```
+
+---
+
+## THEN:
+
+* Show input field
+* Make it **mandatory**
+
+---
+
+## VALIDATION
+
+```ts
+if (stage === "Closure" && status === "Closed - Lost") {
+  if (!leadKillReason || leadKillReason.trim() === "") {
+    throw new Error("Lead Kill Reason is required for Closed - Lost");
+  }
+}
+```
+
+---
+
+# 🧾 3. UI – INPUT FIELD (LEAD DETAILS PANEL)
+
+---
+
+## PLACE BELOW STATUS DROPDOWN
+
+---
+
+```jsx
+{stage === "Closure" && status === "Closed - Lost" && (
+  <div className="mt-4">
+    <label className="text-sm text-gray-400">
+      Lead Kill Reason <span className="text-red-400">*</span>
+    </label>
+
+    <textarea
+      value={leadKillReason}
+      onChange={(e) => setLeadKillReason(e.target.value)}
+      placeholder="Enter reason for losing this lead..."
+      className="w-full mt-2 p-3 rounded-xl 
+        bg-white/5 border border-white/10 
+        text-white text-sm 
+        focus:outline-none focus:border-red-400"
+    />
+  </div>
+)}
+```
+
+---
+
+## UX RULES
+
+* Auto-focus when appears
+* Show inline error if empty
+* Preserve value on edit
+
+---
+
+# 👁️ 4. DISPLAY IN LEAD DETAILS
+
+---
+
+## SHOW BELOW STAGE + STATUS
+
+---
+
+```jsx
+{lead.stage === "Closure" && lead.status === "Closed - Lost" && lead.leadKillReason && (
+  <div className="mt-4 p-3 rounded-xl bg-red-500/5 border border-red-500/10">
+    
+    <p className="text-xs text-red-400 mb-1">
+      Lead Lost Reason
+    </p>
+
+    <p className="text-sm text-gray-200">
+      {lead.leadKillReason}
+    </p>
+
+  </div>
+)}
+```
+
+---
+
+## DESIGN INTENT
+
+* Subtle (NOT aggressive red)
+* Readable
+* Looks like insight, not error
+
+---
+
+# 🎨 5. TABLE HIGHLIGHT (VERY IMPORTANT – SUBTLE ONLY)
+
+---
+
+## ❌ DO NOT
+
+* Use solid red background
+* Use bright colors
+* Break dark theme
+
+---
+
+## ✅ USE THIS
+
+```jsx
+className={`
+  ${lead.stage === "Closure" && lead.status === "Closed - Lost" 
+    ? "bg-red-500/5 border-l-2 border-red-400/40" 
+    : ""}
+`}
+```
+
+---
+
+## OPTIONAL ADD BADGE
+
+```jsx
+<span className="text-[10px] px-2 py-0.5 rounded bg-red-500/10 text-red-400">
+  Lost
+</span>
+```
+
+---
+
+## RESULT
+
+* Slight red tint
+* Thin left border
+* Instantly scannable
+* Not visually loud
+
+---
+
+# 🧠 6. EDGE CASE HANDLING
+
+---
+
+## CASES TO HANDLE
+
+### 1. USER CHANGES STATUS BACK
+
+IF:
+
+* status changes from "Closed - Lost" → something else
+
+THEN:
+
+* keep kill reason (do not delete)
+* hide UI
+
+---
+
+### 2. OLD LEADS
+
+* No crash if `leadKillReason` is null
+
+---
+
+### 3. EDIT FLOW
+
+* Pre-fill textarea if value exists
+
+---
+
+# 🔄 7. API / SAVE LOGIC
+
+---
+
+## ENSURE
+
+* Field included in:
+
+  * Create Lead
+  * Update Lead
+  * Duplicate Lead
+
+---
+
+## IMPORTANT
+
+Do NOT overwrite existing leads without this field.
+
+---
+
+# 🧪 8. TESTING CHECKLIST (VERY IMPORTANT)
+
+---
+
+## FUNCTIONAL
+
+* Cannot save Closed - Lost without reason
+* Can save with reason
+* Reason persists after refresh
+* Edit works correctly
+
+---
+
+## UI
+
+* Field appears only when needed
+* Highlight is subtle (not aggressive)
+* Works in dark theme
+
+---
+
+## TABLE
+
+* Lost leads visually distinguishable
+* No layout break
+
+---
+
+## REGRESSION
+
+* Lead creation unaffected
+* Filtering unaffected
+* Existing data untouched
+
+---
+
+# 🚀 FINAL OUTCOME
+
+---
+
+✔ Strong CRM insight (WHY deals are lost)
+✔ Better decision making
+✔ Clean UI (no noise)
+✔ No system breakage
+✔ Fully production-ready behaviour
+
+---

@@ -215,6 +215,7 @@ export const leadsTable = pgTable("leads", {
   objection: text("objection"),
   outcome: leadOutcomeEnum("outcome"),
   killReason: killReasonEnum("kill_reason"),
+  leadKillReason: text("lead_kill_reason"),
   internalRating: integer("internal_rating"),
   resolvedAt: timestamp("resolved_at"),
   frictionPoint: frictionPointEnum("friction_point"),

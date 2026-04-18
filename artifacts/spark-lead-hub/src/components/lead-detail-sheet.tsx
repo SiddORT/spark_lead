@@ -12,7 +12,7 @@ import { format, formatDistanceToNow, addDays } from "date-fns";
 import { formatFullDate } from "@/lib/utils";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
-  FileText, MessageSquare, History, Copy, CalendarClock, Search,
+  FileText, MessageSquare, History, Copy, CalendarClock, Search, AlertTriangle,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useUserMap } from "@/hooks/use-user-map";
@@ -443,11 +443,21 @@ function DetailsTab({
   handleUpdate,
   stages,
   users,
+  pendingLostStatusId,
+  localKillReason,
+  setLocalKillReason,
+  killReasonError,
+  onConfirmLost,
+  onCancelPendingLost,
+  onKillReasonSave,
 }: any) {
   const { data: services = [] } = useGetServices();
 
   const selectedStage = stages.find((s: any) => s.id === localStageId) ?? null;
   const availableStatuses = selectedStage?.statuses?.filter((s: any) => s.isActive) ?? [];
+
+  const isCurrentlyLost = lead.statusIsLost === true && !pendingLostStatusId;
+  const showKillReason = isCurrentlyLost || !!pendingLostStatusId;
 
   return (
     <div className="details-section">
@@ -484,6 +494,69 @@ function DetailsTab({
             />
           </div>
         </div>
+
+        {/* ── Kill Reason (shows when status is Lost or pending Lost) ── */}
+        {showKillReason && (
+          <div style={{
+            marginTop: "var(--sp-3)",
+            background: "hsl(0 70% 50% / 0.06)",
+            border: `1px solid ${killReasonError ? "hsl(0 70% 55% / 0.6)" : "hsl(0 70% 55% / 0.25)"}`,
+            borderRadius: 10,
+            padding: "var(--sp-4)",
+          }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: "0.06em",
+              color: "hsl(0 70% 60%)", textTransform: "uppercase",
+              marginBottom: "var(--sp-2)",
+            }}>
+              <AlertTriangle size={12} />
+              {pendingLostStatusId ? "Why is this lead being closed as lost?" : "Kill Reason"}
+              {pendingLostStatusId && (
+                <span style={{ color: "hsl(0 70% 60%)", marginLeft: 2 }}>*</span>
+              )}
+            </div>
+            <textarea
+              className="field-input"
+              value={localKillReason}
+              onChange={(e) => {
+                setLocalKillReason(e.target.value);
+              }}
+              onBlur={isCurrentlyLost ? (e) => onKillReasonSave(e.target.value) : undefined}
+              placeholder="e.g. Budget constraints, went with competitor, project cancelled…"
+              rows={3}
+              style={{
+                resize: "vertical", minHeight: "68px",
+                fontFamily: "inherit", lineHeight: 1.5,
+                borderColor: killReasonError ? "hsl(0 70% 55% / 0.7)" : undefined,
+              }}
+            />
+            {killReasonError && (
+              <p style={{ fontSize: "var(--text-xs)", color: "hsl(0 70% 60%)", marginTop: "var(--sp-1)", marginBottom: 0 }}>
+                A kill reason is required to close this lead as lost.
+              </p>
+            )}
+            {pendingLostStatusId && (
+              <div style={{ display: "flex", gap: "var(--sp-2)", marginTop: "var(--sp-3)" }}>
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={onConfirmLost}
+                  style={{ flex: 1 }}
+                  type="button"
+                >
+                  Confirm Closed — Lost
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={onCancelPendingLost}
+                  type="button"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <hr className="details-divider" />
@@ -790,12 +863,20 @@ export function LeadDetailSheet({
   const [localServiceId,  setLocalServiceId]  = useState<string | null>(null);
   const [localCompanyIds, setLocalCompanyIds] = useState<string[]>([]);
 
+  // ── Kill reason state ──
+  const [pendingLostStatusId, setPendingLostStatusId] = useState<string | null>(null);
+  const [localKillReason,     setLocalKillReason]     = useState<string>("");
+  const [killReasonError,     setKillReasonError]     = useState<boolean>(false);
+
   useEffect(() => {
     if (lead) {
       setLocalStageId(lead.pipelineStageId ?? null);
       setLocalStatusId(lead.pipelineStatusId ?? null);
       setLocalServiceId(lead.serviceId ?? null);
       setLocalCompanyIds(lead.companies?.map((c: any) => c.id) ?? []);
+      setLocalKillReason((lead as any).leadKillReason ?? "");
+      setPendingLostStatusId(null);
+      setKillReasonError(false);
     }
   }, [lead?.id, lead?.pipelineStageId, lead?.pipelineStatusId, lead?.serviceId]);
 
@@ -888,6 +969,8 @@ export function LeadDetailSheet({
   const handleStageChange = (stageId: string) => {
     setLocalStageId(stageId || null);
     setLocalStatusId(null);
+    setPendingLostStatusId(null);
+    setKillReasonError(false);
     if (!lead) return;
     updateLeadMutation.mutate({
       id: lead.id,
@@ -896,11 +979,59 @@ export function LeadDetailSheet({
   };
 
   const handleStatusChange = (statusId: string) => {
+    const selectedStatus = pipelineStages
+      .flatMap((s: any) => s.statuses ?? [])
+      .find((st: any) => st.id === statusId);
+
+    if (selectedStatus?.isLost) {
+      // Intercept — don't save until kill reason is provided
+      setLocalStatusId(statusId || null);
+      setPendingLostStatusId(statusId || null);
+      setLocalKillReason((lead as any)?.leadKillReason ?? "");
+      setKillReasonError(false);
+      return;
+    }
+
+    // Non-lost status — clear pending state, save immediately
+    setPendingLostStatusId(null);
+    setKillReasonError(false);
     setLocalStatusId(statusId || null);
     if (!lead) return;
     updateLeadMutation.mutate({
       id: lead.id,
       data: { pipelineStatusId: statusId || null },
+    });
+  };
+
+  const handleConfirmLost = () => {
+    if (!localKillReason.trim()) {
+      setKillReasonError(true);
+      toast.error("A kill reason is required to close this lead as Lost");
+      return;
+    }
+    if (!lead || !pendingLostStatusId) return;
+    updateLeadMutation.mutate({
+      id: lead.id,
+      data: { pipelineStatusId: pendingLostStatusId, leadKillReason: localKillReason.trim() } as any,
+    });
+    setPendingLostStatusId(null);
+    setKillReasonError(false);
+  };
+
+  const handleCancelPendingLost = () => {
+    // Revert to previous status
+    setLocalStatusId(lead?.pipelineStatusId ?? null);
+    setPendingLostStatusId(null);
+    setKillReasonError(false);
+  };
+
+  const handleKillReasonSave = (val: string) => {
+    if (!lead) return;
+    const existing = (lead as any).leadKillReason ?? "";
+    if (val === existing) return;
+    updateLeadMutation.mutate({
+      id: lead.id,
+      data: { leadKillReason: val || null } as any,
     });
   };
 
@@ -1106,6 +1237,13 @@ export function LeadDetailSheet({
               handleUpdate={handleUpdate}
               stages={pipelineStages}
               users={whitelistedUsers}
+              pendingLostStatusId={pendingLostStatusId}
+              localKillReason={localKillReason}
+              setLocalKillReason={setLocalKillReason}
+              killReasonError={killReasonError}
+              onConfirmLost={handleConfirmLost}
+              onCancelPendingLost={handleCancelPendingLost}
+              onKillReasonSave={handleKillReasonSave}
             />
           ) : activeTab === "timeline" ? (
             <TimelineTab leadId={lead.id} />

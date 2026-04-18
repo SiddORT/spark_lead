@@ -114,6 +114,7 @@ function formatLead(lead: any) {
     sourceContext: lead.sourceContext,
     internalRating: lead.internalRating,
     resolvedAt: lead.resolvedAt?.toISOString?.() || (typeof lead.resolvedAt === "string" ? lead.resolvedAt : null),
+    leadKillReason: lead.leadKillReason || null,
     companies: (lead.companies || []).map((c: any) => ({
       id: c?.id,
       name: c?.name,
@@ -359,7 +360,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
       "stage", "leadType", "contactEmail", "phone", "serviceId", "company",
       "leadOwner", "dealHandler", "dealValue", "value", "followUpDate",
       "nextAction", "emotionalState", "decisionRole", "strategicTier",
-      "customHook", "objection", "outcome", "killReason", "internalRating", "frictionPoint"
+      "customHook", "objection", "outcome", "killReason", "leadKillReason", "internalRating", "frictionPoint"
     ];
 
     for (const field of trackableFields) {
@@ -409,6 +410,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     if (updateData.objection !== undefined) dbUpdate.objection = updateData.objection;
     if (updateData.outcome !== undefined) dbUpdate.outcome = updateData.outcome;
     if (updateData.killReason !== undefined) dbUpdate.killReason = updateData.killReason;
+    if (updateData.leadKillReason !== undefined) dbUpdate.leadKillReason = updateData.leadKillReason || null;
     if (updateData.internalRating !== undefined) dbUpdate.internalRating = updateData.internalRating;
     if (updateData.frictionPoint !== undefined) dbUpdate.frictionPoint = updateData.frictionPoint;
     if (updateData.resolvedAt !== undefined) dbUpdate.resolvedAt = updateData.resolvedAt;

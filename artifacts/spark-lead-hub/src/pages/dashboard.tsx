@@ -398,8 +398,16 @@ export function Dashboard() {
   } else if (paginatedLeads.length > 0) {
     tbodyRows = paginatedLeads.map((lead: any) => {
       const tc = TYPE_CONFIG[lead.leadType || "cold"] || TYPE_CONFIG.cold;
+      const isLeadLost = lead.statusIsLost === true || lead.outcome === "lost";
       return (
-        <tr key={lead.id} onClick={() => setSelectedLeadId(lead.id)}>
+        <tr
+          key={lead.id}
+          onClick={() => setSelectedLeadId(lead.id)}
+          style={isLeadLost ? {
+            background: "hsl(0 65% 50% / 0.055)",
+            borderLeft: "3px solid hsl(0 65% 55% / 0.45)",
+          } : undefined}
+        >
           <td>
             <div
               style={{
