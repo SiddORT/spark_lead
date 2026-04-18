@@ -8,6 +8,7 @@ import { StatCardSkeleton, TableRowSkeleton } from "@/components/skeleton";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useDebounce } from "@/hooks/use-debounce";
 import { LeadDetailSheet } from "@/components/lead-detail-sheet";
+import { FollowUpBell } from "@/components/follow-up-bell";
 import { TablePagination } from "@/components/table-pagination";
 import { FilterSelect } from "@/components/filter-select";
 import {
@@ -538,7 +539,7 @@ export function Dashboard() {
   return (
     <div className="page">
       {/* Page header */}
-      <div className="page-header">
+      <div className="page-header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
           <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
             <LayoutDashboard size={28} style={{ color: "var(--teal)" }} />
@@ -546,6 +547,7 @@ export function Dashboard() {
           </h1>
           <p className="page-subtitle">Pipeline overview — filtered in real-time</p>
         </div>
+        <FollowUpBell onLeadClick={(id) => setSelectedLeadId(id)} />
       </div>
 
       {/* Stat cards */}

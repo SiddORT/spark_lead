@@ -1,0 +1,318 @@
+# 🔔 ADD NOTIFICATION ICON FOR FOLLOW-UPS (TOP BAR)
+
+---
+
+# 🎯 OBJECTIVE
+
+Add a **notification (bell) icon** on the Dashboard (top right), which:
+
+✅ Shows **recent 5 follow-ups**
+✅ Opens a **dropdown / popover**
+✅ Provides **"View All"** option to navigate to Follow-Up page
+
+---
+
+# 📍 PLACEMENT
+
+---
+
+## LOCATION
+
+Top right section of Dashboard header (near Export / actions area)
+
+---
+
+## UI ELEMENT
+
+```plaintext
+🔔 Notification Icon
+```
+
+---
+
+## WITH BADGE COUNT
+
+```plaintext
+🔔 (5)
+```
+
+👉 Count = number of:
+
+* Overdue follow-ups 🔴
+* Today follow-ups 🟢
+
+---
+
+# 🧠 FUNCTIONAL LOGIC
+
+---
+
+## FETCH DATA
+
+Create API:
+
+```http
+GET /followups/recent?limit=5
+```
+
+---
+
+## RESPONSE STRUCTURE
+
+```json
+[
+  {
+    "leadId": "123",
+    "leadName": "ABC Corp",
+    "followUpDate": "2026-04-20",
+    "status": "OVERDUE | TODAY | UPCOMING",
+    "handler": "Smit Lalai"
+  }
+]
+```
+
+---
+
+# 🎨 UI DESIGN (POPOVER)
+
+---
+
+## ON CLICK → SHOW DROPDOWN
+
+---
+
+### HEADER
+
+```plaintext
+Follow-Ups
+```
+
+---
+
+### LIST (MAX 5 ITEMS)
+
+Each item:
+
+```plaintext
+Lead Name
+Follow-up: Mon, 20 Apr 2026
+Handler: Smit Lalai
+Status Badge (Overdue / Today / Upcoming)
+```
+
+---
+
+## STATUS COLORS
+
+* 🔴 Overdue → Red
+* 🟢 Today → Green
+* 🟡 Upcoming → Yellow
+
+---
+
+## EXAMPLE ITEM
+
+```plaintext
+Nalanda CHS
+Follow-up: Mon, 20 Apr 2026
+Handler: smit
+[Overdue 🔴]
+```
+
+---
+
+# 🔘 FOOTER ACTION
+
+---
+
+## BUTTON
+
+```plaintext
+View All →
+```
+
+---
+
+## NAVIGATION
+
+```js
+navigate("/follow-up");
+```
+
+---
+
+# 🔢 BADGE COUNT LOGIC
+
+---
+
+## COUNT ONLY:
+
+```js
+count = overdue + today;
+```
+
+---
+
+## DISPLAY RULE
+
+* If count = 0 → no badge
+* If count > 99 → show `99+`
+
+---
+
+# ⚡ REAL-TIME UPDATE
+
+---
+
+## AUTO REFRESH
+
+* Refresh every 60 seconds OR
+* Refetch on:
+
+  * Page focus
+  * New note added
+  * Follow-up updated
+
+---
+
+## OPTIONAL (BEST)
+
+Use:
+
+```js
+react-query / swr invalidate
+```
+
+---
+
+# 🔗 CLICK BEHAVIOUR
+
+---
+
+## ON ITEM CLICK
+
+```js
+navigate(`/lead/${leadId}`);
+```
+
+👉 Opens Lead Details Drawer
+
+---
+
+# 📱 RESPONSIVENESS
+
+---
+
+## MOBILE
+
+* Full width dropdown
+* Scrollable list
+
+---
+
+## DESKTOP
+
+* Floating popover
+* Right aligned
+
+---
+
+# 🔒 ACCESS CONTROL
+
+---
+
+## ADMIN
+
+* Sees all follow-ups
+
+---
+
+## MANAGER
+
+* Sees only:
+
+  * Assigned leads follow-ups
+
+---
+
+# ⚠️ EDGE CASES
+
+---
+
+## NO FOLLOW-UPS
+
+```plaintext
+No follow-ups found
+```
+
+---
+
+## LONG LEAD NAME
+
+* Truncate with ellipsis
+
+---
+
+## INVALID DATE
+
+* Show `-`
+
+---
+
+# 🧪 TESTING CHECKLIST
+
+---
+
+## ✅ UI
+
+* Bell icon visible
+* Badge count correct
+* Dropdown aligned properly
+
+---
+
+## ✅ DATA
+
+* Only 5 items shown
+* Correct sorting (latest first follow-up)
+
+---
+
+## ✅ NAVIGATION
+
+* Click item → opens correct lead
+* View All → opens follow-up page
+
+---
+
+## ✅ ACCESS CONTROL
+
+* Manager sees only assigned
+* Admin sees all
+
+---
+
+## ✅ REAL-TIME
+
+* Updates after new follow-up
+* Updates after status change
+
+---
+
+## ✅ PERFORMANCE
+
+* No lag
+* API optimized
+
+---
+
+# 🚀 FINAL RESULT
+
+---
+
+✔ Clean notification system
+✔ Quick access to follow-ups
+✔ Improved productivity
+✔ No clutter on dashboard
+
+---
