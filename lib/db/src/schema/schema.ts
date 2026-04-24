@@ -219,8 +219,40 @@ export const leadsTable = pgTable("leads", {
   internalRating: integer("internal_rating"),
   resolvedAt: timestamp("resolved_at"),
   frictionPoint: frictionPointEnum("friction_point"),
+  finalValue: text("final_value"),
+  valueUpdatedAt: timestamp("value_updated_at"),
+  valueUpdatedBy: text("value_updated_by"),
+  closureNote: text("closure_note"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const leadDocumentsTable = pgTable("lead_documents", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => leadsTable.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileSize: integer("file_size"),
+  mimeType: text("mime_type"),
+  uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+  uploadedBy: uuid("uploaded_by").references(() => usersTable.id),
+  stage: text("stage"),
+  status: text("status"),
+  noteId: uuid("note_id").references(() => leadNotesTable.id, { onDelete: "set null" }),
+});
+
+export const leadValueHistoryTable = pgTable("lead_value_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => leadsTable.id, { onDelete: "cascade" }),
+  oldValue: text("old_value"),
+  newValue: text("new_value"),
+  changedAt: timestamp("changed_at").notNull().defaultNow(),
+  changedBy: uuid("changed_by").references(() => usersTable.id),
+  reason: text("reason"),
 });
 
 export const leadCompaniesTable = pgTable("lead_companies", {
@@ -286,3 +318,5 @@ export type AuditLog = typeof auditLogTable.$inferSelect;
 export type AccessRequest = typeof accessRequestsTable.$inferSelect;
 export type PipelineStage = typeof pipelineStagesTable.$inferSelect;
 export type PipelineStatus = typeof pipelineStatusesTable.$inferSelect;
+export type LeadDocument = typeof leadDocumentsTable.$inferSelect;
+export type LeadValueHistory = typeof leadValueHistoryTable.$inferSelect;

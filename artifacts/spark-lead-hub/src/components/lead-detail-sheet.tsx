@@ -13,7 +13,9 @@ import { formatFullDate } from "@/lib/utils";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
   FileText, MessageSquare, History, Copy, CalendarClock, Search, AlertTriangle,
+  TrendingUp, Folder,
 } from "lucide-react";
+import { DocumentsTab } from "./documents-tab";
 import { useLocation } from "wouter";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useAuth } from "./auth-provider";
@@ -201,7 +203,7 @@ function CompanyChipSelect({
 function NotesSection({ leadId }: { leadId: string }) {
   const { data: notes } = useGetLeadNotes(leadId);
   const queryClient    = useQueryClient();
-  const { user }       = useAuth();
+  const { user, token } = useAuth();
   const [newNote, setNewNote]     = useState("");
   const [noteSearch, setNoteSearch] = useState("");
   const defaultFollowUpDate = format(addDays(new Date(), 2), "yyyy-MM-dd");
@@ -557,6 +559,78 @@ function DetailsTab({
             )}
           </div>
         )}
+
+        {/* ── Won Closure Panel ── */}
+        {lead.statusIsWon && (
+          <div style={{
+            marginTop: "var(--sp-3)",
+            background: "hsl(145 65% 42% / 0.07)",
+            border: "1px solid hsl(145 65% 42% / 0.30)",
+            borderRadius: 10,
+            padding: "var(--sp-4)",
+          }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              fontSize: "var(--text-xs)", fontWeight: 700, letterSpacing: "0.06em",
+              color: "hsl(145 65% 52%)", textTransform: "uppercase",
+              marginBottom: "var(--sp-3)",
+            }}>
+              <TrendingUp size={12} />
+              Won — Closure Details
+            </div>
+
+            <div className="details-row" style={{ marginBottom: "var(--sp-3)" }}>
+              <div className="form-field">
+                <label className="field-label">Final Closed Value (₹)</label>
+                <input
+                  className="field-input"
+                  type="number"
+                  key={lead.id + "-finalValue"}
+                  defaultValue={lead.finalValue ?? lead.dealValue ?? ""}
+                  onBlur={(e) => handleUpdate("finalValue", e.target.value || null)}
+                  placeholder="e.g. 480000"
+                  style={{ borderColor: "hsl(145 65% 42% / 0.45)" }}
+                />
+                {lead.finalValue && lead.dealValue && Number(lead.finalValue) !== Number(lead.dealValue) && (
+                  <div style={{
+                    fontSize: "var(--text-xs)", marginTop: "var(--sp-1)",
+                    display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <span style={{ color: "var(--text-muted)", textDecoration: "line-through" }}>
+                      Original: {formatCurrency(lead.dealValue)}
+                    </span>
+                    {Number(lead.finalValue) > Number(lead.dealValue) ? (
+                      <span style={{ color: "hsl(145 65% 52%)", fontWeight: 700 }}>
+                        ▲ {formatCurrency(lead.finalValue)}
+                      </span>
+                    ) : (
+                      <span style={{ color: "hsl(35 90% 55%)", fontWeight: 700 }}>
+                        ▼ {formatCurrency(lead.finalValue)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="form-field">
+              <label className="field-label">Closure Note</label>
+              <textarea
+                className="field-input"
+                key={lead.id + "-closureNote"}
+                defaultValue={lead.closureNote || ""}
+                onBlur={(e) => handleUpdate("closureNote", e.target.value || null)}
+                placeholder="Key success factors, next steps, referral potential…"
+                rows={3}
+                style={{
+                  resize: "vertical", minHeight: "72px",
+                  fontFamily: "inherit", lineHeight: 1.5,
+                  borderColor: "hsl(145 65% 42% / 0.35)",
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <hr className="details-divider" />
@@ -839,6 +913,7 @@ export function LeadDetailSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { token }                      = useAuth();
   const { data: lead }                 = useGetLead(leadId || "", { query: { enabled: !!leadId } });
   const { data: notesData }            = useGetLeadNotes(leadId || "", { query: { enabled: !!leadId } });
   const notesCount                     = (notesData as any[])?.length ?? 0;
@@ -847,7 +922,7 @@ export function LeadDetailSheet({
   const whitelistedUsers               = (teamMembers as any[]).filter((m: any) => m.whitelistStatus === "active");
   const queryClient                    = useQueryClient();
   const { data: pipelineStages = [] }  = usePipelineStages();
-  const [activeTab, setActiveTab]      = useState<"details" | "notes" | "timeline">("details");
+  const [activeTab, setActiveTab]      = useState<"details" | "notes" | "timeline" | "documents">("details");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -1097,11 +1172,38 @@ export function LeadDetailSheet({
                     {LEAD_TYPE_EMOJI[lead.leadType]} {capitalize(lead.leadType)}
                   </span>
                 )}
-                {lead.dealValue && (
-                  <span className="sheet-value-chip">
-                    {formatCurrency(lead.dealValue)}
-                  </span>
-                )}
+                {(lead.dealValue || lead.finalValue) && (() => {
+                  const isWon = lead.statusIsWon;
+                  const hasFinal = isWon && lead.finalValue != null;
+                  const differs = hasFinal && Number(lead.finalValue) !== Number(lead.dealValue);
+                  if (!hasFinal) {
+                    return (
+                      <span className="sheet-value-chip">
+                        {formatCurrency(lead.dealValue)}
+                      </span>
+                    );
+                  }
+                  if (!differs) {
+                    return (
+                      <span className="sheet-value-chip" style={{ background: "hsl(145 65% 42% / 0.15)", color: "hsl(145 65% 60%)", borderColor: "hsl(145 65% 42% / 0.35)" }}>
+                        {formatCurrency(lead.finalValue)} Won
+                      </span>
+                    );
+                  }
+                  return (
+                    <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <span style={{
+                        fontSize: "var(--text-xs)", color: "var(--text-muted)",
+                        textDecoration: "line-through", fontFamily: "var(--font-mono)",
+                      }}>
+                        {formatCurrency(lead.dealValue)}
+                      </span>
+                      <span className="sheet-value-chip" style={{ background: "hsl(145 65% 42% / 0.15)", color: "hsl(145 65% 60%)", borderColor: "hsl(145 65% 42% / 0.35)" }}>
+                        {Number(lead.finalValue) > Number(lead.dealValue) ? "▲" : "▼"} {formatCurrency(lead.finalValue)} Won
+                      </span>
+                    </span>
+                  );
+                })()}
                 {(() => {
                   const fup = (lead as any).activeFollowUpDate;
                   if (!fup) return null;
@@ -1196,14 +1298,15 @@ export function LeadDetailSheet({
         {/* ── Tabs ── */}
         <div className="sheet-tabs">
           {[
-            { id: "details",  label: "Details",       icon: <FileText size={13} /> },
-            { id: "notes",    label: notesCount > 0 ? `Notes & Follow-Up (${notesCount})` : "Notes & Follow-Up", icon: <MessageSquare size={13} /> },
-            { id: "timeline", label: "Timeline",       icon: <History size={13} /> },
+            { id: "details",   label: "Details",       icon: <FileText size={13} /> },
+            { id: "notes",     label: notesCount > 0 ? `Notes & Follow-Up (${notesCount})` : "Notes & Follow-Up", icon: <MessageSquare size={13} /> },
+            { id: "timeline",  label: "Timeline",       icon: <History size={13} /> },
+            { id: "documents", label: "Documents",      icon: <Folder size={13} /> },
           ].map((tab) => (
             <button
               key={tab.id}
               className={`sheet-tab ${activeTab === tab.id ? "is-active" : ""}`}
-              onClick={() => setActiveTab(tab.id as "details" | "notes" | "timeline")}
+              onClick={() => setActiveTab(tab.id as "details" | "notes" | "timeline" | "documents")}
               type="button"
             >
               {tab.icon}
@@ -1247,6 +1350,13 @@ export function LeadDetailSheet({
             />
           ) : activeTab === "timeline" ? (
             <TimelineTab leadId={lead.id} />
+          ) : activeTab === "documents" ? (
+            <DocumentsTab
+              leadId={lead.id}
+              leadStageName={(lead as any).stageName ?? null}
+              leadStatusName={(lead as any).statusName ?? null}
+              token={token ?? ""}
+            />
           ) : (
             <NotesSection leadId={lead.id} />
           )}

@@ -64,6 +64,8 @@ export * from "./updateServiceInput";
 export * from "./updateTeamMemberInput";
 export * from "./updateTeamMemberInputRole";
 export * from "./updateTeamMemberInputStatus";
+export * from "./uploadUrlRequest";
+export * from "./uploadUrlResponse";
 export * from "./userMapEntry";
 export * from "./userProfile";
 export * from "./weeklyConversion";

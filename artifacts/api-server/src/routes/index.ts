@@ -10,6 +10,7 @@ import permissionsRouter from "./permissions";
 import auditRouter from "./audit";
 import analyticsRouter from "./analytics";
 import pipelineRouter from "./pipeline";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/permissions", permissionsRouter);
 router.use("/audit", auditRouter);
 router.use("/analytics", analyticsRouter);
 router.use("/pipeline", pipelineRouter);
+router.use("/storage", storageRouter);
 
 export default router;

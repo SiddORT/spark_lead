@@ -1,0 +1,349 @@
+# 🟢 FEATURE: WON CLOSURE ENHANCEMENTS (VALUE CHANGE + NOTES + DOCUMENTS)
+
+---
+
+# 🎯 OBJECTIVE
+
+When a lead is marked:
+
+* Stage = **Closure**
+* Status = **Closed - Won**
+
+Then enable:
+
+1. ✏️ Editable Lead Value (with audit tracking)
+2. 📝 Closure Note (mandatory optional)
+3. 📂 Document Upload
+4. 📊 Value Change Tracking (original vs final)
+5. 🗂 New "Lead Documents" Tab
+6. 🔍 Full visibility of document history
+
+---
+
+# ⚙️ 1. DATA MODEL UPDATES (SAFE & BACKWARD COMPATIBLE)
+
+---
+
+## UPDATE LEAD MODEL
+
+```ts
+originalValue: number   // already exists (do not modify)
+finalValue?: number     // new field
+valueUpdatedAt?: Date
+valueUpdatedBy?: string
+closureNote?: string
+```
+
+---
+
+## CREATE NEW TABLE: LEAD_DOCUMENTS
+
+```ts
+id: string
+leadId: string
+fileName: string
+fileUrl: string
+uploadedAt: Date
+uploadedBy: string
+stage: string
+status: string
+noteId?: string (optional link to note)
+```
+
+---
+
+## CREATE VALUE HISTORY (IMPORTANT)
+
+```ts
+LEAD_VALUE_HISTORY
+
+id
+leadId
+oldValue
+newValue
+changedAt
+changedBy
+reason: "Won Adjustment"
+```
+
+---
+
+# 🧠 2. VALUE EDIT LOGIC (CRITICAL)
+
+---
+
+## WHEN:
+
+```ts
+stage === "Closure" && status === "Closed - Won"
+```
+
+---
+
+## ENABLE:
+
+Editable value field
+
+---
+
+## UI FIELD
+
+```jsx
+<input
+  type="number"
+  value={finalValue || originalValue}
+  onChange={(e) => setFinalValue(e.target.value)}
+  className="input"
+/>
+```
+
+---
+
+## SAVE LOGIC
+
+```ts
+if (finalValue && finalValue !== originalValue) {
+  saveToValueHistory({
+    oldValue: originalValue,
+    newValue: finalValue,
+    reason: "Won Adjustment"
+  });
+
+  updateLead({
+    finalValue,
+    valueUpdatedAt: now(),
+    valueUpdatedBy: currentUser
+  });
+}
+```
+
+---
+
+# 🎨 3. UI – VALUE CHANGE HIGHLIGHT
+
+---
+
+## IN LEAD DETAILS HEADER
+
+```jsx
+<div>
+  <span className="text-gray-400 line-through text-sm">
+    ₹{originalValue}
+  </span>
+
+  <span className="text-green-400 font-semibold ml-2">
+    ₹{finalValue}
+  </span>
+</div>
+```
+
+---
+
+## IF NO CHANGE
+
+* Show only one value
+
+---
+
+## DESIGN RULE
+
+* Old value → muted + strike-through
+* New value → highlighted green
+* Subtle, not flashy
+
+---
+
+# 📝 4. CLOSURE NOTE (IMPORTANT)
+
+---
+
+## SHOW ONLY FOR WON
+
+```jsx
+{isWon && (
+  <textarea
+    placeholder="Add closure note (what helped win this deal)..."
+    value={closureNote}
+    onChange={...}
+  />
+)}
+```
+
+---
+
+## SAVE WITH LEAD UPDATE
+
+```ts
+updateLead({
+  closureNote
+});
+```
+
+---
+
+# 📂 5. DOCUMENT UPLOAD IN NOTES
+
+---
+
+## ADD FILE UPLOAD OPTION
+
+```jsx
+<input type="file" multiple />
+```
+
+---
+
+## ON UPLOAD
+
+```ts
+uploadFile(file) → url
+
+saveLeadDocument({
+  leadId,
+  fileName,
+  fileUrl,
+  stage,
+  status,
+  uploadedBy
+});
+```
+
+---
+
+# 🗂 6. NEW TAB: "LEAD DOCUMENTS"
+
+---
+
+## ADD TAB NEXT TO:
+
+* Details
+* Notes & Follow-Up
+* Timeline
+
+---
+
+## TAB NAME
+
+```jsx
+Lead Documents
+```
+
+---
+
+## UI STRUCTURE
+
+```jsx
+<div className="space-y-3">
+
+  {documents.map(doc => (
+    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+
+      <div className="flex justify-between">
+
+        <div>
+          <p className="text-sm text-white">{doc.fileName}</p>
+
+          <p className="text-xs text-gray-400">
+            {doc.stage} • {doc.status}
+          </p>
+
+          <p className="text-xs text-gray-500">
+            {formatDate(doc.uploadedAt)}
+          </p>
+        </div>
+
+        <a href={doc.fileUrl} target="_blank">
+          View
+        </a>
+
+      </div>
+
+    </div>
+  ))}
+
+</div>
+```
+
+---
+
+# 🎯 7. PURPOSE OF DOCUMENT TRACKING
+
+---
+
+Each document must clearly show:
+
+* 📌 Which stage it belongs to
+* 📌 What status it was uploaded in
+* 📌 When it was uploaded
+* 📌 Who uploaded it
+
+---
+
+# 🔍 8. NOTES + DOCUMENT LINKING
+
+---
+
+If document uploaded with note:
+
+```ts
+noteId: link to note
+```
+
+---
+
+# 🧪 9. TESTING CHECKLIST (VERY IMPORTANT)
+
+---
+
+## VALUE LOGIC
+
+* Value editable only on Closed - Won
+* Value change stored
+* History tracked
+* Old value preserved
+
+---
+
+## UI
+
+* Value comparison visible
+* No clutter
+* Works in dark theme
+
+---
+
+## DOCUMENTS
+
+* Upload works
+* Files accessible
+* Correct stage/status mapping
+
+---
+
+## NOTES
+
+* Closure note saves
+* Editable
+* Not lost on refresh
+
+---
+
+## REGRESSION
+
+* Existing leads untouched
+* No crashes on old data
+* Table view unaffected
+
+---
+
+# 🚀 FINAL OUTCOME
+
+---
+
+✔ Full financial transparency
+✔ Audit trail for deal value changes
+✔ Document-level traceability
+✔ Strong post-closure intelligence
+✔ Enterprise-grade CRM behaviour
+
+---

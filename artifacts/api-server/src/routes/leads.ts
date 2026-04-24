@@ -6,6 +6,8 @@ import {
   leadNotesTable,
   leadActivitiesTable,
   leadCompaniesTable,
+  leadDocumentsTable,
+  leadValueHistoryTable,
   companiesTable,
   servicesTable,
   usersTable,
@@ -13,6 +15,7 @@ import {
   pipelineStagesTable,
   pipelineStatusesTable,
 } from "@workspace/db";
+import leadDocumentsRouter from "./lead-documents";
 import { eq, inArray, and, or, gte, asc, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
@@ -115,6 +118,10 @@ function formatLead(lead: any) {
     internalRating: lead.internalRating,
     resolvedAt: lead.resolvedAt?.toISOString?.() || (typeof lead.resolvedAt === "string" ? lead.resolvedAt : null),
     leadKillReason: lead.leadKillReason || null,
+    finalValue: lead.finalValue || null,
+    valueUpdatedAt: lead.valueUpdatedAt?.toISOString?.() || null,
+    valueUpdatedBy: lead.valueUpdatedBy || null,
+    closureNote: lead.closureNote || null,
     companies: (lead.companies || []).map((c: any) => ({
       id: c?.id,
       name: c?.name,
@@ -360,7 +367,8 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
       "stage", "leadType", "contactEmail", "phone", "serviceId", "company",
       "leadOwner", "dealHandler", "dealValue", "value", "followUpDate",
       "nextAction", "emotionalState", "decisionRole", "strategicTier",
-      "customHook", "objection", "outcome", "killReason", "leadKillReason", "internalRating", "frictionPoint"
+      "customHook", "objection", "outcome", "killReason", "leadKillReason", "internalRating", "frictionPoint",
+      "finalValue", "closureNote"
     ];
 
     for (const field of trackableFields) {
@@ -415,8 +423,34 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     if (updateData.frictionPoint !== undefined) dbUpdate.frictionPoint = updateData.frictionPoint;
     if (updateData.resolvedAt !== undefined) dbUpdate.resolvedAt = updateData.resolvedAt;
     if (autoResolvedAt) dbUpdate.resolvedAt = autoResolvedAt;
+    if (updateData.closureNote !== undefined) dbUpdate.closureNote = updateData.closureNote || null;
+
+    // finalValue: track change + auto-set valueUpdatedAt/By
+    let valueHistoryEntry: any = null;
+    if (updateData.finalValue !== undefined) {
+      const oldFinal = old.finalValue;
+      const newFinal = updateData.finalValue || null;
+      if (String(oldFinal || "") !== String(newFinal || "")) {
+        valueHistoryEntry = {
+          id: uuidv4(),
+          leadId: req.params.id,
+          oldValue: oldFinal || old.dealValue || null,
+          newValue: newFinal,
+          changedBy: req.user!.userId,
+          reason: "Won Adjustment",
+        };
+      }
+      dbUpdate.finalValue = newFinal;
+      dbUpdate.valueUpdatedAt = new Date();
+      dbUpdate.valueUpdatedBy = req.user!.userId;
+    }
 
     await db.update(leadsTable).set(dbUpdate).where(eq(leadsTable.id, req.params.id));
+
+    // Insert value history after lead update
+    if (valueHistoryEntry) {
+      await db.insert(leadValueHistoryTable).values(valueHistoryEntry);
+    }
 
     if (companyIds !== undefined) {
       const uniqueCompanyIds: string[] = [...new Set<string>((companyIds as string[]).filter(Boolean))];
@@ -720,5 +754,36 @@ router.get("/:id/activities", requireAuth, async (req: AuthRequest, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+// Value history
+router.get("/:id/value-history", requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const history = await db
+      .select({
+        id: leadValueHistoryTable.id,
+        leadId: leadValueHistoryTable.leadId,
+        oldValue: leadValueHistoryTable.oldValue,
+        newValue: leadValueHistoryTable.newValue,
+        changedAt: leadValueHistoryTable.changedAt,
+        reason: leadValueHistoryTable.reason,
+        changedByName: usersTable.displayName,
+      })
+      .from(leadValueHistoryTable)
+      .leftJoin(usersTable, eq(leadValueHistoryTable.changedBy, usersTable.id))
+      .where(eq(leadValueHistoryTable.leadId, req.params.id))
+      .orderBy(desc(leadValueHistoryTable.changedAt));
+
+    res.json(history.map((h) => ({
+      ...h,
+      changedAt: h.changedAt.toISOString(),
+    })));
+  } catch (err) {
+    req.log.error({ err }, "Get value history error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Mount documents sub-router
+router.use("/:leadId/documents", leadDocumentsRouter);
 
 export default router;
