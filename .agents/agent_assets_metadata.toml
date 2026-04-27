@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "FEhszB8ZQaJ7bE63K6KZN"
+uri = "file://docs/auth-and-access-guide.md"
+type = "text"
+title = "Spark Lead Hub — Authentication & Access Guide"
