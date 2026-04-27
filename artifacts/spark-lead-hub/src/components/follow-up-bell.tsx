@@ -55,7 +55,7 @@ export function FollowUpBell({ onLeadClick }: Props) {
   const leads = raw as any[];
 
   const enriched = leads
-    .filter((l: any) => !!l.activeFollowUpDate)
+    .filter((l: any) => !!l.activeFollowUpDate && !l.statusIsWon && !l.statusIsLost)
     .map((l: any) => ({ ...l, _status: getStatus(l.activeFollowUpDate as string) }))
     .sort((a: any, b: any) => {
       const order: Record<Status, number> = { OVERDUE: 0, TODAY: 1, UPCOMING: 2 };

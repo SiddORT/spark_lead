@@ -81,7 +81,11 @@ async function getLeadWithRelations(leadId: string) {
 function formatLead(lead: any) {
   const stage = lead.stageInfo;
   const status = lead.statusInfo;
-  const activeFollowUpDate = lead.activeFollowUpDate ?? lead.followUpDate ?? null;
+  const isClosed = (status?.isWon === true) || (status?.isLost === true);
+  // Closed leads are removed from all follow-up surfaces
+  const activeFollowUpDate = isClosed
+    ? null
+    : (lead.activeFollowUpDate ?? lead.followUpDate ?? null);
   return {
     id: lead.id,
     leadName: lead.leadName,
@@ -382,15 +386,19 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     }
 
     // Auto-set resolved_at when moving to a terminal pipeline status or legacy outcome change
+    // Also auto-clear followUpDate on closure so closed leads don't appear in the follow-up system
     let autoResolvedAt: Date | undefined;
-    if (updateData.pipelineStatusId && !old.resolvedAt) {
+    let autoClearFollowUp = false;
+    if (updateData.pipelineStatusId) {
       const newStatus = await db.select().from(pipelineStatusesTable)
         .where(eq(pipelineStatusesTable.id, updateData.pipelineStatusId)).limit(1);
       if (newStatus[0] && (newStatus[0].isWon || newStatus[0].isLost)) {
-        autoResolvedAt = new Date();
+        if (!old.resolvedAt) autoResolvedAt = new Date();
+        autoClearFollowUp = true;
       }
     } else if (updateData.outcome && updateData.outcome !== "wip" && !old.resolvedAt) {
       autoResolvedAt = new Date();
+      autoClearFollowUp = true;
     }
 
     const dbUpdate: any = { updatedAt: new Date() };
@@ -423,6 +431,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
     if (updateData.frictionPoint !== undefined) dbUpdate.frictionPoint = updateData.frictionPoint;
     if (updateData.resolvedAt !== undefined) dbUpdate.resolvedAt = updateData.resolvedAt;
     if (autoResolvedAt) dbUpdate.resolvedAt = autoResolvedAt;
+    if (autoClearFollowUp) dbUpdate.followUpDate = null;
     if (updateData.closureNote !== undefined) dbUpdate.closureNote = updateData.closureNote || null;
 
     // finalValue: track change + auto-set valueUpdatedAt/By

@@ -86,11 +86,13 @@ export function FollowUp() {
   useEffect(() => { localStorage.setItem("slh_rows_per_page", String(pageSize)); }, [pageSize]);
   useEffect(() => { setPage(1); }, [debouncedSearch, serviceFilter, companyFilter, typeFilter, stageFilter]);
 
-  // Step 1: filter to follow-up leads (today + overdue)
+  // Step 1: filter to follow-up leads (today + overdue), excluding closed leads
   const followUpLeads = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return (leads as any[]).filter((l: any) => {
+      // Closed leads (Won or Lost) are never shown in follow-up
+      if (l.statusIsWon || l.statusIsLost) return false;
       if (!l.activeFollowUpDate) return false;
       const follow = new Date(l.activeFollowUpDate);
       follow.setHours(0, 0, 0, 0);
