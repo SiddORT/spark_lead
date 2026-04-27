@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FileText, Upload, Trash2, ExternalLink, Loader2, Paperclip } from "lucide-react";
+import { FileText, Upload, Trash2, ExternalLink, Loader2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -196,15 +196,34 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
           {uploading ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
           {uploading ? "Uploading…" : "Upload Files"}
         </button>
-        {leadStageName && (
-          <span style={{
-            fontSize: "var(--text-xs)", color: "var(--text-muted)",
-            background: "var(--bg-glass)", border: "1px solid var(--border-subtle)",
-            borderRadius: 6, padding: "3px 8px",
-          }}>
-            <Paperclip size={10} style={{ marginRight: 4 }} />
-            Files tagged: <strong>{leadStageName}</strong>{leadStatusName ? ` · ${leadStatusName}` : ""}
-          </span>
+        {/* Context chips — what stage/status will be tagged on uploaded files */}
+        {(leadStageName || leadStatusName) && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            {leadStageName && (
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                fontSize: 11, fontWeight: 600,
+                background: "hsl(258 65% 55% / 0.12)",
+                color: "hsl(258 80% 75%)",
+                border: "1px solid hsl(258 65% 55% / 0.25)",
+                borderRadius: 6, padding: "3px 9px",
+              }}>
+                📍 {leadStageName}
+              </span>
+            )}
+            {leadStatusName && (
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                fontSize: 11, fontWeight: 600,
+                background: "hsl(172 75% 48% / 0.10)",
+                color: "var(--teal)",
+                border: "1px solid hsl(172 75% 48% / 0.25)",
+                borderRadius: 6, padding: "3px 9px",
+              }}>
+                📌 {leadStatusName}
+              </span>
+            )}
+          </div>
         )}
       </div>
 
@@ -220,9 +239,11 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
           color: "var(--text-muted)", display: "flex", flexDirection: "column",
           alignItems: "center", gap: "var(--sp-3)",
         }}>
-          <FileText size={32} style={{ opacity: 0.25 }} />
-          <div style={{ fontSize: "var(--text-sm)", fontWeight: 500 }}>No documents yet</div>
-          <div style={{ fontSize: "var(--text-xs)" }}>Upload proposals, contracts, or any relevant files.</div>
+          <FolderOpen size={32} style={{ opacity: 0.22 }} />
+          <div style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-secondary)" }}>No documents uploaded yet</div>
+          <div style={{ fontSize: "var(--text-xs)", maxWidth: 240, lineHeight: 1.5 }}>
+            Upload proposals, agreements, or supporting files for this lead.
+          </div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
@@ -245,19 +266,39 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
                 }}>
                   {doc.fileName}
                 </div>
-                <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginTop: 2, display: "flex", gap: "var(--sp-2)", flexWrap: "wrap" }}>
+                <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginTop: 4, display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
                   {doc.stage && (
                     <span style={{
-                      background: "var(--teal-dim)", color: "var(--teal)",
-                      borderRadius: 4, padding: "1px 6px", fontWeight: 600, fontSize: "10px",
+                      display: "inline-flex", alignItems: "center",
+                      background: "hsl(258 65% 55% / 0.12)", color: "hsl(258 80% 78%)",
+                      border: "1px solid hsl(258 65% 55% / 0.22)",
+                      borderRadius: 5, padding: "1px 7px", fontWeight: 600, fontSize: "10px",
                     }}>
-                      {doc.stage}{doc.status ? ` · ${doc.status}` : ""}
+                      📍 {doc.stage}
                     </span>
                   )}
-                  {doc.fileSize && <span>{formatFileSize(doc.fileSize)}</span>}
-                  <span>·</span>
-                  <span>{format(new Date(doc.uploadedAt), "d MMM yyyy, h:mm a")}</span>
-                  {doc.uploaderName && <><span>·</span><span>{doc.uploaderName}</span></>}
+                  {doc.status && (
+                    <span style={{
+                      display: "inline-flex", alignItems: "center",
+                      background: "hsl(172 75% 48% / 0.10)", color: "var(--teal)",
+                      border: "1px solid hsl(172 75% 48% / 0.22)",
+                      borderRadius: 5, padding: "1px 7px", fontWeight: 600, fontSize: "10px",
+                    }}>
+                      📌 {doc.status}
+                    </span>
+                  )}
+                  {(doc.stage || doc.status) && doc.fileSize && (
+                    <span style={{ color: "hsl(222 15% 45%)" }}>·</span>
+                  )}
+                  {doc.fileSize && (
+                    <span style={{ color: "hsl(222 15% 55%)", fontWeight: 500 }}>{formatFileSize(doc.fileSize)}</span>
+                  )}
+                  <span style={{ color: "hsl(222 15% 45%)" }}>·</span>
+                  <span style={{ color: "hsl(222 15% 55%)" }}>{format(new Date(doc.uploadedAt), "d MMM yyyy, h:mm a")}</span>
+                  {doc.uploaderName && (
+                    <><span style={{ color: "hsl(222 15% 45%)" }}>·</span>
+                    <span style={{ color: "hsl(222 15% 60%)", fontWeight: 500 }}>{doc.uploaderName}</span></>
+                  )}
                 </div>
               </div>
               <div style={{ display: "flex", gap: "var(--sp-1)", flexShrink: 0 }}>

@@ -1,0 +1,219 @@
+You’re right — that label is both **unclear (UX issue)** and **low contrast (readability issue)**. It’s trying to convey metadata but ends up confusing the user.
+
+Let’s fix this properly with **clear language + better visual structure + meaning**.
+
+---
+
+## 🎯 What’s wrong (quick diagnosis)
+
+* ❌ “Files tagged: …” → too technical
+* ❌ “Proposal & Negotiation · Proposal Shared” → unclear relationship
+* ❌ Low contrast → hard to read on dark UI
+* ❌ No actionable meaning → user doesn’t know *why it matters*
+
+---
+
+## ✅ What it should communicate instead
+
+👉 Answer 3 simple questions:
+
+1. **What is this file?** (Type)
+2. **Where was it added?** (Stage)
+3. **What is its status?** (Optional)
+
+---
+
+## 🚀 Recommended UX (Clean + Clear)
+
+### Replace this:
+
+```
+Files tagged: Proposal & Negotiation · Proposal Shared
+```
+
+### With this:
+
+**Option A (Best – Structured Chips UI):**
+
+```
+📄 Proposal
+📍 Stage: Proposal & Negotiation
+📌 Status: Shared
+```
+
+---
+
+## 🔧 Replit AI Markdown Prompt
+
+# 🎨 UI/UX FIX: DOCUMENT LABEL CLARITY & READABILITY
+
+---
+
+# 🎯 OBJECTIVE
+
+Replace confusing and unreadable document metadata:
+
+❌ "Files tagged: Proposal & Negotiation · Proposal Shared"
+
+With a **clear, structured, human-readable format**
+
+---
+
+# ⚙️ 1. BREAK DATA INTO MEANINGFUL FIELDS
+
+---
+
+## CURRENT (BAD)
+
+```ts
+"Proposal & Negotiation · Proposal Shared"
+```
+
+---
+
+## NEW STRUCTURE
+
+```ts
+{
+  type: "Proposal",
+  stage: "Proposal & Negotiation",
+  status: "Shared"
+}
+```
+
+---
+
+# 🎨 2. UI IMPLEMENTATION (CHIP DESIGN)
+
+---
+
+## REPLACE TEXT WITH:
+
+```jsx
+<div className="flex flex-wrap gap-2 mt-2">
+
+  <span className="px-2 py-1 text-xs rounded-md bg-blue-500/10 text-blue-400">
+    📄 Proposal
+  </span>
+
+  <span className="px-2 py-1 text-xs rounded-md bg-purple-500/10 text-purple-400">
+    📍 Proposal & Negotiation
+  </span>
+
+  <span className="px-2 py-1 text-xs rounded-md bg-green-500/10 text-green-400">
+    📌 Shared
+  </span>
+
+</div>
+```
+
+---
+
+# 🎨 3. REMOVE CONFUSING LABEL
+
+---
+
+## DELETE THIS COMPLETELY:
+
+```ts
+"Files tagged:"
+```
+
+---
+
+# 🌙 4. READABILITY FIX (IMPORTANT)
+
+---
+
+## IMPROVE CONTRAST
+
+* Increase text brightness
+* Avoid grey-on-dark combinations
+
+```css
+text-opacity: 90%+
+font-weight: 500
+```
+
+---
+
+# 🧠 5. TOOLTIP (OPTIONAL BUT SMART)
+
+---
+
+```jsx
+<span title="This file is a Proposal shared during Proposal stage">
+  📄 Proposal
+</span>
+```
+
+---
+
+# 📁 6. EMPTY STATE IMPROVEMENT
+
+---
+
+## CURRENT:
+
+"No documents yet"
+
+---
+
+## IMPROVED:
+
+```jsx
+"No documents uploaded yet.
+Upload proposals, agreements, or supporting files."
+```
+
+---
+
+# 🧪 7. TESTING
+
+---
+
+✔ Chips visible and readable
+✔ Works in dark mode
+✔ Long text wraps properly
+✔ No UI overflow
+✔ Mobile responsive
+
+---
+
+# 🚀 FINAL OUTCOME
+
+---
+
+✔ Clear meaning
+✔ Better readability
+✔ Professional UI
+✔ Zero confusion
+
+---
+
+---
+
+## 💡 Small but powerful upgrade
+
+If you want to make this even better:
+
+👉 Add **file preview type icon**
+
+* 📄 PDF
+* 📊 Excel
+* 🖼 Image
+
+👉 Add **uploaded date + user**
+
+```
+Uploaded by Smit • 18 Apr
+```
+
+---
+
+## 🔥 Bottom line
+
+Right now your UI is **data-heavy but meaning-light**.
+This change makes it **meaning-first**, which is what users actually need.
+
+
