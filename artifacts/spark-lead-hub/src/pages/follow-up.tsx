@@ -40,6 +40,62 @@ function getOverdueDays(followUpDate: string): number {
   return differenceInCalendarDays(today, follow);
 }
 
+type QuickFilter = "today" | "overdue" | null;
+
+// ─── Quick-Filter Chip ─────────────────────────────────
+function QuickChip({
+  active, onClick, color, icon, label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  color: "teal" | "danger" | "warning";
+  icon: React.ReactNode;
+  label: string;
+}) {
+  const colors: Record<string, { bg: string; border: string; text: string; activeBg: string; activeBorder: string }> = {
+    teal:    { bg: "hsl(172 75% 48% / 0.08)", border: "hsl(172 75% 48% / 0.22)", text: "var(--teal)",    activeBg: "hsl(172 75% 48% / 0.20)", activeBorder: "var(--teal)"    },
+    danger:  { bg: "hsl(0 75% 50% / 0.08)",   border: "hsl(0 75% 50% / 0.22)",   text: "var(--danger)",  activeBg: "hsl(0 75% 50% / 0.20)",   activeBorder: "var(--danger)"  },
+    warning: { bg: "hsl(38 90% 55% / 0.08)",  border: "hsl(38 90% 55% / 0.22)",  text: "var(--warning)", activeBg: "hsl(38 90% 55% / 0.20)",  activeBorder: "var(--warning)" },
+  };
+  const c = colors[color];
+  return (
+    <button
+      onClick={onClick}
+      title={active ? `Click to clear "${label}" filter` : `Filter by ${label}`}
+      style={{
+        display: "flex", alignItems: "center", gap: 6,
+        padding: "5px 14px",
+        background: active ? c.activeBg : c.bg,
+        border: `1px solid ${active ? c.activeBorder : c.border}`,
+        borderRadius: "var(--radius-full)",
+        fontSize: "var(--text-xs)", fontWeight: 600, color: c.text,
+        cursor: "pointer",
+        transition: "background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 80ms ease",
+        whiteSpace: "nowrap", flexShrink: 0,
+        boxShadow: active ? `0 0 0 3px ${c.activeBorder}25, 0 2px 8px ${c.activeBorder}20` : "none",
+        transform: active ? "scale(1.03)" : "scale(1)",
+        minHeight: 36,
+        outline: "none",
+        userSelect: "none",
+      }}
+    >
+      {icon}
+      {label}
+      {active && (
+        <span style={{
+          display: "inline-flex", alignItems: "center", justifyContent: "center",
+          width: 14, height: 14, marginLeft: 2,
+          background: c.text, borderRadius: "50%",
+          color: "hsl(222 25% 8%)", fontSize: 9, fontWeight: 800, lineHeight: 1,
+          flexShrink: 0,
+        }}>
+          ✓
+        </span>
+      )}
+    </button>
+  );
+}
+
 // ─── Follow Up Page ────────────────────────────────────
 export function FollowUp() {
   const { data: leads = [], isLoading: leadsLoading } = useGetLeads();
@@ -48,7 +104,10 @@ export function FollowUp() {
   const { data: stages = [] }                          = usePipelineStages();
   const { resolveName }                                = useUserMap();
 
-  // Filters — multi-select (arrays)
+  // Quick-filter chip state
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>(null);
+
+  // Text + dropdown filters
   const [searchRaw, setSearchRaw]         = useState("");
   const [serviceFilter, setServiceFilter] = useState<string[]>([]);
   const [companyFilter, setCompanyFilter] = useState<string[]>([]);
@@ -84,14 +143,15 @@ export function FollowUp() {
   };
 
   useEffect(() => { localStorage.setItem("slh_rows_per_page", String(pageSize)); }, [pageSize]);
-  useEffect(() => { setPage(1); }, [debouncedSearch, serviceFilter, companyFilter, typeFilter, stageFilter]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, serviceFilter, companyFilter, typeFilter, stageFilter, quickFilter]);
 
-  // Step 1: filter to follow-up leads (today + overdue), excluding closed leads
+  // Step 1: All open leads that have a follow-up date ≤ today (closed leads excluded)
   const followUpLeads = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return (leads as any[]).filter((l: any) => {
-      // Closed leads (Won or Lost) are never shown in follow-up
       if (l.statusIsWon || l.statusIsLost) return false;
       if (!l.activeFollowUpDate) return false;
       const follow = new Date(l.activeFollowUpDate);
@@ -100,9 +160,20 @@ export function FollowUp() {
     });
   }, [leads]);
 
-  // Step 2: apply user filters
-  const filteredLeads = useMemo(() => {
+  // Step 2: Apply quick-filter chip (today / overdue)
+  const quickFiltered = useMemo(() => {
+    if (!quickFilter) return followUpLeads;
     return followUpLeads.filter((l: any) => {
+      const days = getOverdueDays(l.activeFollowUpDate);
+      if (quickFilter === "today")   return days === 0;
+      if (quickFilter === "overdue") return days > 0;
+      return true;
+    });
+  }, [followUpLeads, quickFilter]);
+
+  // Step 3: Apply text + dropdown filters (always runs on top of quick-filter result)
+  const filteredLeads = useMemo(() => {
+    return quickFiltered.filter((l: any) => {
       const q = debouncedSearch.toLowerCase();
       if (q) {
         const handlerName  = l.dealHandler ? resolveName(l.dealHandler).toLowerCase() : "";
@@ -121,9 +192,9 @@ export function FollowUp() {
       if (stageFilter.length   && !stageFilter.includes(l.pipelineStageId)) return false;
       return true;
     });
-  }, [followUpLeads, debouncedSearch, serviceFilter, companyFilter, typeFilter, stageFilter]);
+  }, [quickFiltered, debouncedSearch, serviceFilter, companyFilter, typeFilter, stageFilter, resolveName]);
 
-  // Step 3: sort
+  // Step 4: Sort
   const sortedLeads = useMemo(() => {
     const TYPE_ORDER: Record<string, number> = { hot: 0, warm: 1, cold: 2, ghosted: 3 };
     const dir = sortDir === "asc" ? 1 : -1;
@@ -157,11 +228,29 @@ export function FollowUp() {
   // Lead detail sheet
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
-  const hasFilters = !!(searchRaw || serviceFilter.length || companyFilter.length || typeFilter.length || stageFilter.length);
-  const clearFilters = () => {
+  // Stats — computed from the base follow-up pool (not affected by quick-filter)
+  const overdueCount = followUpLeads.filter((l: any) => l.activeFollowUpDate && getOverdueDays(l.activeFollowUpDate) > 0).length;
+  const todayCount   = followUpLeads.filter((l: any) => l.activeFollowUpDate && getOverdueDays(l.activeFollowUpDate) === 0).length;
+
+  const hasDropdownFilters = !!(searchRaw || serviceFilter.length || companyFilter.length || typeFilter.length || stageFilter.length);
+  const hasAnyFilter       = !!(quickFilter || hasDropdownFilters);
+
+  const clearDropdownFilters = () => {
     setSearchRaw(""); setServiceFilter([]); setCompanyFilter([]); setTypeFilter([]); setStageFilter([]);
   };
-  const activeFilterCount = [!!searchRaw, serviceFilter.length > 0, companyFilter.length > 0, typeFilter.length > 0, stageFilter.length > 0].filter(Boolean).length;
+  const clearAllFilters = () => {
+    clearDropdownFilters();
+    setQuickFilter(null);
+  };
+
+  const activeFilterCount = [
+    !!quickFilter,
+    !!searchRaw,
+    serviceFilter.length > 0,
+    companyFilter.length > 0,
+    typeFilter.length > 0,
+    stageFilter.length > 0,
+  ].filter(Boolean).length;
 
   // Filter options
   const serviceOptions = (services as any[]).map((s: any) => ({ value: s.id, label: s.name }));
@@ -171,9 +260,28 @@ export function FollowUp() {
     .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
     .map((s: any) => ({ value: s.id, label: s.displayName || s.name }));
 
-  // Stats
-  const overdueCount = followUpLeads.filter((l: any) => l.activeFollowUpDate && getOverdueDays(l.activeFollowUpDate) > 0).length;
-  const todayCount   = followUpLeads.filter((l: any) => l.activeFollowUpDate && getOverdueDays(l.activeFollowUpDate) === 0).length;
+  // Empty-state message — context-aware
+  const emptyTitle = useMemo(() => {
+    if (quickFilter === "today" && !hasDropdownFilters) return "No follow-ups due today";
+    if (quickFilter === "today" && hasDropdownFilters)  return "No today follow-ups match your filters";
+    if (quickFilter === "overdue" && !hasDropdownFilters) return "No overdue follow-ups found";
+    if (quickFilter === "overdue" && hasDropdownFilters)  return "No overdue follow-ups match your filters";
+    if (hasDropdownFilters) return "No leads match your filters";
+    return "No follow-ups due! 🎉";
+  }, [quickFilter, hasDropdownFilters]);
+
+  const emptySubtitle = useMemo(() => {
+    if (quickFilter === "today" && !hasDropdownFilters) return "Check back later — or view overdue items.";
+    if (quickFilter === "overdue" && !hasDropdownFilters) return "Great job staying on top of your pipeline!";
+    if (hasAnyFilter) return "Try adjusting or clearing your active filters.";
+    return "You're all caught up — no overdue or due-today follow-ups.";
+  }, [quickFilter, hasDropdownFilters, hasAnyFilter]);
+
+  const emptyIcon = quickFilter === "today"
+    ? <CheckCircle2 size={36} style={{ color: "var(--warning)", opacity: 0.5 }} />
+    : quickFilter === "overdue"
+    ? <AlertCircle size={36} style={{ color: "var(--teal)", opacity: 0.4 }} />
+    : <CheckCircle2 size={36} style={{ color: "var(--teal)", opacity: 0.35 }} />;
 
   return (
     <div className="page">
@@ -193,34 +301,63 @@ export function FollowUp() {
             {todayCount > 0 && <> · <span style={{ color: "var(--warning)" }}>{todayCount} due today</span></>}
           </p>
         </div>
+
+        {/* ── Quick-filter chips ── */}
         <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "4px 12px",
-            background: "hsl(172 75% 48% / 0.08)",
-            border: "1px solid hsl(172 75% 48% / 0.2)",
-            borderRadius: "var(--radius-full)",
-            fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--teal)",
-          }}>
-            <CheckCircle2 size={12} /> {todayCount} today
-          </div>
-          {overdueCount > 0 && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "4px 12px",
-              background: "hsl(0 75% 50% / 0.08)",
-              border: "1px solid hsl(0 75% 50% / 0.2)",
-              borderRadius: "var(--radius-full)",
-              fontSize: "var(--text-xs)", fontWeight: 600, color: "var(--danger)",
-            }}>
-              <AlertCircle size={12} /> {overdueCount} overdue
-            </div>
-          )}
+          <QuickChip
+            active={quickFilter === "today"}
+            onClick={() => setQuickFilter(f => f === "today" ? null : "today")}
+            color="teal"
+            icon={<CheckCircle2 size={12} />}
+            label={`${todayCount} today`}
+          />
+          <QuickChip
+            active={quickFilter === "overdue"}
+            onClick={() => setQuickFilter(f => f === "overdue" ? null : "overdue")}
+            color="danger"
+            icon={<AlertCircle size={12} />}
+            label={`${overdueCount} overdue`}
+          />
         </div>
       </div>
 
-      {/* ── Filter bar — identical to dashboard ──────── */}
-      <div style={{
+      {/* ── Active chip indicator bar ── */}
+      {quickFilter && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: "var(--space-2)",
+          marginBottom: "var(--space-2)",
+          padding: "8px 14px",
+          background: quickFilter === "today"
+            ? "hsl(172 75% 48% / 0.06)"
+            : "hsl(0 75% 50% / 0.06)",
+          border: `1px solid ${quickFilter === "today" ? "hsl(172 75% 48% / 0.18)" : "hsl(0 75% 50% / 0.18)"}`,
+          borderRadius: "var(--radius-md)",
+          fontSize: "var(--text-xs)", fontWeight: 500,
+          color: quickFilter === "today" ? "var(--teal)" : "var(--danger)",
+          animation: "fadeInDown 0.15s ease",
+        }}>
+          <span style={{ opacity: 0.7 }}>Filtered by:</span>
+          <strong>{quickFilter === "today" ? "Due Today" : "Overdue"}</strong>
+          <span style={{ opacity: 0.5, fontSize: 10 }}>· {quickFiltered.length} {quickFiltered.length === 1 ? "lead" : "leads"}</span>
+          <button
+            onClick={() => setQuickFilter(null)}
+            style={{
+              marginLeft: "auto", display: "flex", alignItems: "center", gap: 4,
+              background: "none", border: "none", cursor: "pointer",
+              color: "inherit", opacity: 0.7, fontSize: "var(--text-xs)",
+              padding: "2px 6px", borderRadius: "var(--radius-sm)",
+              transition: "opacity 120ms ease",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+            onMouseLeave={e => (e.currentTarget.style.opacity = "0.7")}
+          >
+            <X size={11} /> Clear
+          </button>
+        </div>
+      )}
+
+      {/* ── Filter bar ──────────────────────────────── */}
+      <div className="dashboard-filter-bar" style={{
         display: "flex",
         alignItems: "center",
         gap: "var(--space-3)",
@@ -229,6 +366,7 @@ export function FollowUp() {
         border: "1px solid var(--border-subtle)",
         borderRadius: "var(--radius-lg)",
         marginBottom: "var(--space-3)",
+        flexWrap: "wrap",
       }}>
         {/* Search */}
         <div style={{ position: "relative", flex: "1 1 200px", minWidth: 180 }}>
@@ -284,9 +422,9 @@ export function FollowUp() {
         <FilterSelect value={typeFilter}    onChange={setTypeFilter}    options={LEAD_TYPE_OPTIONS} placeholder="All Types" width={145} />
         <FilterSelect value={stageFilter}   onChange={setStageFilter}   options={stageOptions} placeholder="All Stages" width={175} />
 
-        {hasFilters && (
+        {hasAnyFilter && (
           <button
-            onClick={clearFilters}
+            onClick={clearAllFilters}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               height: 40, padding: "0 var(--space-3)",
@@ -297,7 +435,7 @@ export function FollowUp() {
               cursor: "pointer", transition: "all 120ms ease", flexShrink: 0, whiteSpace: "nowrap",
             }}
           >
-            <X size={13} /> Clear
+            <X size={13} /> Clear all
             <span style={{
               background: "var(--danger)", color: "#fff",
               borderRadius: 100, fontSize: 10, fontWeight: 700,
@@ -309,7 +447,7 @@ export function FollowUp() {
         )}
       </div>
 
-      {/* ── Table card — identical wrapper to dashboard ─ */}
+      {/* ── Table card ──────────────────────────────── */}
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
         <div className="table-scroll-wrapper">
           <table className="data-table">
@@ -368,16 +506,30 @@ export function FollowUp() {
                         textAlign: "center", padding: "var(--space-10) 0",
                         display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-3)",
                       }}>
-                        <CheckCircle2 size={36} style={{ color: "var(--teal)", opacity: 0.35 }} />
+                        {emptyIcon}
                         <div style={{ fontSize: "var(--text-base)", fontWeight: 600, color: "var(--text-secondary)" }}>
-                          {hasFilters ? "No leads match your filters" : "No follow-ups due! 🎉"}
+                          {emptyTitle}
                         </div>
                         <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>
-                          {hasFilters
-                            ? "Try clearing filters to see all due follow-ups."
-                            : "You're all caught up — no overdue or due-today follow-ups."
-                          }
+                          {emptySubtitle}
                         </div>
+                        {hasAnyFilter && (
+                          <button
+                            onClick={clearAllFilters}
+                            style={{
+                              marginTop: 4,
+                              display: "inline-flex", alignItems: "center", gap: 6,
+                              padding: "8px 20px",
+                              background: "hsl(0 75% 50% / 0.07)",
+                              border: "1px solid hsl(0 75% 50% / 0.22)",
+                              borderRadius: "var(--radius-full)",
+                              color: "var(--danger)", fontSize: "var(--text-sm)", fontWeight: 500,
+                              cursor: "pointer", transition: "background 120ms ease",
+                            }}
+                          >
+                            <X size={13} /> Clear all filters
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -548,7 +700,7 @@ export function FollowUp() {
           </table>
         </div>
 
-        {/* Pagination row — identical to dashboard */}
+        {/* Pagination row */}
         {!leadsLoading && sortedLeads.length > 0 && (
           <div style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -576,24 +728,28 @@ export function FollowUp() {
               >
                 {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
-              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>entries</span>
+              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>rows</span>
             </div>
-            <TablePagination
-              page={page}
-              totalPages={totalPages}
-              total={sortedLeads.length}
-              pageSize={pageSize}
-              onChange={setPage}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
+                {sortedLeads.length === 0
+                  ? "No results"
+                  : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, sortedLeads.length)} of ${sortedLeads.length}`}
+              </span>
+              <TablePagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── Lead detail sheet ───────────────────────── */}
+      {/* ── Lead Detail Sheet ────────────────────────── */}
       <LeadDetailSheet
         leadId={selectedLeadId}
-        open={!!selectedLeadId}
-        onOpenChange={open => !open && setSelectedLeadId(null)}
+        onClose={() => setSelectedLeadId(null)}
       />
     </div>
   );

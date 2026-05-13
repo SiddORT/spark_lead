@@ -1,0 +1,298 @@
+# 🔔 FOLLOW-UP PAGE — “TODAY” & “OVERDUE” COUNTERS SHOULD FILTER TABLE DATA
+
+---
+
+# ❌ CURRENT ISSUE
+
+On the Follow-Up page, the top summary counters:
+
+* `0 today`
+* `18 overdue`
+
+are currently behaving like static indicators only.
+
+When clicking these counters, the table data below does NOT get filtered.
+
+This creates a UX inconsistency because users naturally expect these counters to behave as interactive filters.
+
+---
+
+# 🎯 REQUIRED BEHAVIOR
+
+The summary counters should behave as:
+
+* clickable filter chips/buttons
+* real-time quick filters
+* smart dashboard shortcuts
+
+---
+
+# ✅ REQUIRED FILTER LOGIC
+
+---
+
+# 1️⃣ CLICKING “TODAY”
+
+When user clicks:
+
+```text id="t2a4x9"
+0 today
+```
+
+the table below should immediately filter and display ONLY:
+
+* leads with follow-up date = today
+* active/open leads only
+* non-closed leads only
+
+---
+
+## FILTER CONDITIONS
+
+```ts id="j7m0r3"
+followUpDate === today
+AND
+leadStage !== "Closure"
+```
+
+OR
+
+```ts id="7b4wz2"
+status NOT IN [
+  "Closed - Won",
+  "Closed - Lost"
+]
+```
+
+---
+
+# 2️⃣ CLICKING “OVERDUE”
+
+When user clicks:
+
+```text id="0x9mrf"
+18 overdue
+```
+
+the table below should immediately filter and display ONLY:
+
+* overdue follow-ups
+* follow-up date < today
+* active/open leads only
+
+---
+
+## FILTER CONDITIONS
+
+```ts id="u5a8zw"
+followUpDate < today
+AND
+status NOT IN [
+  "Closed - Won",
+  "Closed - Lost"
+]
+```
+
+---
+
+# 3️⃣ ACTIVE FILTER STATE
+
+When a counter is selected:
+
+* visually highlight the selected chip
+* show active state clearly
+* update table instantly
+
+---
+
+## Example
+
+```text id="3snk8n"
+[ Today ✓ ]
+[ Overdue ]
+```
+
+or
+
+```text id="tclwzy"
+[ Today ]
+[ Overdue ✓ ]
+```
+
+---
+
+# 4️⃣ TOGGLE BEHAVIOR
+
+Clicking the same filter again should:
+
+* remove filter
+* restore full dataset
+
+---
+
+# 5️⃣ FILTER COMBINATION SUPPORT
+
+The “Today” and “Overdue” filters must work together with:
+
+* Search
+* Service filter
+* Company filter
+* Type filter
+* Stage filter
+
+without breaking existing filtering logic.
+
+---
+
+# ✅ EXPECTED FILTER PRIORITY
+
+Final filtered result should combine:
+
+```ts id="mo6s4r"
+quickFilter
++
+searchFilter
++
+dropdownFilters
+```
+
+---
+
+# 6️⃣ UPDATE TABLE COUNTS DYNAMICALLY
+
+When filter is applied:
+
+Update:
+
+* visible row count
+* pagination
+* result totals
+
+correctly.
+
+---
+
+# 7️⃣ EMPTY STATE SUPPORT
+
+If no data found:
+
+Show proper empty state.
+
+Example:
+
+```text id="d0w04q"
+No overdue follow-ups found
+```
+
+or
+
+```text id="vf4v9p"
+No follow-ups due today
+```
+
+NOT blank tables.
+
+---
+
+# 8️⃣ MOBILE RESPONSIVENESS
+
+The chips/buttons must:
+
+* remain clickable on mobile
+* not overlap
+* not get cropped
+* maintain touch-friendly spacing
+
+---
+
+# 🎨 UI/UX REQUIREMENTS
+
+The filter transition should feel:
+
+* smooth
+* responsive
+* instant
+* intelligent
+
+Use:
+
+* subtle animation
+* loading state if needed
+* proper active styling
+
+---
+
+# 🔐 IMPORTANT BUSINESS LOGIC
+
+Closed leads should NEVER appear inside:
+
+* Today
+* Overdue
+* Pending follow-up
+
+unless:
+
+* the lead has been reopened
+
+This logic must remain consistent system-wide.
+
+---
+
+# 🧪 TESTING REQUIREMENTS
+
+Conduct detailed testing for:
+
+---
+
+## TODAY FILTER
+
+✔ Shows only today follow-ups
+✔ Excludes closed leads
+✔ Works with search
+✔ Works with dropdown filters
+✔ Pagination correct
+
+---
+
+## OVERDUE FILTER
+
+✔ Shows only overdue leads
+✔ Excludes closed leads
+✔ Accurate overdue calculation
+✔ Correct timezone handling
+✔ Correct sorting
+
+---
+
+## UI TESTING
+
+✔ Active chip state visible
+✔ Mobile responsive
+✔ No layout break
+✔ No flickering
+✔ No incorrect counts
+
+---
+
+# 🚀 FINAL EXPECTED RESULT
+
+The Follow-Up summary counters should behave like:
+
+* smart quick filters
+* interactive KPI widgets
+* operational shortcuts
+
+making the Follow-Up module:
+
+* faster
+* smarter
+* easier to use
+* more intuitive
+* enterprise-grade
+
+with ZERO:
+
+* logical gaps
+* filter inconsistencies
+* closed lead leakage
+* UI/UX issues
