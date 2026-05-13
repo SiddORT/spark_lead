@@ -84,9 +84,13 @@ router.post("/test-email/activity", requireAuth, requireAdmin, async (req: AuthR
     if (user[0]) {
       await sendActivityAlertEmail({
         recipientEmail: user[0].email,
-        leadName: "Test Lead",
-        changeDetails: "stage: \"discovery\" → \"qualification\"\ndeal_value: \"\" → \"₹50,000\"",
-        actorName: user[0].displayName,
+        leadName: "Acme Corp Expansion",
+        changes: [
+          { label: "Pipeline Stage",  oldValue: "Discovery",       newValue: "Qualification" },
+          { label: "Pipeline Status", oldValue: "Initial Contact", newValue: "Proposal Shared" },
+          { label: "Deal Value",      oldValue: "—",               newValue: "₹50,000" },
+        ],
+        actorName: user[0].displayName || "System Admin",
       });
     }
     res.json({ success: true, message: "Test activity email sent" });

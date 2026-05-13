@@ -231,28 +231,108 @@ ${EMAIL_WRAPPER_CLOSE(new Date().getFullYear())}`;
 
 // ── Activity alert email ─────────────────────────────────────────────────────
 
+export type ActivityChange = {
+  label: string;
+  oldValue: string;
+  newValue: string;
+  isNote?: boolean;
+};
+
+function renderChangeRows(changes: ActivityChange[]): string {
+  return changes.map((c) => {
+    if (c.isNote) {
+      return `
+<table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:10px;">
+<tr>
+  <td style="background:#0d1117;border:1px solid #1e2433;border-radius:8px;overflow:hidden;">
+    <table cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td style="padding:8px 14px;background:#0a1a18;border-bottom:1px solid #1e2433;">
+          <span style="font-size:10px;font-weight:700;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.08em;">📝 Note Added</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 14px;">
+          <p style="margin:0;font-size:14px;color:#c8d0dc;line-height:1.65;">${escapeHtml(c.newValue)}</p>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>`;
+    }
+
+    const hasOld = c.oldValue && c.oldValue !== "—";
+    return `
+<table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:10px;">
+<tr>
+  <td style="background:#0d1117;border:1px solid #1e2433;border-radius:8px;overflow:hidden;">
+    <table cellpadding="0" cellspacing="0" width="100%">
+      <tr>
+        <td style="padding:8px 14px;background:#0a1220;border-bottom:1px solid #1e2433;">
+          <span style="font-size:10px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.08em;">${escapeHtml(c.label)}</span>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:12px 14px;">
+          <table cellpadding="0" cellspacing="0">
+            <tr>
+              ${hasOld ? `<td style="font-size:14px;color:#6b7a9a;text-decoration:line-through;padding-right:10px;">${escapeHtml(c.oldValue)}</td>
+              <td style="font-size:16px;color:#2dd4bf;padding-right:10px;font-weight:700;">→</td>` : ""}
+              <td style="font-size:14px;color:#e8eaf0;font-weight:600;">${escapeHtml(c.newValue)}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+</table>`;
+  }).join("");
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function sendActivityAlertEmail(params: {
   recipientEmail: string;
   leadName: string;
-  changeDetails: string;
+  changes: ActivityChange[];
   actorName: string;
 }): Promise<boolean> {
+  const changeCount = params.changes.length;
+  const summaryLine = changeCount === 1
+    ? `1 field was updated`
+    : `${changeCount} fields were updated`;
+
   const html = `${EMAIL_WRAPPER_OPEN}
 <tr><td style="padding:32px 36px;">
   <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.08em;">Lead Update</p>
-  <h2 style="margin:0 0 20px;font-size:20px;font-weight:700;color:#2dd4bf;">${params.leadName}</h2>
-  <div style="background:#0d1117;border:1px solid #1e2433;border-radius:8px;padding:16px;margin-bottom:20px;">
-    <p style="margin:0;font-size:14px;color:#8892a4;line-height:1.7;white-space:pre-line;">${params.changeDetails}</p>
-  </div>
-  <p style="margin:0;font-size:13px;color:#4a5568;">
-    Updated by <strong style="color:#e8eaf0;">${params.actorName}</strong>
-  </p>
+  <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#2dd4bf;">${escapeHtml(params.leadName)}</h2>
+  <p style="margin:0 0 24px;font-size:13px;color:#4a5568;">${summaryLine}</p>
+
+  ${renderChangeRows(params.changes)}
+
+  <table cellpadding="0" cellspacing="0" width="100%" style="margin-top:20px;">
+  <tr>
+    <td style="padding:12px 16px;background:#0d1117;border:1px solid #1e2433;border-radius:8px;">
+      <p style="margin:0;font-size:13px;color:#4a5568;">
+        Updated by <strong style="color:#c8d0dc;">${escapeHtml(params.actorName)}</strong>
+      </p>
+    </td>
+  </tr>
+  </table>
 </td></tr>
 ${EMAIL_WRAPPER_CLOSE(new Date().getFullYear())}`;
 
   return sendEmail({
     to: params.recipientEmail,
-    subject: `Update on lead: ${params.leadName}`,
+    subject: `Lead updated: ${params.leadName}`,
     html,
   });
 }
@@ -276,7 +356,10 @@ export async function sendTestEmail(
   return sendActivityAlertEmail({
     recipientEmail: to,
     leadName: "Test Lead — ACME Corp",
-    changeDetails: "Stage: Discovery → Qualification\nDeal Value: ₹5,00,000",
+    changes: [
+      { label: "Pipeline Stage",  oldValue: "Discovery",    newValue: "Qualification" },
+      { label: "Deal Value",      oldValue: "—",            newValue: "₹5,00,000" },
+    ],
     actorName: "System Admin",
   });
 }

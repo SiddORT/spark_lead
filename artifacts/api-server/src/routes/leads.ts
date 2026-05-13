@@ -19,7 +19,94 @@ import leadDocumentsRouter from "./lead-documents";
 import { eq, inArray, and, or, gte, asc, desc, sql } from "drizzle-orm";
 import { requireAuth } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
-import { sendActivityAlertEmail } from "../lib/email";
+import { sendActivityAlertEmail, type ActivityChange } from "../lib/email";
+
+// ── Human-readable field labels ───────────────────────────────────────────────
+const FIELD_LABELS: Record<string, string> = {
+  pipelineStageId:  "Pipeline Stage",
+  pipelineStatusId: "Pipeline Status",
+  stage:            "Stage",
+  leadType:         "Lead Type",
+  contactEmail:     "Contact Email",
+  phone:            "Phone",
+  serviceId:        "Service",
+  company:          "Company",
+  leadOwner:        "Lead Owner",
+  dealHandler:      "Deal Handler",
+  dealValue:        "Deal Value",
+  value:            "Value",
+  followUpDate:     "Follow-up Date",
+  nextAction:       "Next Action",
+  emotionalState:   "Emotional State",
+  decisionRole:     "Decision Role",
+  strategicTier:    "Strategic Tier",
+  customHook:       "Custom Hook",
+  objection:        "Objection",
+  outcome:          "Outcome",
+  killReason:       "Kill Reason",
+  leadKillReason:   "Lead Kill Reason",
+  internalRating:   "Internal Rating",
+  frictionPoint:    "Friction Point",
+  finalValue:       "Final Value",
+  closureNote:      "Closure Note",
+};
+
+// ── Resolve a raw DB value to a human-readable string ────────────────────────
+async function resolveFieldValue(field: string, value: string): Promise<string> {
+  if (!value || value === "null" || value === "undefined") return "—";
+
+  if (field === "pipelineStageId") {
+    const row = await db.select().from(pipelineStagesTable)
+      .where(eq(pipelineStagesTable.id, value)).limit(1);
+    return row[0]?.displayName || row[0]?.name || "—";
+  }
+
+  if (field === "pipelineStatusId") {
+    const row = await db.select().from(pipelineStatusesTable)
+      .where(eq(pipelineStatusesTable.id, value)).limit(1);
+    return row[0]?.displayName || row[0]?.name || "—";
+  }
+
+  if (field === "leadOwner" || field === "dealHandler") {
+    const row = await db.select().from(usersTable)
+      .where(eq(usersTable.id, value)).limit(1);
+    return row[0]?.displayName || row[0]?.email || "—";
+  }
+
+  if (field === "serviceId") {
+    const row = await db.select().from(servicesTable)
+      .where(eq(servicesTable.id, value)).limit(1);
+    return row[0]?.name || "—";
+  }
+
+  if (field === "dealValue" || field === "value" || field === "finalValue") {
+    const num = parseFloat(value);
+    if (!isNaN(num)) return `₹${num.toLocaleString("en-IN")}`;
+    return value;
+  }
+
+  if (field === "followUpDate") {
+    try {
+      return new Date(value).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    } catch { return value; }
+  }
+
+  return value;
+}
+
+// ── Resolve raw activity entries into labelled, human-readable changes ────────
+async function resolveActivitiesForEmail(
+  activities: Array<{ field_name: string; old_value: string; new_value: string }>
+): Promise<ActivityChange[]> {
+  const resolved: ActivityChange[] = [];
+  for (const a of activities) {
+    const label    = FIELD_LABELS[a.field_name] || a.field_name;
+    const oldValue = await resolveFieldValue(a.field_name, a.old_value);
+    const newValue = await resolveFieldValue(a.field_name, a.new_value);
+    resolved.push({ label, oldValue, newValue });
+  }
+  return resolved;
+}
 
 const router = Router();
 
@@ -498,10 +585,11 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
             const user = await db.select().from(usersTable).where(eq(usersTable.id, recipientId!)).limit(1);
             if (user[0]) {
               const actor = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
+              const resolvedChanges = await resolveActivitiesForEmail(activities);
               await sendActivityAlertEmail({
                 recipientEmail: user[0].email,
                 leadName: updated[0].leadName,
-                changeDetails: activities.map((a) => `${a.field_name}: "${a.old_value}" → "${a.new_value}"`).join("\n"),
+                changes: resolvedChanges,
                 actorName: actor[0]?.displayName || req.user!.email,
               });
             }
@@ -645,7 +733,7 @@ router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
             await sendActivityAlertEmail({
               recipientEmail: user[0].email,
               leadName: lead[0].leadName,
-              changeDetails: `Note added: "${content}"`,
+              changes: [{ label: "Note Added", oldValue: "", newValue: content, isNote: true }],
               actorName: author[0]?.displayName || req.user!.email,
             });
           }

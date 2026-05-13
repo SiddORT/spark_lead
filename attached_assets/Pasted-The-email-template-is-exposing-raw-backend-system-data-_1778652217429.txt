@@ -1,0 +1,320 @@
+The email template is exposing raw backend/system data instead of rendering human-readable values.
+
+Right now this:
+
+```text
+pipelineStatusId: "" → "0447566e-ed25-4faa-ac98-58cc95b60c04"
+```
+
+is being sent directly into the email body, which is completely incorrect from a UX, business, and audit standpoint.
+
+The user should never see:
+
+* Internal IDs
+* UUIDs
+* Database keys
+* Raw object diffs
+* Technical payloads
+
+The email should instead display meaningful business information like:
+
+```text
+Pipeline Stage updated from:
+Qualification → Proposal Shared
+```
+
+or
+
+```text
+Lead status changed:
+Ongoing Negotiation → Closed – Won
+```
+
+Below is the proper markdown prompt for Replit AI.
+
+---
+
+# 🚨 CRITICAL FIX — EMAIL TEMPLATE SHOWING RAW SYSTEM IDS / PAYLOADS
+
+---
+
+# ❌ CURRENT ISSUE
+
+The email notification system is currently sending raw backend values like:
+
+```text
+pipelineStatusId: "" → "0447566e-ed25-4faa-ac98-58cc95b60c04"
+```
+
+This is completely incorrect.
+
+Users should NEVER see:
+
+* UUIDs
+* Internal database IDs
+* Foreign keys
+* Raw JSON diffs
+* Technical payloads
+* System field names
+
+This looks broken, confusing, unprofessional, and exposes internal system structure.
+
+---
+
+# 🎯 REQUIRED FIX
+
+Convert all email notifications into clean, human-readable business updates.
+
+The email should display:
+
+* Stage names
+* Status names
+* User-friendly labels
+* Proper change summaries
+
+instead of raw IDs.
+
+---
+
+# ✅ EXPECTED EMAIL FORMAT
+
+---
+
+## BEFORE (INCORRECT)
+
+```text
+pipelineStatusId: "" → "0447566e-ed25-4faa-ac98-58cc95b60c04"
+```
+
+---
+
+## AFTER (CORRECT)
+
+```text
+Pipeline Status Updated
+
+Previous Status:
+Qualification
+
+New Status:
+Proposal Shared
+```
+
+OR
+
+```text
+Lead moved from:
+Proposal Shared → Closed – Won
+```
+
+---
+
+# ⚙️ IMPLEMENTATION REQUIREMENTS
+
+---
+
+# 1. MAP IDS TO HUMAN READABLE VALUES
+
+Wherever the system stores:
+
+```ts
+pipelineStatusId
+pipelineStageId
+companyId
+serviceId
+handlerId
+ownerId
+```
+
+the email layer must resolve those IDs before rendering the template.
+
+---
+
+## Example
+
+```ts
+const previousStatus = await getPipelineStatusName(oldValue);
+const newStatus = await getPipelineStatusName(newValue);
+```
+
+---
+
+# 2. NEVER SEND RAW FIELD NAMES
+
+Do NOT show:
+
+```text
+pipelineStatusId
+leadOwnerId
+assignedToId
+```
+
+Instead show:
+
+```text
+Pipeline Status
+Lead Owner
+Assigned To
+```
+
+---
+
+# 3. CREATE A FIELD LABEL MAPPER
+
+```ts
+const fieldLabels = {
+  pipelineStatusId: "Pipeline Status",
+  pipelineStageId: "Pipeline Stage",
+  leadValue: "Lead Value",
+  leadOwnerId: "Lead Owner",
+  dealHandlerId: "Deal Handler",
+};
+```
+
+---
+
+# 4. CREATE VALUE RESOLVERS
+
+```ts
+const resolvers = {
+  pipelineStatusId: getPipelineStatusName,
+  pipelineStageId: getPipelineStageName,
+  leadOwnerId: getUserName,
+  dealHandlerId: getUserName,
+  companyId: getCompanyName,
+};
+```
+
+---
+
+# 5. HANDLE EMPTY VALUES PROPERLY
+
+Do NOT show:
+
+```text
+"" → "044756..."
+```
+
+Instead:
+
+```text
+Not Assigned → Proposal Shared
+```
+
+or
+
+```text
+No Previous Status → Qualification
+```
+
+---
+
+# 🎨 6. IMPROVE EMAIL UI
+
+---
+
+## USE STRUCTURED CHANGE BLOCKS
+
+```html
+<div class="change-row">
+  <div class="label">Pipeline Status</div>
+
+  <div class="change-values">
+    <span class="old-value">Qualification</span>
+    <span class="arrow">→</span>
+    <span class="new-value">Proposal Shared</span>
+  </div>
+</div>
+```
+
+---
+
+# 7. REMOVE TECHNICAL DATA COMPLETELY
+
+The email system must NEVER expose:
+
+* Database UUIDs
+* Internal keys
+* API payloads
+* Raw diff objects
+* JSON responses
+* Undefined/null values
+
+---
+
+# 🧪 8. TESTING REQUIREMENTS
+
+---
+
+## TEST ALL EMAIL TYPES
+
+✔ Lead updates
+✔ Stage changes
+✔ Status changes
+✔ Owner changes
+✔ Handler changes
+✔ Lead value changes
+✔ Closure updates
+
+---
+
+## VERIFY
+
+✔ No UUIDs visible anywhere
+✔ No raw IDs visible anywhere
+✔ No raw JSON visible
+✔ No backend field names exposed
+✔ Emails are readable by non-technical users
+
+---
+
+# 🔐 9. SECURITY & PROFESSIONALISM
+
+This is also a security and audit concern.
+
+Internal system identifiers should never be exposed to end users in emails.
+
+The notification system should look:
+
+* Clean
+* Human-readable
+* Professional
+* Business-friendly
+* Non-technical
+
+---
+
+# 🚀 FINAL EXPECTED RESULT
+
+Users should receive polished business updates like:
+
+```text
+Lead Updated
+
+Lead:
+Acme Corp Expansion
+
+Pipeline Stage:
+Qualification → Proposal & Negotiation
+
+Updated By:
+Test Admin User
+```
+
+NOT raw technical payloads.
+
+---
+
+# ⚠️ IMPORTANT
+
+After implementing:
+
+* Thoroughly test the complete email notification system
+* Verify all templates
+* Verify all dynamic fields
+* Ensure there are no logical gaps
+* Ensure there are no UI/UX issues
+* Ensure no raw backend data leaks anywhere in emails
+* Ensure the system remains secure, reliable, and production-safe
+
+---
