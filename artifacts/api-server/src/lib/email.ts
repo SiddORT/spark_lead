@@ -71,7 +71,8 @@ export async function verifyEmailConnection(): Promise<boolean> {
  * authorised to send for.
  */
 function resolveFromAddress(): string {
-  const smtpFrom = process.env.SMTP_FROM?.trim();
+  // Accept SMTP_FROM or EMAIL_FROM (either name works)
+  const smtpFrom = (process.env.SMTP_FROM || process.env.EMAIL_FROM)?.trim();
   if (smtpFrom) {
     // If it already looks like a full "Name <addr>" header, use as-is.
     // Otherwise wrap it with the display name.
