@@ -57,6 +57,31 @@ export async function verifyEmailConnection(): Promise<boolean> {
 
 // ─── Core send helper ────────────────────────────────────────────────────────
 
+/**
+ * Resolve the "From" address used for all outbound emails.
+ *
+ * Priority:
+ *   1. SMTP_FROM env var  – use a custom-domain address when available
+ *      e.g. "noreply@yourdomain.com" or "Spark Lead Hub <noreply@yourdomain.com>"
+ *   2. SMTP_USER fallback – used when no SMTP_FROM is set (Gmail address)
+ *
+ * Using a custom-domain From address (matching your SMTP relay's authorized
+ * domain) is the primary fix for custom-domain recipients rejecting mail:
+ * SPF/DKIM alignment requires the From domain to match what the relay is
+ * authorised to send for.
+ */
+function resolveFromAddress(): string {
+  const smtpFrom = process.env.SMTP_FROM?.trim();
+  if (smtpFrom) {
+    // If it already looks like a full "Name <addr>" header, use as-is.
+    // Otherwise wrap it with the display name.
+    return smtpFrom.includes("<")
+      ? smtpFrom
+      : `"Spark Lead Hub" <${smtpFrom}>`;
+  }
+  return `"Spark Lead Hub" <${process.env.SMTP_USER}>`;
+}
+
 async function sendEmail(opts: {
   to: string;
   subject: string;
@@ -68,18 +93,34 @@ async function sendEmail(opts: {
     return false;
   }
 
+  const from = resolveFromAddress();
+
   try {
     const info = await transporter.sendMail({
-      from: `"Spark Lead Hub" <${process.env.SMTP_USER}>`,
+      from,
       to: opts.to,
       subject: opts.subject,
       html: opts.html,
-      text: opts.text || opts.html.replace(/<[^>]+>/g, ""),
+      text: opts.text || opts.html.replace(/<[^>]+>/g, " ").replace(/\s{2,}/g, " ").trim(),
+      // ── Deliverability headers ──────────────────────────────────────────
+      // Reply-To: keep replies going to SMTP_USER even when SMTP_FROM differs
+      replyTo: process.env.SMTP_REPLY_TO || process.env.SMTP_USER,
+      headers: {
+        // Identifies this as automated transactional mail (not bulk marketing)
+        "X-Mailer": "Spark-Lead-Hub/1.0",
+        // Tell mail clients not to thread these as conversations
+        "X-Auto-Response-Suppress": "OOF, DR, RN, NRN, AutoReply",
+        // Precedence bulk keeps OOF auto-replies from bouncing back
+        "Precedence": "bulk",
+      },
     });
-    logger.info({ to: opts.to, messageId: info.messageId }, "✅ Email sent");
+    logger.info(
+      { to: opts.to, from, messageId: info.messageId },
+      "✅ Email sent",
+    );
     return true;
   } catch (err: any) {
-    logger.error({ err: err.message, to: opts.to }, "❌ Email send failed");
+    logger.error({ err: err.message, to: opts.to, from }, "❌ Email send failed");
     return false;
   }
 }
