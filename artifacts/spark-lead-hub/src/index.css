@@ -2715,6 +2715,264 @@ a:hover { opacity: 0.85; }
 }
 
 /* ============================================
+   STATS GRID (responsive)
+   ============================================ */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+/* ============================================
+   RESPONSIVE — COMPREHENSIVE MOBILE / TABLET
+   ============================================ */
+
+/* ── Large tablet (≤1200px): loosen cols ── */
+@media (max-width: 1200px) {
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .charts-grid { grid-template-columns: 1fr; }
+  .page { padding: var(--space-6) var(--space-6); }
+}
+
+/* ── Tablet (≤1024px) ── */
+@media (max-width: 1024px) {
+  .sidebar { width: 200px; min-width: 200px; }
+  .stats-grid { grid-template-columns: repeat(3, 1fr); }
+  .permissions-grid { grid-template-columns: 1fr; }
+  .kanban-grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }
+  .details-row { grid-template-columns: 1fr 1fr; }
+  .details-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── Mobile (≤768px): full mobile layout ── */
+@media (max-width: 768px) {
+
+  /* [1] PAGE LAYOUT */
+  .page { padding: var(--space-4) var(--space-4); }
+  .page-title { font-size: clamp(18px, 5vw, 26px); }
+  .page-subtitle { font-size: 12px; }
+  .page-header {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+    align-items: flex-start;
+  }
+  .page-actions { flex-wrap: wrap; }
+
+  /* [2] STATS GRID — 2 col */
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+  .stat-card { padding: var(--space-4); }
+  .stat-card-value { font-size: 26px; }
+
+  /* [3] CHARTS */
+  .charts-grid, .charts-grid-2 { grid-template-columns: 1fr !important; }
+  .chart-card { padding: var(--space-4); }
+  .chart-title { font-size: var(--text-sm); }
+
+  /* [4] TABLE — horizontal scroll, preserve touch */
+  .table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-md);
+  }
+  .data-table { table-layout: auto; min-width: 680px; }
+
+  /* [5] FILTER BAR — stack vertically */
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+  .search-input-wrapper { min-width: unset; width: 100%; }
+  .filter-chips { flex-wrap: wrap; }
+
+  /* Dashboard standalone filter bar */
+  .dashboard-filter-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--space-2) !important;
+    padding: var(--space-3) !important;
+  }
+  .dashboard-filter-bar > div:first-child {
+    flex: unset !important;
+    min-width: unset !important;
+    width: 100% !important;
+  }
+
+  /* [6] LEAD DETAIL SHEET — full screen on mobile */
+  .lead-sheet {
+    width: 100vw !important;
+    border-left: none;
+    top: 0;
+    border-radius: 0;
+  }
+  .lead-sheet-header {
+    padding: var(--space-3) var(--space-4);
+  }
+  .lead-sheet-title { font-size: var(--text-lg); }
+  .lead-sheet-body { padding: var(--space-4); }
+
+  /* [7] SHEET TABS — horizontally scrollable */
+  .sheet-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 var(--space-3);
+    gap: 0;
+    scrollbar-width: none;
+  }
+  .sheet-tabs::-webkit-scrollbar { display: none; }
+  .sheet-tab {
+    padding: var(--space-3) var(--space-3);
+    font-size: var(--text-xs);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* [8] STAGE TRACKER — horizontal scroll */
+  .milestone-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--space-3) var(--space-4);
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .milestone-bar::-webkit-scrollbar { display: none; }
+  .milestone { min-width: 80px; flex-shrink: 0; }
+  .milestone-dot { width: 22px; height: 22px; font-size: 10px; }
+  .milestone-label { font-size: 9px; }
+  .milestone-connector { min-width: 24px; margin: 0 var(--space-1); }
+
+  /* [9] KANBAN — horizontal scroll (disable drag on mobile) */
+  .kanban-grid {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--space-4);
+    padding-bottom: var(--space-6);
+    align-items: flex-start;
+    scrollbar-width: none;
+    grid-template-columns: unset;
+  }
+  .kanban-grid::-webkit-scrollbar { display: none; }
+  .kanban-column { min-width: 280px; flex-shrink: 0; }
+
+  /* [10] MODALS — bottom sheet on mobile */
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    max-width: 100%;
+    max-height: 92svh;
+    overflow-y: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .modal-body {
+    padding: var(--sp-4);
+    max-height: 65svh;
+    overflow-y: auto;
+  }
+  .modal-head { padding: var(--sp-4); }
+  .modal-foot { padding: var(--sp-4); }
+
+  /* [11] FORMS — stack single col */
+  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+  .details-row { grid-template-columns: 1fr !important; }
+  .details-grid { grid-template-columns: 1fr !important; }
+  .form-row { grid-template-columns: 1fr; }
+
+  /* [12] PERMISSIONS GRID — single col */
+  .permissions-grid { grid-template-columns: 1fr; }
+
+  /* [13] BUTTONS — 44px touch targets */
+  .btn { min-height: 44px; }
+  .btn.btn-sm { min-height: 36px; }
+  .btn-icon {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* [14] CARDS */
+  .card { padding: var(--space-4); }
+
+  /* Page tabs — full width scrollable */
+  .page-tabs { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .page-tab { white-space: nowrap; padding: var(--space-2) var(--space-3); }
+
+  /* Notes input footer — stack on mobile */
+  .notes-input-footer {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: var(--sp-2) !important;
+  }
+  .notes-hint { display: none; }
+
+  /* Follow-up bell — bottom sheet vars */
+  .bell-sheet-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: unset !important;
+    width: 100% !important;
+    border-radius: var(--r-xl) var(--r-xl) 0 0 !important;
+    max-height: 80svh;
+    overflow-y: auto;
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+    z-index: 9999;
+  }
+  .bell-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: hsl(222 22% 3% / 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    animation: fade-in 180ms ease both;
+  }
+}
+
+/* ── Extra-small mobile (≤480px) ── */
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
+  .page { padding: var(--space-3); }
+  .page-title { font-size: clamp(16px, 4.5vw, 22px); }
+  .stat-card-value { font-size: 22px; }
+  .data-table { min-width: 560px; }
+}
+
+/* ── Very small (≤360px) ── */
+@media (max-width: 360px) {
+  .page { padding: var(--space-2) var(--space-2); }
+  .stats-grid { gap: var(--space-2); }
+  .stat-card { padding: var(--space-3); }
+}
+
+/* ── Safe area insets (notch / home indicator) ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .app-shell {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .mobile-header {
+    padding-top: max(var(--space-3), env(safe-area-inset-top));
+  }
+  .sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ── Prevent horizontal overflow on body ── */
+body { overflow-x: hidden; }
+.main-content { overflow-x: hidden; }
+
+/* ============================================
    LIGHT THEME OVERRIDES
    Applied when <html data-theme="light">
    ============================================ */

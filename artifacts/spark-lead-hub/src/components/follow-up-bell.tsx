@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, X } from "lucide-react";
 import { useGetLeads } from "@workspace/api-client-react";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useLocation } from "wouter";
 import { formatShortDate } from "@/lib/utils";
 import { differenceInCalendarDays } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Status = "OVERDUE" | "TODAY" | "UPCOMING";
 
@@ -48,6 +49,7 @@ export function FollowUpBell({ onLeadClick }: Props) {
   const ref              = useRef<HTMLDivElement>(null);
   const [, setLocation]  = useLocation();
   const { resolveName }  = useUserMap();
+  const isMobile         = useIsMobile();
 
   const { data: raw = [] } = useGetLeads(undefined, {
     query: { refetchInterval: 60_000, refetchOnWindowFocus: true },
@@ -78,6 +80,133 @@ export function FollowUpBell({ onLeadClick }: Props) {
 
   const badgeLabel = badgeCount > 9 ? "9+" : String(badgeCount);
 
+  const panelContent = (
+    <>
+      {/* Header */}
+      <div style={{
+        padding: "14px 16px 10px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.01em" }}>
+          Follow-Ups
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {badgeCount > 0 && (
+            <span style={{
+              background: "rgba(239,68,68,0.15)", color: "rgb(248,113,113)",
+              borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 600,
+            }}>
+              {badgeCount} urgent
+            </span>
+          )}
+          {isMobile && (
+            <button
+              onClick={() => setOpen(false)}
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 8, width: 28, height: 28,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer", color: "rgba(255,255,255,0.65)",
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 12px" }} />
+
+      {/* Mobile handle bar */}
+      {isMobile && (
+        <div style={{
+          position: "absolute", top: 8, left: "50%", transform: "translateX(-50%)",
+          width: 36, height: 4, borderRadius: 2,
+          background: "rgba(255,255,255,0.2)",
+        }} />
+      )}
+
+      {/* Items list */}
+      <div style={{ padding: "8px 10px", maxHeight: isMobile ? "55svh" : 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+        {displayItems.length === 0 ? (
+          <div style={{
+            padding: "28px 12px", textAlign: "center",
+            color: "rgba(255,255,255,0.35)", fontSize: 13,
+          }}>
+            🎉 No follow-ups pending
+          </div>
+        ) : displayItems.map((item: any) => (
+          <button
+            key={item.id}
+            onClick={() => { onLeadClick(item.id); setOpen(false); }}
+            style={{
+              width: "100%", textAlign: "left",
+              background: "transparent", border: "none",
+              borderRadius: 12, padding: "10px 12px",
+              cursor: "pointer", transition: "background 0.12s",
+              minHeight: 44,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+          >
+            {/* Row: name + badge */}
+            <div style={{
+              display: "flex", alignItems: "flex-start",
+              justifyContent: "space-between", gap: 8, marginBottom: 5,
+            }}>
+              <span style={{
+                fontWeight: 600, fontSize: 13,
+                color: "rgba(255,255,255,0.88)",
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                minWidth: 0, flex: 1,
+              }}>
+                {item.leadName}
+              </span>
+              <StatusPill status={item._status as Status} />
+            </div>
+            {/* Row: date + handler */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.40)" }}>
+                📅 {item.activeFollowUpDate ? formatShortDate(item.activeFollowUpDate) : "—"}
+              </span>
+              {item.dealHandler && (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                  👤 {resolveName(item.dealHandler)}
+                </span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Divider */}
+      <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 12px" }} />
+
+      {/* Footer */}
+      <div style={{ padding: "10px 12px 12px" }}>
+        <button
+          onClick={() => { setLocation("/follow-up"); setOpen(false); }}
+          style={{
+            width: "100%",
+            background: "rgba(45,212,191,0.07)",
+            border: "1px solid rgba(45,212,191,0.2)",
+            borderRadius: 12,
+            color: "rgb(45,212,191)", fontWeight: 600, fontSize: 13,
+            padding: "10px 0", cursor: "pointer",
+            transition: "background 0.15s",
+            minHeight: 44,
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = "rgba(45,212,191,0.14)")}
+          onMouseLeave={e => (e.currentTarget.style.background = "rgba(45,212,191,0.07)")}
+        >
+          View All Follow-Ups →
+        </button>
+      </div>
+    </>
+  );
+
   return (
     <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
 
@@ -97,6 +226,7 @@ export function FollowUpBell({ onLeadClick }: Props) {
           color: badgeCount > 0 ? "rgb(248,113,113)" : "rgba(255,255,255,0.65)",
           display: "flex", alignItems: "center",
           transition: "background 0.15s, color 0.15s, border-color 0.15s",
+          minWidth: 44, minHeight: 44, justifyContent: "center",
         }}
         onMouseEnter={e => {
           if (!open) e.currentTarget.style.background = "rgba(255,255,255,0.08)";
@@ -124,8 +254,8 @@ export function FollowUpBell({ onLeadClick }: Props) {
         )}
       </button>
 
-      {/* ── Popover ── */}
-      {open && (
+      {/* ── Desktop popover ── */}
+      {open && !isMobile && (
         <div style={{
           position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 9999,
           width: 320,
@@ -135,104 +265,29 @@ export function FollowUpBell({ onLeadClick }: Props) {
           boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)",
           overflow: "hidden",
         }}>
-
-          {/* Header */}
-          <div style={{
-            padding: "14px 16px 10px",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
-            <span style={{ fontWeight: 700, fontSize: 14, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.01em" }}>
-              Follow-Ups
-            </span>
-            {badgeCount > 0 && (
-              <span style={{
-                background: "rgba(239,68,68,0.15)", color: "rgb(248,113,113)",
-                borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 600,
-              }}>
-                {badgeCount} urgent
-              </span>
-            )}
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 12px" }} />
-
-          {/* Items list */}
-          <div style={{ padding: "8px 10px", maxHeight: 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
-            {displayItems.length === 0 ? (
-              <div style={{
-                padding: "28px 12px", textAlign: "center",
-                color: "rgba(255,255,255,0.35)", fontSize: 13,
-              }}>
-                🎉 No follow-ups pending
-              </div>
-            ) : displayItems.map((item: any) => (
-              <button
-                key={item.id}
-                onClick={() => { onLeadClick(item.id); setOpen(false); }}
-                style={{
-                  width: "100%", textAlign: "left",
-                  background: "transparent", border: "none",
-                  borderRadius: 12, padding: "10px 12px",
-                  cursor: "pointer", transition: "background 0.12s",
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                {/* Row: name + badge */}
-                <div style={{
-                  display: "flex", alignItems: "flex-start",
-                  justifyContent: "space-between", gap: 8, marginBottom: 5,
-                }}>
-                  <span style={{
-                    fontWeight: 600, fontSize: 13,
-                    color: "rgba(255,255,255,0.88)",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                    minWidth: 0, flex: 1,
-                  }}>
-                    {item.leadName}
-                  </span>
-                  <StatusPill status={item._status as Status} />
-                </div>
-                {/* Row: date + handler */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.40)" }}>
-                    📅 {item.activeFollowUpDate ? formatShortDate(item.activeFollowUpDate) : "—"}
-                  </span>
-                  {item.dealHandler && (
-                    <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
-                      👤 {resolveName(item.dealHandler)}
-                    </span>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 12px" }} />
-
-          {/* Footer */}
-          <div style={{ padding: "10px 12px 12px" }}>
-            <button
-              onClick={() => { setLocation("/follow-up"); setOpen(false); }}
-              style={{
-                width: "100%",
-                background: "rgba(45,212,191,0.07)",
-                border: "1px solid rgba(45,212,191,0.2)",
-                borderRadius: 12,
-                color: "rgb(45,212,191)", fontWeight: 600, fontSize: 13,
-                padding: "8px 0", cursor: "pointer",
-                transition: "background 0.15s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(45,212,191,0.14)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "rgba(45,212,191,0.07)")}
-            >
-              View All Follow-Ups →
-            </button>
-          </div>
-
+          {panelContent}
         </div>
+      )}
+
+      {/* ── Mobile bottom sheet ── */}
+      {open && isMobile && (
+        <>
+          <div
+            className="bell-sheet-overlay"
+            onClick={() => setOpen(false)}
+          />
+          <div
+            className="bell-sheet-mobile"
+            style={{
+              position: "fixed",
+              background: "hsl(222, 25%, 8%)",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
+              overflow: "hidden",
+            }}
+          >
+            {panelContent}
+          </div>
+        </>
       )}
     </div>
   );

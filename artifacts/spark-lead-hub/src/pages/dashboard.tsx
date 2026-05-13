@@ -559,12 +559,7 @@ export function Dashboard() {
       </div>
 
       {/* Stat cards */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(5, 1fr)",
-        gap: "var(--space-4)",
-        marginBottom: "var(--space-5)",
-      }}>
+      <div className="stats-grid">
         {leadsLoading ? (
           Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
@@ -783,7 +778,7 @@ export function Dashboard() {
       </div>
 
       {/* ─── Standalone filter bar ─── */}
-      <div style={{
+      <div className="dashboard-filter-bar" style={{
         display: "flex",
         alignItems: "center",
         gap: "var(--space-3)",
@@ -792,6 +787,7 @@ export function Dashboard() {
         border: "1px solid var(--border-subtle)",
         borderRadius: "var(--radius-lg)",
         marginBottom: "var(--space-3)",
+        flexWrap: "wrap",
       }}>
         {/* Search — takes all remaining space on the left */}
         <div style={{ position: "relative", flex: "1 1 200px", minWidth: 180 }}>
