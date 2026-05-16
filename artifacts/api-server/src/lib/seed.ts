@@ -189,13 +189,29 @@ export async function seedInitialAdmin(): Promise<void> {
 
 export async function seedDefaultPermissions(): Promise<void> {
   try {
-    const existing = await db.select().from(rolePermissionsTable).limit(1);
-    if (existing.length > 0) return;
+    // Fetch every existing (roleName, resource, action) triple so we can
+    // insert only the rows that are genuinely absent.  This replaces the old
+    // "skip if ANY rows exist" guard, which caused newly-added resources (e.g.
+    // pipeline) to never be seeded into an already-populated database.
+    const existing = await db
+      .select({ roleName: rolePermissionsTable.roleName, resource: rolePermissionsTable.resource, action: rolePermissionsTable.action })
+      .from(rolePermissionsTable);
 
-    logger.info("🔐 Seeding default role permissions...");
+    const existingKeys = new Set(existing.map((r) => `${r.roleName}::${r.resource}::${r.action}`));
+
+    const missing = DEFAULT_PERMISSIONS.filter(
+      (p) => !existingKeys.has(`${p.roleName}::${p.resource}::${p.action}`)
+    );
+
+    if (missing.length === 0) {
+      logger.info("✅ Role permissions already up-to-date — nothing to seed.");
+      return;
+    }
+
+    logger.info(`🔐 Seeding ${missing.length} missing permission row(s)...`);
 
     await db.insert(rolePermissionsTable).values(
-      DEFAULT_PERMISSIONS.map((p) => ({
+      missing.map((p) => ({
         id: uuidv4(),
         roleName: p.roleName,
         resource: p.resource,
@@ -204,7 +220,7 @@ export async function seedDefaultPermissions(): Promise<void> {
       }))
     );
 
-    logger.info(`✅ Seeded ${DEFAULT_PERMISSIONS.length} default permission rows.`);
+    logger.info(`✅ Seeded ${missing.length} permission row(s) (${[...new Set(missing.map(p => p.resource))].join(", ")}).`);
   } catch (err) {
     logger.error({ err }, "❌ Failed to seed default permissions");
   }
