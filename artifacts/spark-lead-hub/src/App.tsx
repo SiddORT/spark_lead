@@ -1,8 +1,8 @@
-import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
+import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, ProtectedRoute } from "@/components/auth-provider";
+import { AuthProvider, ProtectedRoute, useAuth } from "@/components/auth-provider";
 import { Layout } from "@/components/layout";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Dashboard } from "@/pages/dashboard";
@@ -30,6 +30,67 @@ const queryClient = new QueryClient({
   },
 });
 
+function AccessDeniedView() {
+  return (
+    <div className="page">
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        flex: 1,
+        gap: "var(--space-4)",
+        padding: "var(--space-12)",
+        textAlign: "center",
+      }}>
+        <div style={{
+          width: 56, height: 56, borderRadius: "50%",
+          background: "hsl(0 72% 51% / 0.08)",
+          border: "1px solid hsl(0 72% 51% / 0.25)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 24,
+        }}>
+          🔒
+        </div>
+        <div style={{
+          fontFamily: "var(--font-display)",
+          fontSize: "var(--text-lg)",
+          fontWeight: 700,
+          color: "var(--text-primary)",
+        }}>
+          Access Denied
+        </div>
+        <div style={{
+          fontSize: "var(--text-sm)",
+          color: "var(--text-muted)",
+          maxWidth: 360,
+          lineHeight: 1.7,
+        }}>
+          You don't have permission to access this section.
+          Contact your administrator to request access.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PermissionRoute({
+  resource,
+  action,
+  adminOnly = false,
+  children,
+}: {
+  resource?: string;
+  action?: string;
+  adminOnly?: boolean;
+  children: React.ReactNode;
+}) {
+  const { hasPermission, user } = useAuth();
+  if (adminOnly && user?.role !== "admin") return <AccessDeniedView />;
+  if (resource && action && !hasPermission(resource, action)) return <AccessDeniedView />;
+  return <>{children}</>;
+}
+
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
@@ -45,42 +106,78 @@ function Router() {
       <Route path="/request-access" component={RequestAccess} />
       <Route path="/access-denied" component={AccessDenied} />
       <Route path="/set-password" component={SetPassword} />
+
       <Route path="/profile">
         <ProtectedLayout><Profile /></ProtectedLayout>
       </Route>
 
+      {/* ── Always-accessible protected pages ── */}
       <Route path="/">
         <ProtectedLayout><Dashboard /></ProtectedLayout>
       </Route>
       <Route path="/kanban">
         <ProtectedLayout><KanbanBoard /></ProtectedLayout>
       </Route>
-      <Route path="/leads/new">
-        <ProtectedLayout><NewLead /></ProtectedLayout>
-      </Route>
       <Route path="/follow-up">
         <ProtectedLayout><FollowUp /></ProtectedLayout>
       </Route>
+
+      {/* ── Permission-guarded pages ── */}
+      <Route path="/leads/new">
+        <ProtectedLayout>
+          <PermissionRoute resource="leads" action="create">
+            <NewLead />
+          </PermissionRoute>
+        </ProtectedLayout>
+      </Route>
       <Route path="/analytics">
-        <ProtectedLayout><Analytics /></ProtectedLayout>
+        <ProtectedLayout>
+          <PermissionRoute resource="reports" action="read">
+            <Analytics />
+          </PermissionRoute>
+        </ProtectedLayout>
       </Route>
       <Route path="/team">
-        <ProtectedLayout><Team /></ProtectedLayout>
+        <ProtectedLayout>
+          <PermissionRoute resource="team" action="read">
+            <Team />
+          </PermissionRoute>
+        </ProtectedLayout>
       </Route>
       <Route path="/master/companies">
-        <ProtectedLayout><Companies /></ProtectedLayout>
+        <ProtectedLayout>
+          <PermissionRoute resource="companies" action="read">
+            <Companies />
+          </PermissionRoute>
+        </ProtectedLayout>
       </Route>
       <Route path="/master/services">
-        <ProtectedLayout><Services /></ProtectedLayout>
+        <ProtectedLayout>
+          <PermissionRoute resource="services" action="read">
+            <Services />
+          </PermissionRoute>
+        </ProtectedLayout>
       </Route>
       <Route path="/master/pipeline">
-        <ProtectedLayout><PipelineMaster /></ProtectedLayout>
+        <ProtectedLayout>
+          <PermissionRoute resource="settings" action="read">
+            <PipelineMaster />
+          </PermissionRoute>
+        </ProtectedLayout>
       </Route>
       <Route path="/settings/permissions">
-        <ProtectedLayout><Permissions /></ProtectedLayout>
+        <ProtectedLayout>
+          <PermissionRoute adminOnly>
+            <Permissions />
+          </PermissionRoute>
+        </ProtectedLayout>
       </Route>
       <Route path="/audit">
-        <ProtectedLayout><AuditLog /></ProtectedLayout>
+        <ProtectedLayout>
+          <PermissionRoute resource="audit" action="read">
+            <AuditLog />
+          </PermissionRoute>
+        </ProtectedLayout>
       </Route>
 
       <Route component={NotFound} />

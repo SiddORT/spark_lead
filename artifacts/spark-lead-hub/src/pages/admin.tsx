@@ -7,7 +7,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui";
 import { format } from "date-fns";
-import { ShieldCheck, ScrollText, Mail, Activity, Settings, Info } from "lucide-react";
+import { ShieldCheck, ScrollText, Mail, Activity, Settings, Info, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 
@@ -112,8 +112,8 @@ export function Permissions() {
       }}>
         <Info size={15} style={{ color: "var(--teal)", flexShrink: 0, marginTop: 1 }} />
         <span>
-          Changes take effect <strong style={{ color: "var(--text-primary)" }}>immediately</strong> — the backend checks permissions live on every request.
-          Logged-in users automatically receive updated permissions within 30 seconds.
+          Changes take effect <strong style={{ color: "var(--text-primary)" }}>immediately</strong> — every API request is checked live against the database.
+          Active sessions reflect updates within seconds, or instantly when the user switches back to their tab.
         </span>
       </div>
 
@@ -154,24 +154,29 @@ export function Permissions() {
 
                       return (
                         <td key={r} style={{ textAlign: "center" }}>
-                          <div style={{ display: "inline-flex", alignItems: "center", flexDirection: "column", gap: 2 }}>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)" }}>
                             <Switch
                               checked={perm.allowed}
                               onCheckedChange={() => handleToggle(perm)}
                               disabled={isDisabled}
                               title={
                                 readBlocked
-                                  ? `Enable "${resource}.read" for ${r} first`
+                                  ? `Enable Read permission for ${r} first`
                                   : isSaving
                                   ? "Saving…"
                                   : undefined
                               }
-                              style={{ opacity: isSaving ? 0.6 : 1, transition: "opacity 150ms ease" }}
+                              style={{
+                                opacity: isSaving ? 0.6 : readBlocked ? 0.35 : 1,
+                                transition: "opacity 150ms ease",
+                              }}
                             />
                             {readBlocked && (
-                              <span style={{ fontSize: 9, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                                needs read
-                              </span>
+                              <Lock
+                                size={11}
+                                style={{ color: "var(--text-muted)", flexShrink: 0 }}
+                                title={`Enable Read permission for ${r} first`}
+                              />
                             )}
                           </div>
                         </td>

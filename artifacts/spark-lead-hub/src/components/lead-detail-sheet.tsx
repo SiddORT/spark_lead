@@ -18,7 +18,7 @@ import {
 import { DocumentsTab } from "./documents-tab";
 import { useLocation } from "wouter";
 import { useUserMap } from "@/hooks/use-user-map";
-import { useAuth } from "./auth-provider";
+import { useAuth, PermissionCheck } from "./auth-provider";
 import { toast } from "sonner";
 import { usePipelineStages } from "@/hooks/use-pipeline";
 import { PipelineProgressBar } from "./stage-status-select";
@@ -1248,34 +1248,36 @@ export function LeadDetailSheet({
                 <Copy size={15} />
               </button>
             )}
-            {confirmingDelete ? (
-              <>
-                <span className="sheet-delete-confirm-label">Delete this lead?</span>
+            <PermissionCheck resource="leads" action="delete">
+              {confirmingDelete ? (
+                <>
+                  <span className="sheet-delete-confirm-label">Delete this lead?</span>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={handleDeleteConfirm}
+                    disabled={deleteLeadMutation.isPending}
+                  >
+                    {deleteLeadMutation.isPending ? "Deleting…" : "Yes, delete"}
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleteLeadMutation.isPending}
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
                 <button
-                  className="btn btn-danger btn-sm"
-                  onClick={handleDeleteConfirm}
-                  disabled={deleteLeadMutation.isPending}
+                  className="sheet-delete-btn"
+                  onClick={() => setConfirmingDelete(true)}
+                  aria-label="Delete lead"
+                  title="Delete lead"
                 >
-                  {deleteLeadMutation.isPending ? "Deleting…" : "Yes, delete"}
+                  <Trash2 size={15} />
                 </button>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => setConfirmingDelete(false)}
-                  disabled={deleteLeadMutation.isPending}
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <button
-                className="sheet-delete-btn"
-                onClick={() => setConfirmingDelete(true)}
-                aria-label="Delete lead"
-                title="Delete lead"
-              >
-                <Trash2 size={15} />
-              </button>
-            )}
+              )}
+            </PermissionCheck>
             <button
               className="sheet-close-btn"
               onClick={() => onOpenChange(false)}

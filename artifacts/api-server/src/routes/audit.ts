@@ -2,12 +2,12 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { auditLogTable, usersTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { requireAuth, requireAdmin } from "../lib/auth";
+import { requireAuth, requirePermission } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 
 const router = Router();
 
-router.get("/", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+router.get("/", requireAuth, requirePermission("audit", "read"), async (req: AuthRequest, res) => {
   try {
     const entries = await db
       .select()

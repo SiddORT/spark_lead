@@ -24,7 +24,7 @@ async function getServiceWithCompanies(serviceId: string) {
   };
 }
 
-router.get("/", requireAuth, requirePermission("companies", "read"), async (req: AuthRequest, res) => {
+router.get("/", requireAuth, requirePermission("services", "read"), async (req: AuthRequest, res) => {
   try {
     const services = await db.select().from(servicesTable).orderBy(servicesTable.name);
     const result = await Promise.all(services.map((s) => getServiceWithCompanies(s.id)));
@@ -45,7 +45,7 @@ router.get("/", requireAuth, requirePermission("companies", "read"), async (req:
   }
 });
 
-router.post("/", requireAuth, requirePermission("companies", "create"), async (req: AuthRequest, res) => {
+router.post("/", requireAuth, requirePermission("services", "create"), async (req: AuthRequest, res) => {
   try {
     const { name, category, description } = req.body;
     if (!name) {
@@ -78,7 +78,7 @@ router.post("/", requireAuth, requirePermission("companies", "create"), async (r
   }
 });
 
-router.patch("/:id", requireAuth, requirePermission("companies", "update"), async (req: AuthRequest, res) => {
+router.patch("/:id", requireAuth, requirePermission("services", "update"), async (req: AuthRequest, res) => {
   try {
     const { name, category, description } = req.body;
     const update: any = {};
@@ -107,7 +107,7 @@ router.patch("/:id", requireAuth, requirePermission("companies", "update"), asyn
   }
 });
 
-router.delete("/:id", requireAuth, requirePermission("companies", "delete"), async (req: AuthRequest, res) => {
+router.delete("/:id", requireAuth, requirePermission("services", "delete"), async (req: AuthRequest, res) => {
   try {
     await db.delete(servicesTable).where(eq(servicesTable.id, req.params.id));
     res.json({ success: true, message: "Service deleted" });

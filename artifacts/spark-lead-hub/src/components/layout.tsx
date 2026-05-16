@@ -15,7 +15,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
-  const { user, token, signOut } = useAuth();
+  const { user, token, signOut, hasPermission } = useAuth();
+
+  // Section visibility — hide entire group when none of its items are accessible
+  const hasMasterDataSection = hasPermission("companies", "read") ||
+                               hasPermission("services",  "read") ||
+                               hasPermission("settings",  "read");
+  const hasAdminSection      = hasPermission("reports",  "read") ||
+                               hasPermission("team",     "read") ||
+                               hasPermission("settings", "read") ||
+                               hasPermission("audit",    "read");
   const { theme, toggleTheme } = useTheme();
   const [location] = useLocation();
 
@@ -200,30 +209,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </PermissionCheck>
           <NavItem href="/follow-up" icon={CalendarClock} label="Follow Up" badge={followUpCount} />
 
-          <SectionLabel title="Master Data" />
-          <PermissionCheck resource="companies" action="read">
-            <NavItem href="/master/companies" icon={Building2} label="Companies" badge={companiesCount} />
-          </PermissionCheck>
-          <PermissionCheck resource="services" action="read">
-            <NavItem href="/master/services" icon={Briefcase} label="Services" badge={servicesCount} />
-          </PermissionCheck>
-          <PermissionCheck resource="settings" action="read">
-            <NavItem href="/master/pipeline" icon={GitBranch} label="Pipeline" />
-          </PermissionCheck>
+          {hasMasterDataSection && (
+            <>
+              <SectionLabel title="Master Data" />
+              <PermissionCheck resource="companies" action="read">
+                <NavItem href="/master/companies" icon={Building2} label="Companies" badge={companiesCount} />
+              </PermissionCheck>
+              <PermissionCheck resource="services" action="read">
+                <NavItem href="/master/services" icon={Briefcase} label="Services" badge={servicesCount} />
+              </PermissionCheck>
+              <PermissionCheck resource="settings" action="read">
+                <NavItem href="/master/pipeline" icon={GitBranch} label="Pipeline" />
+              </PermissionCheck>
+            </>
+          )}
 
-          <SectionLabel title="Administration" />
-          <PermissionCheck resource="reports" action="read">
-            <NavItem href="/analytics" icon={BarChart3} label="Analytics" />
-          </PermissionCheck>
-          <PermissionCheck resource="team" action="read">
-            <NavItem href="/team" icon={Users} label="Team" />
-          </PermissionCheck>
-          <PermissionCheck resource="settings" action="read">
-            <NavItem href="/settings/permissions" icon={ShieldCheck} label="Permissions" />
-          </PermissionCheck>
-          <PermissionCheck resource="audit" action="read">
-            <NavItem href="/audit" icon={ScrollText} label="Audit Log" />
-          </PermissionCheck>
+          {hasAdminSection && (
+            <>
+              <SectionLabel title="Administration" />
+              <PermissionCheck resource="reports" action="read">
+                <NavItem href="/analytics" icon={BarChart3} label="Analytics" />
+              </PermissionCheck>
+              <PermissionCheck resource="team" action="read">
+                <NavItem href="/team" icon={Users} label="Team" />
+              </PermissionCheck>
+              <PermissionCheck resource="settings" action="read">
+                <NavItem href="/settings/permissions" icon={ShieldCheck} label="Permissions" />
+              </PermissionCheck>
+              <PermissionCheck resource="audit" action="read">
+                <NavItem href="/audit" icon={ScrollText} label="Audit Log" />
+              </PermissionCheck>
+            </>
+          )}
         </nav>
 
         {/* Footer */}

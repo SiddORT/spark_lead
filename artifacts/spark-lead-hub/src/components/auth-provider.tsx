@@ -39,8 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     query: {
       enabled: !!user && user.role !== 'admin',
       retry: false,
-      refetchInterval: 30_000,   // refresh every 30s so role changes take effect without re-login
-      staleTime: 10_000,
+      refetchInterval: 5_000,        // poll every 5s — permission changes propagate in near real-time
+      refetchOnWindowFocus: true,    // instant update when user switches back to the tab
+      staleTime: 3_000,
     }
   });
 
