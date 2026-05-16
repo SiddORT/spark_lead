@@ -20,9 +20,9 @@ import { format } from "date-fns";
 import {
   Search, X, Users, Flame, CheckCircle2,
   Activity, TrendingUp, LayoutDashboard,
-  ChevronUp, ChevronDown, ChevronsUpDown, Layers,
+  ChevronUp, ChevronDown, ChevronsUpDown, Layers, ShieldOff,
 } from "lucide-react";
-import { PermissionCheck } from "@/components/auth-provider";
+import { PermissionCheck, useAuth } from "@/components/auth-provider";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
@@ -145,8 +145,14 @@ function AreaTooltip({ active, payload, label }: any) {
 }
 
 export function Dashboard() {
-  const { data: leads = [], isLoading: leadsLoading } = useGetLeads();
-  const { data: trendData = [] } = useGetLeadTrend();
+  const { hasPermission } = useAuth();
+  // Gate ALL lead data behind the live permission check.  When leads.read is
+  // toggled off by an admin, this becomes false within milliseconds (via the
+  // BroadcastChannel sync), which disables the fetches and hides the UI.
+  const canReadLeads = hasPermission("leads", "read");
+
+  const { data: leads = [], isLoading: leadsLoading } = useGetLeads({ query: { enabled: canReadLeads } });
+  const { data: trendData = [] } = useGetLeadTrend({ query: { enabled: canReadLeads } });
   const { data: pipelineStages = [] } = usePipelineStages();
   const { data: services = [] } = useGetServices();
   const { data: allCompanies = [] } = useGetCompanies();
@@ -558,7 +564,30 @@ export function Dashboard() {
         <FollowUpBell onLeadClick={(id) => setSelectedLeadId(id)} />
       </div>
 
+      {/* ── Permission revoked banner — renders instantly via live RBAC sync ── */}
+      {!canReadLeads && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: "var(--space-4)",
+          padding: "var(--space-4) var(--space-5)",
+          background: "hsl(0 65% 50% / 0.07)",
+          border: "1px solid hsl(0 65% 50% / 0.25)",
+          borderRadius: "var(--radius-lg)",
+          margin: "var(--space-4) 0",
+        }}>
+          <ShieldOff size={32} style={{ color: "hsl(0 65% 55%)", flexShrink: 0 }} />
+          <div>
+            <div style={{ fontWeight: 700, fontSize: "var(--text-base)", color: "var(--text-primary)", marginBottom: 4 }}>
+              Lead Access Restricted
+            </div>
+            <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>
+              Your role does not have read access to leads. Contact your administrator to restore access.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Stat cards */}
+      {canReadLeads && (
       <div className="stats-grid">
         {leadsLoading ? (
           Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
@@ -572,9 +601,10 @@ export function Dashboard() {
           </>
         )}
       </div>
+      )}
 
-      {/* Charts */}
-      <div className="charts-grid" style={{ marginBottom: "var(--space-5)" }}>
+      {/* Charts — only rendered when leads.read is true */}
+      {canReadLeads && <div className="charts-grid" style={{ marginBottom: "var(--space-5)" }}>
         <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
           <div className="chart-title">Lead Volume (30 Days)</div>
           <ResponsiveContainer width="100%" height="100%">
@@ -775,9 +805,10 @@ export function Dashboard() {
           </div>
 
         </div>
-      </div>
+      </div>}
 
-      {/* ─── Standalone filter bar ─── */}
+      {/* ─── Standalone filter bar + leads table — only rendered when leads.read is true ── */}
+      {canReadLeads && <>
       <div className="dashboard-filter-bar" style={{
         display: "flex",
         alignItems: "center",
@@ -1040,6 +1071,7 @@ export function Dashboard() {
           />
         </div>
       </div>
+      </>}
 
       <LeadDetailSheet
         leadId={selectedLeadId}

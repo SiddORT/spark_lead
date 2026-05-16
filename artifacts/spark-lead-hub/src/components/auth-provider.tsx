@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useCallback, useState, ReactNode } from "react";
 import { useGetMe, setUnauthorizedHandler } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
 type PermissionMap = Record<string, Record<string, boolean>>;
@@ -12,6 +13,7 @@ interface AuthContextType {
   role?: string;
   permissions?: PermissionMap;
   hasPermission: (resource: string, action: string) => boolean;
+  refreshPermissions: () => void;
   isWhitelisted?: boolean;
   signOut: () => void;
 }
@@ -33,34 +35,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [showWarning, setShowWarning] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
   const idleTimer    = useRef<NodeJS.Timeout | null>(null);
   const warnTimer    = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const tokenRef     = useRef(token);
+  const prevPermsRef = useRef<PermissionMap | undefined>();
 
-  const { data: user, isLoading: loadingUser, error } = useGetMe({
+  const { data: user, isLoading: loadingUser, error, refetch: refetchMe } = useGetMe({
     query: {
       enabled: !!token,
       retry: false,
-      // Poll /auth/me every 5 s for non-admin users — permissions are embedded in the
-      // response, so changes made by an admin propagate within 5 s without re-login.
-      // Window-focus refetch means the update is instant when the user switches tabs.
+      // Poll every 3 s for non-admin users.  Permissions are embedded in the
+      // response, so DB changes propagate within 3 s.  The BroadcastChannel +
+      // custom event below make changes from the admin panel instant (< 500 ms).
       refetchInterval: (query) => {
         const d = query.state.data as any;
-        if (!d || d.role === 'admin') return false; // admins always have full access — no need to poll
-        return 5_000;
+        if (!d || d.role === 'admin') return false;
+        return 3_000;
       },
       refetchOnWindowFocus: true,
-      staleTime: 3_000,
+      staleTime: 0, // always re-evaluate from the server — no stale permission cache
     }
   });
 
   // Permissions are returned directly by /api/auth/me — no separate API call needed.
-  // The old approach (useGetPermissions) polled the admin-only GET /api/permissions
-  // endpoint and always got 403 for non-admin users, leaving permissions undefined.
   // getPermissionsForRole returns a nested map: { resource: { action: boolean } }
   const permissions = (user as any)?.permissions as PermissionMap | undefined;
+
+  // ── Instant permission sync ──────────────────────────────────────────────
+  // When the admin panel saves a permission toggle it fires:
+  //   1. window CustomEvent "permissions-updated"  (same tab)
+  //   2. BroadcastChannel "rbac-sync" message      (other open tabs)
+  // Both immediately call refetchMe() so the UI updates in < 500 ms.
+  const refreshPermissions = useCallback(() => { refetchMe(); }, [refetchMe]);
+
+  useEffect(() => {
+    if (!token) return;
+    window.addEventListener('permissions-updated', refreshPermissions);
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('rbac-sync');
+      channel.onmessage = (e) => {
+        if (e.data?.type === 'permissions-updated') refreshPermissions();
+      };
+    } catch { /* BroadcastChannel not available in some environments */ }
+    return () => {
+      window.removeEventListener('permissions-updated', refreshPermissions);
+      channel?.close();
+    };
+  }, [token, refreshPermissions]);
+
+  // ── Stale data purge on permission revocation ────────────────────────────
+  // When a resource loses its read permission, immediately evict the cached
+  // data for that resource so the UI never briefly shows data the user can
+  // no longer access.
+  useEffect(() => {
+    const prev = prevPermsRef.current;
+    const curr = permissions;
+    if (prev && curr) {
+      const lostRead = Object.keys(prev).filter(
+        (r) => prev[r]?.read === true && curr[r]?.read !== true
+      );
+      if (lostRead.length) {
+        queryClient.removeQueries({
+          predicate: (q) => {
+            const key = String(q.queryKey[0] ?? '');
+            return lostRead.some((r) => key.toLowerCase().includes(r));
+          },
+        });
+      }
+    }
+    prevPermsRef.current = curr;
+  }, [permissions, queryClient]);
 
   // Keep tokenRef in sync so timers can read the latest value
   const setToken = useCallback((t: string | null) => {
@@ -207,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return (
     <AuthContext.Provider value={{
       user, token, setToken, loading: loadingUser && !!token,
-      role: user?.role, permissions, hasPermission,
+      role: user?.role, permissions, hasPermission, refreshPermissions,
       isWhitelisted: user?.isWhitelisted, signOut
     }}>
       {children}

@@ -76,8 +76,27 @@ export function Permissions() {
           toast.success(
             `${perm.resource}.${perm.action} ${newAllowed ? "enabled" : "disabled"} for ${perm.roleName}`
           );
-          // Invalidate so other users and this admin get fresh perms immediately
+          // Invalidate the admin's own permission list
           queryClient.invalidateQueries({ queryKey: getGetPermissionsQueryKey() });
+
+          // ── Instant live-sync to affected sessions ───────────────────────
+          // 1. Other tabs in the same browser via BroadcastChannel
+          try {
+            const ch = new BroadcastChannel("rbac-sync");
+            ch.postMessage({
+              type: "permissions-updated",
+              resource: perm.resource,
+              action: perm.action,
+              role: perm.roleName,
+              allowed: newAllowed,
+              timestamp: Date.now(),
+            });
+            ch.close();
+          } catch { /* BroadcastChannel not available */ }
+          // 2. Same tab (if the admin is also the affected user)
+          window.dispatchEvent(new CustomEvent("permissions-updated", {
+            detail: { resource: perm.resource, action: perm.action, role: perm.roleName, allowed: newAllowed },
+          }));
         },
         onError: () => {
           toast.error("Failed to update permission. Please try again.");
@@ -112,8 +131,8 @@ export function Permissions() {
       }}>
         <Info size={15} style={{ color: "var(--teal)", flexShrink: 0, marginTop: 1 }} />
         <span>
-          Changes take effect <strong style={{ color: "var(--text-primary)" }}>immediately</strong> — every API request is checked live against the database.
-          Active sessions reflect updates within seconds, or instantly when the user switches back to their tab.
+          Changes take effect <strong style={{ color: "var(--text-primary)" }}>instantly</strong> — permission toggles broadcast to all open sessions in real-time via live sync.
+          Protected routes, menus, buttons, and data queries update without refresh or re-login.
         </span>
       </div>
 

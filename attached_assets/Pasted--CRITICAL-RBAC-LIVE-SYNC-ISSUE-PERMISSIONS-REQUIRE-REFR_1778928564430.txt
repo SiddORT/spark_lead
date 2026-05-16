@@ -1,0 +1,522 @@
+# 🚨 CRITICAL RBAC LIVE SYNC ISSUE — PERMISSIONS REQUIRE REFRESH TO APPLY
+
+After reviewing the attached screenshots thoroughly, the permission system is still not behaving like a real-time enterprise RBAC engine.
+
+Currently:
+
+* toggles visually update
+* permissions save in database
+* BUT the actual UI access only changes after manual refresh
+
+This is incorrect.
+
+A modern permission system must react instantly across:
+
+* menus
+* routes
+* buttons
+* pages
+* widgets
+* actions
+* APIs
+* modules
+
+WITHOUT:
+
+* refresh
+* relogin
+* cache clearing
+* tab reopening
+
+---
+
+# 🚨 CURRENT ISSUE IDENTIFIED
+
+## ❌ Lead Read Permission Requires Refresh
+
+In screenshot 1:
+
+```text
+Leads → Read = Disabled for Manager
+```
+
+BUT in screenshot 2:
+Manager still sees:
+
+* Dashboard
+* Lead data
+* lead widgets
+* charts
+* lead statistics
+* lead listing components
+
+UNTIL refresh happens.
+
+This creates:
+
+* stale authorization state
+* inconsistent UX
+* unreliable security
+* fake permission behavior
+
+---
+
+# 🎯 OBJECTIVE
+
+The RBAC system must become:
+
+* real-time
+* reactive
+* instantly synchronized
+* permission-driven
+* state-consistent
+* enterprise-grade
+
+Permission changes should apply:
+
+* immediately
+* across open tabs
+* across all pages
+* across all visible modules
+* across all active sessions
+
+WITHOUT manual refresh.
+
+---
+
+# ✅ REQUIRED FIX
+
+---
+
+# 1️⃣ REMOVE STALE PERMISSION CACHING
+
+Currently frontend is likely:
+
+* caching permissions in memory
+* caching user session object
+* storing stale role data
+
+This must be eliminated.
+
+---
+
+# ✅ REQUIRED
+
+Permission checks must always use:
+
+* live global auth state
+  OR
+* live permission context
+  OR
+* real-time fetched permissions
+
+NOT stale snapshots.
+
+---
+
+# 2️⃣ IMPLEMENT GLOBAL LIVE PERMISSION STORE
+
+Create centralized reactive RBAC state.
+
+Example:
+
+```ts
+permissionStore = {
+  permissions,
+  role,
+  lastUpdated,
+  refreshPermissions()
+}
+```
+
+All components MUST subscribe to this shared store.
+
+---
+
+# 3️⃣ FORCE INSTANT UI RE-EVALUATION
+
+Whenever permissions change:
+
+Immediately re-evaluate:
+
+* sidebar menus
+* routes
+* widgets
+* action buttons
+* cards
+* dashboards
+* tables
+* modals
+* analytics
+* exports
+* APIs
+
+WITHOUT reload.
+
+---
+
+# 4️⃣ ADD LIVE RBAC EVENT BROADCAST
+
+After admin changes permissions:
+
+Broadcast:
+
+```ts
+window.dispatchEvent(
+  new CustomEvent("permissions-updated")
+)
+```
+
+OR use:
+
+* websocket
+* context provider
+* global state event bus
+* realtime subscription
+
+---
+
+# 5️⃣ AUTO-REFRESH ACTIVE USER SESSION
+
+When permissions change:
+
+Active sessions must:
+
+* re-fetch permissions
+* update instantly
+* re-render protected UI
+
+WITHOUT:
+
+* logout
+* login
+* refresh
+
+---
+
+# 6️⃣ FORCE ROUTE REVALIDATION
+
+If:
+
+```text
+leads.read = false
+```
+
+THEN IMMEDIATELY:
+
+* remove dashboard access
+* remove lead widgets
+* remove lead listing
+* block lead APIs
+* redirect unauthorized pages
+
+WITHOUT refresh.
+
+---
+
+# 7️⃣ IMMEDIATE MENU REBUILD
+
+Sidebar must instantly react.
+
+Example:
+
+If:
+
+```text
+pipeline.read = false
+```
+
+THEN:
+
+* Pipeline menu disappears instantly
+
+If:
+
+```text
+companies.read = true
+```
+
+THEN:
+
+* Companies menu appears instantly
+
+No refresh allowed.
+
+---
+
+# 8️⃣ FORCE LIVE ACTION BUTTON RECHECK
+
+Buttons must react immediately.
+
+Examples:
+
+* Delete
+* Edit
+* Export
+* Upload
+* Create
+* Close Lead
+* Restore
+* Reopen
+
+---
+
+# 9️⃣ FIX DASHBOARD ACCESS LOGIC
+
+Dashboard currently visible even after Leads Read disabled.
+
+This is incorrect because dashboard contains:
+
+* lead metrics
+* lead charts
+* lead pipeline analytics
+
+---
+
+# ✅ REQUIRED
+
+If:
+
+```text
+leads.read = false
+```
+
+THEN EITHER:
+
+* hide dashboard entirely
+  OR
+* show limited non-lead dashboard
+
+But NEVER show protected lead analytics.
+
+---
+
+# 🔟 ADD PROTECTED COMPONENT WRAPPER
+
+Create reusable RBAC wrapper.
+
+Example:
+
+```tsx
+<Can permission="leads.delete">
+  <DeleteButton />
+</Can>
+```
+
+OR:
+
+```tsx
+{can("leads.read") && <Dashboard />}
+```
+
+This ensures:
+
+* centralized logic
+* instant re-rendering
+* no stale visibility
+
+---
+
+# 1️⃣1️⃣ FORCE API REVALIDATION
+
+Frontend hiding is not enough.
+
+Backend MUST also:
+
+* reject stale unauthorized requests
+* re-check permissions on every API call
+
+---
+
+# 1️⃣2️⃣ HANDLE OPEN PAGES INTELLIGENTLY
+
+If user loses access while page is open:
+
+System should:
+
+* show permission revoked message
+* gracefully redirect
+* prevent interaction
+* disable actions instantly
+
+Example:
+
+```text
+Your permissions have changed.
+This module is no longer accessible.
+```
+
+---
+
+# 1️⃣3️⃣ ADD MULTI-TAB SYNCHRONIZATION
+
+If admin changes permissions in one tab:
+
+Other open tabs should instantly update.
+
+Use:
+
+* BroadcastChannel
+* localStorage sync
+* websocket
+* realtime event bus
+
+---
+
+# 1️⃣4️⃣ REMOVE ALL “REFRESH TO SEE EFFECT” BEHAVIOR
+
+The system should NEVER depend on:
+
+* page refresh
+* manual reload
+* cache clearing
+* relogin
+
+for permission updates.
+
+That behavior feels:
+
+* outdated
+* unreliable
+* non-enterprise
+
+---
+
+# 🧪 TESTING REQUIREMENTS
+
+Conduct extremely detailed live RBAC testing.
+
+---
+
+# ✅ TEST CASES
+
+## Scenario 1
+
+Disable:
+
+```text
+leads.read
+```
+
+Expected:
+
+* dashboard disappears instantly
+* lead APIs blocked instantly
+* sidebar updates instantly
+
+WITHOUT refresh.
+
+---
+
+## Scenario 2
+
+Enable:
+
+```text
+companies.read
+```
+
+Expected:
+
+* Companies menu appears instantly
+* routes accessible instantly
+
+WITHOUT refresh.
+
+---
+
+## Scenario 3
+
+Enable:
+
+```text
+leads.delete
+```
+
+Expected:
+
+* delete buttons appear instantly
+
+WITHOUT refresh.
+
+---
+
+## Scenario 4
+
+Disable:
+
+```text
+pipeline.read
+```
+
+Expected:
+
+* pipeline menu disappears instantly
+* pipeline routes blocked instantly
+
+WITHOUT refresh.
+
+---
+
+## Scenario 5
+
+Open two tabs.
+
+Change permission in one tab.
+
+Expected:
+
+* second tab updates automatically
+
+WITHOUT refresh.
+
+---
+
+# 🔐 SECURITY REQUIREMENTS
+
+Ensure:
+
+* no stale authorization
+* no delayed revocation
+* no ghost permissions
+* no unauthorized temporary access
+* no cache-based permission leaks
+
+---
+
+# 🚀 FINAL EXPECTED RESULT
+
+The permission engine should now behave like a real enterprise SaaS RBAC system.
+
+Permission changes must:
+
+* apply instantly
+* reflect instantly
+* render instantly
+* revoke instantly
+
+WITHOUT:
+
+* refresh
+* relogin
+* delay
+* stale UI
+
+The system should feel:
+
+* live
+* reactive
+* secure
+* intelligent
+* production-grade
+* trustworthy
+
+There should be ZERO:
+
+* stale permission states
+* delayed UI updates
+* refresh dependencies
+* ghost access
+* permission lag
+* inconsistent visibility
+* cached authorization gaps

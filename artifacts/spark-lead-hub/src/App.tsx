@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import React, { useEffect } from "react";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -85,9 +86,25 @@ function PermissionRoute({
   adminOnly?: boolean;
   children: React.ReactNode;
 }) {
-  const { hasPermission, user } = useAuth();
-  if (adminOnly && user?.role !== "admin") return <AccessDeniedView />;
-  if (resource && action && !hasPermission(resource, action)) return <AccessDeniedView />;
+  const { hasPermission, user, loading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const allowed =
+    adminOnly
+      ? user?.role === "admin"
+      : resource && action
+      ? hasPermission(resource, action)
+      : true;
+
+  // Live redirect: when permission is revoked while the user is already on this
+  // page, redirect immediately instead of leaving a broken view in place.
+  useEffect(() => {
+    if (!loading && user && !allowed) {
+      setLocation("/access-denied");
+    }
+  }, [allowed, loading, user, setLocation]);
+
+  if (!allowed) return <AccessDeniedView />;
   return <>{children}</>;
 }
 
