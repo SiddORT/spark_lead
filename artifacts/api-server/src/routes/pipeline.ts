@@ -8,18 +8,11 @@ import {
   auditLogTable,
 } from "@workspace/db";
 import { eq, asc, and, sql } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requireAdmin, requirePermission } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { seedPipelineStages } from "../lib/seed";
 
 const router = Router();
-
-function requireAdmin(req: AuthRequest, res: any, next: any) {
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
-  }
-  next();
-}
 
 // GET /api/pipeline/stages — all active stages with nested statuses
 router.get("/stages", requireAuth, async (req: AuthRequest, res) => {
@@ -69,7 +62,7 @@ router.get("/stages/:stageId/statuses", requireAuth, async (req: AuthRequest, re
 });
 
 // POST /api/pipeline/stages — admin only
-router.post("/stages", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+router.post("/stages", requireAuth, requirePermission("pipeline", "create"), async (req: AuthRequest, res) => {
   try {
     const { displayName, description, color, icon, sortOrder } = req.body;
     const name = displayName.toLowerCase().replace(/[^a-z0-9]+/g, "_");
@@ -94,7 +87,7 @@ router.post("/stages", requireAuth, requireAdmin, async (req: AuthRequest, res) 
 });
 
 // PATCH /api/pipeline/stages/:id — admin only
-router.patch("/stages/:id", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+router.patch("/stages/:id", requireAuth, requirePermission("pipeline", "update"), async (req: AuthRequest, res) => {
   try {
     const { displayName, description, color, icon, sortOrder, isTerminal } = req.body;
     const updates: any = { updatedAt: new Date() };
@@ -125,7 +118,7 @@ router.patch("/stages/:id", requireAuth, requireAdmin, async (req: AuthRequest, 
 });
 
 // DELETE /api/pipeline/stages/:id — soft delete, admin only
-router.delete("/stages/:id", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+router.delete("/stages/:id", requireAuth, requirePermission("pipeline", "delete"), async (req: AuthRequest, res) => {
   try {
     const countResult = await db
       .select({ count: sql<number>`count(*)::int` })
@@ -149,7 +142,7 @@ router.delete("/stages/:id", requireAuth, requireAdmin, async (req: AuthRequest,
 });
 
 // POST /api/pipeline/statuses — admin only
-router.post("/statuses", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+router.post("/statuses", requireAuth, requirePermission("pipeline", "create"), async (req: AuthRequest, res) => {
   try {
     const { stageId, displayName, description, color, sortOrder, isWon, isLost } = req.body;
     const name = displayName.toLowerCase().replace(/[^a-z0-9]+/g, "_");
@@ -175,7 +168,7 @@ router.post("/statuses", requireAuth, requireAdmin, async (req: AuthRequest, res
 });
 
 // PATCH /api/pipeline/statuses/:id — admin only
-router.patch("/statuses/:id", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+router.patch("/statuses/:id", requireAuth, requirePermission("pipeline", "update"), async (req: AuthRequest, res) => {
   try {
     const { displayName, description, color, sortOrder, isWon, isLost } = req.body;
     const updates: any = { updatedAt: new Date() };
@@ -198,7 +191,7 @@ router.patch("/statuses/:id", requireAuth, requireAdmin, async (req: AuthRequest
 });
 
 // DELETE /api/pipeline/statuses/:id — soft delete, admin only
-router.delete("/statuses/:id", requireAuth, requireAdmin, async (req: AuthRequest, res) => {
+router.delete("/statuses/:id", requireAuth, requirePermission("pipeline", "delete"), async (req: AuthRequest, res) => {
   try {
     const countResult = await db
       .select({ count: sql<number>`count(*)::int` })

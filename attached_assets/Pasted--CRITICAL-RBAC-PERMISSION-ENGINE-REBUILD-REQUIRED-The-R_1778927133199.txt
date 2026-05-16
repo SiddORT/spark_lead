@@ -1,0 +1,659 @@
+# 🚨 CRITICAL RBAC + PERMISSION ENGINE REBUILD REQUIRED
+
+The Role Permission system is still highly inconsistent, unreliable, and incomplete.
+
+After reviewing the attached screenshots thoroughly, it is clear that:
+
+* permissions are toggling visually
+* but functionality is NOT reflecting correctly
+* multiple modules are missing from RBAC
+* granted permissions are not enabling UI/actions
+* some actions exist without permissions
+* some permissions exist without actions
+* major frontend/backend permission mapping gaps still exist
+
+The current permission system feels:
+
+* vague
+* partially wired
+* unreliable
+* non-enterprise
+* unsafe for production
+
+This entire RBAC architecture now needs a complete permission-mapping stabilization and enforcement pass.
+
+---
+
+# 🚨 CURRENT CRITICAL ISSUES IDENTIFIED
+
+## ❌ Companies permission granted → module still unavailable
+
+Manager has:
+
+* Companies Create
+* Companies Read
+* Companies Update
+* Companies Delete
+
+But:
+
+* Companies management functionality still not properly accessible
+
+This means:
+
+* permission mapping is broken
+  OR
+* UI gating is incomplete
+  OR
+* routes/actions are disconnected from RBAC.
+
+---
+
+## ❌ Delete rights enabled → delete action missing entirely
+
+Manager has:
+
+```text
+Leads → Delete = Enabled
+```
+
+But:
+
+* delete button nowhere visible
+* no delete action in lead details
+* no delete option in tables/cards
+
+This is a direct permission-to-UI mismatch.
+
+---
+
+## ❌ Pipeline permissions module missing completely
+
+There are permissions for:
+
+* Leads
+* Companies
+* Services
+* Team
+  etc.
+
+BUT:
+
+* Pipeline module permissions do not exist at all
+
+This is a major architecture gap because Pipeline is a core master-data entity.
+
+---
+
+# 🎯 OBJECTIVE
+
+The permission system must become:
+
+* fully mapped
+* feature-complete
+* logically consistent
+* enterprise-grade
+* instantly reactive
+* predictable
+* trustworthy
+
+Every permission toggle MUST:
+
+* control a real capability
+* immediately affect the UI
+* immediately affect backend access
+* visibly change the system behavior
+
+NO fake toggles.
+NO disconnected permissions.
+NO hidden unmapped logic.
+
+---
+
+# ✅ REQUIRED FIXES
+
+---
+
+# 1️⃣ COMPLETE PERMISSION-TO-FEATURE MAPPING
+
+Every permission MUST map to:
+
+* menu visibility
+* route access
+* page visibility
+* action buttons
+* dropdown actions
+* APIs
+* modals
+* exports
+* uploads
+* edit states
+
+---
+
+# ✅ REQUIRED ARCHITECTURE
+
+Create centralized RBAC registry:
+
+```ts
+permissions = {
+  leads: {
+    create,
+    read,
+    update,
+    delete,
+    export
+  },
+  companies: {
+    create,
+    read,
+    update,
+    delete
+  },
+  services: {
+    create,
+    read,
+    update,
+    delete
+  },
+  pipeline: {
+    create,
+    read,
+    update,
+    delete
+  },
+  team: {
+    create,
+    read,
+    update,
+    delete
+  },
+  audit: {
+    read
+  },
+  reports: {
+    read
+  },
+  settings: {
+    read,
+    update
+  }
+}
+```
+
+ALL UI and backend checks MUST use same source.
+
+---
+
+# 2️⃣ ADD MISSING PIPELINE PERMISSIONS MODULE
+
+Currently pipeline permissions do not exist.
+
+This is incorrect because Pipeline is:
+
+* editable
+* configurable
+* business-critical
+
+---
+
+# ✅ ADD FULL PIPELINE RBAC
+
+Add permission block:
+
+```text
+Pipeline
+- Create
+- Read
+- Update
+- Delete
+```
+
+---
+
+# ✅ PIPELINE RIGHTS MUST CONTROL
+
+* sidebar Pipeline menu
+* pipeline listing
+* create pipeline button
+* edit pipeline
+* delete pipeline
+* stage editing
+* stage ordering
+* stage configuration
+
+---
+
+# 3️⃣ FIX COMPANIES MODULE ACCESS
+
+Currently:
+permissions exist
+BUT functionality missing.
+
+---
+
+# ✅ REQUIRED
+
+If:
+
+```text
+companies.read = true
+```
+
+THEN:
+
+* Companies menu visible
+* companies listing accessible
+* routes accessible
+
+---
+
+If:
+
+```text
+companies.create = true
+```
+
+THEN:
+
+* Add Company button visible
+* create modal/page accessible
+
+---
+
+If:
+
+```text
+companies.update = true
+```
+
+THEN:
+
+* edit buttons visible
+* editing enabled
+
+---
+
+If:
+
+```text
+companies.delete = true
+```
+
+THEN:
+
+* delete actions visible
+* delete APIs allowed
+
+---
+
+# 4️⃣ FIX LEAD DELETE PERMISSION
+
+Currently:
+Delete permission exists
+BUT no delete action appears.
+
+This creates:
+
+* broken expectations
+* confusing UX
+* fake RBAC
+
+---
+
+# ✅ REQUIRED
+
+If:
+
+```text
+leads.delete = true
+```
+
+THEN SHOW:
+
+* delete button
+* delete menu action
+* delete confirmation modal
+* bulk delete option (if applicable)
+
+---
+
+If:
+
+```text
+leads.delete = false
+```
+
+THEN:
+
+* completely hide all delete actions
+
+---
+
+# 5️⃣ ENSURE ALL PERMISSIONS CONTROL REAL FEATURES
+
+Every toggle MUST have actual impact.
+
+NO dead toggles allowed.
+
+---
+
+# 🚨 VALIDATE EVERY MODULE
+
+## Leads
+
+* Create
+* Read
+* Update
+* Delete
+* Export
+
+## Companies
+
+* Create
+* Read
+* Update
+* Delete
+
+## Services
+
+* Create
+* Read
+* Update
+* Delete
+
+## Pipeline
+
+* Create
+* Read
+* Update
+* Delete
+
+## Team
+
+* Create
+* Read
+* Update
+* Delete
+
+## Audit
+
+* Read
+
+## Reports
+
+* Read
+
+## Settings
+
+* Read
+* Update
+
+---
+
+# 6️⃣ ADD PERMISSION DEBUG VALIDATION
+
+During development:
+log permission evaluations clearly.
+
+Example:
+
+```ts
+console.log({
+  module: "companies",
+  action: "read",
+  allowed: true
+});
+```
+
+This helps identify mismatches quickly.
+
+---
+
+# 7️⃣ FIX ROLE UI SYNCHRONIZATION
+
+Currently:
+
+* toggles change
+* but actual system not updating correctly
+
+Need:
+
+* instant permission revalidation
+* sidebar rerender
+* route rerender
+* action rerender
+
+WITHOUT:
+
+* refresh
+* relogin
+
+---
+
+# 8️⃣ ADD PROPER EMPTY STATES
+
+If user lacks:
+
+* create rights
+* update rights
+* delete rights
+
+System should gracefully adapt.
+
+Example:
+
+```text
+You have view-only access.
+Contact your administrator for additional permissions.
+```
+
+NOT broken/incomplete UI.
+
+---
+
+# 9️⃣ ADD ROUTE-LEVEL RBAC GUARDS
+
+Frontend hiding alone is NOT enough.
+
+Protect:
+
+* APIs
+* routes
+* mutations
+* uploads
+* exports
+
+---
+
+# ✅ REQUIRED
+
+Backend MUST reject unauthorized actions.
+
+Frontend MUST hide inaccessible actions.
+
+Both required together.
+
+---
+
+# 🔟 ADD PERMISSION MATRIX TESTING
+
+Build comprehensive RBAC test matrix.
+
+---
+
+# ✅ TEST EVERY ROLE
+
+## Admin
+
+Should access everything.
+
+---
+
+## Manager
+
+Should ONLY access enabled modules/actions.
+
+---
+
+## Member
+
+Should ONLY access allowed features.
+
+---
+
+# ✅ TEST EVERY COMBINATION
+
+Example:
+
+* read without update
+* update without delete
+* create without export
+* read-only states
+
+---
+
+# 1️⃣1️⃣ FIX VISUAL TRUST ISSUES
+
+Current system feels:
+
+* inconsistent
+* unreliable
+* unpredictable
+
+The UI should NEVER:
+
+* hide valid actions
+* show invalid actions
+* ignore granted permissions
+* show nonfunctional toggles
+
+---
+
+# 1️⃣2️⃣ ADD PERMISSION INSPECTION HELPER
+
+Optional but highly recommended:
+
+Inside dev mode:
+show current evaluated permissions.
+
+Example:
+
+```json
+{
+  "companies.read": true,
+  "companies.create": true,
+  "leads.delete": false
+}
+```
+
+This will dramatically speed debugging.
+
+---
+
+# 🧪 TESTING REQUIREMENTS
+
+Conduct extremely detailed testing.
+
+---
+
+# ✅ VERIFY COMPANIES
+
+* menu visibility
+* page access
+* create
+* edit
+* delete
+
+---
+
+# ✅ VERIFY LEADS DELETE
+
+* button visibility
+* confirmation modal
+* actual deletion
+* hidden when unauthorized
+
+---
+
+# ✅ VERIFY PIPELINE
+
+* permissions exist
+* functionality controlled correctly
+
+---
+
+# ✅ VERIFY LIVE PERMISSION REFLECTION
+
+Change permission:
+
+* from admin account
+* observe manager account instantly
+
+No refresh.
+No relogin.
+
+---
+
+# ✅ VERIFY SECURITY
+
+Attempt:
+
+* direct route access
+* API calls
+* hidden actions
+* stale sessions
+
+Ensure backend blocks unauthorized access.
+
+---
+
+# 🔐 SECURITY REQUIREMENTS
+
+Ensure:
+
+* no RBAC bypass
+* no stale permissions
+* no frontend-only enforcement
+* no unauthorized mutations
+* no route leakage
+
+---
+
+# 🚀 FINAL EXPECTED RESULT
+
+The RBAC system should now feel:
+
+* complete
+* accurate
+* enterprise-grade
+* secure
+* instant
+* predictable
+* production-ready
+
+Permissions should NEVER feel:
+
+* fake
+* disconnected
+* cosmetic
+* unreliable
+* partially wired
+
+Every toggle must:
+
+* visibly do something
+* enforce something
+* control something real
+
+There should be ZERO:
+
+* permission mismatches
+* missing RBAC modules
+* dead toggles
+* invisible granted actions
+* unauthorized visible actions
+* stale permission states
+* broken role experiences
+
+The permission engine should now behave like a real professional SaaS authorization system.

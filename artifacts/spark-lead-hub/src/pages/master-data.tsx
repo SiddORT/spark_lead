@@ -81,11 +81,13 @@ export function Companies() {
           </h1>
           <p className="page-subtitle">{companies.length} companies in your database</p>
         </div>
-        <div className="page-actions">
-          <button className="btn btn-primary" onClick={() => handleOpen()}>
-            <PlusCircle size={15} /> Add Company
-          </button>
-        </div>
+        <PermissionCheck resource="companies" action="create">
+          <div className="page-actions">
+            <button className="btn btn-primary" onClick={() => handleOpen()}>
+              <PlusCircle size={15} /> Add Company
+            </button>
+          </div>
+        </PermissionCheck>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -134,7 +136,9 @@ export function Companies() {
                 </td>
                 <td>
                   <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                    <button className="btn btn-ghost btn-icon" onClick={() => handleOpen(c)} title="Edit"><Pencil size={14} /></button>
+                    <PermissionCheck resource="companies" action="update">
+                      <button className="btn btn-ghost btn-icon" onClick={() => handleOpen(c)} title="Edit"><Pencil size={14} /></button>
+                    </PermissionCheck>
                     <PermissionCheck resource="companies" action="delete">
                       <button className="btn btn-ghost btn-icon" style={{ color: "var(--danger)" }} onClick={() => handleDelete(c.id)} title="Delete"><Trash2 size={14} /></button>
                     </PermissionCheck>
@@ -295,11 +299,13 @@ export function Services() {
           </h1>
           <p className="page-subtitle">{services.length} services in your catalog</p>
         </div>
-        <div className="page-actions">
-          <button className="btn btn-primary" onClick={() => handleOpen()}>
-            <PlusCircle size={15} /> Add Service
-          </button>
-        </div>
+        <PermissionCheck resource="services" action="create">
+          <div className="page-actions">
+            <button className="btn btn-primary" onClick={() => handleOpen()}>
+              <PlusCircle size={15} /> Add Service
+            </button>
+          </div>
+        </PermissionCheck>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
@@ -339,8 +345,12 @@ export function Services() {
                 </td>
                 <td>
                   <div style={{ display: "flex", gap: "var(--space-2)" }}>
-                    <button className="btn btn-ghost btn-icon" style={{ color: "var(--teal)" }} onClick={() => openLinkDialog(s)} title="Link companies"><LinkIcon size={14} /></button>
-                    <button className="btn btn-ghost btn-icon" onClick={() => handleOpen(s)} title="Edit"><Pencil size={14} /></button>
+                    <PermissionCheck resource="services" action="update">
+                      <button className="btn btn-ghost btn-icon" style={{ color: "var(--teal)" }} onClick={() => openLinkDialog(s)} title="Link companies"><LinkIcon size={14} /></button>
+                    </PermissionCheck>
+                    <PermissionCheck resource="services" action="update">
+                      <button className="btn btn-ghost btn-icon" onClick={() => handleOpen(s)} title="Edit"><Pencil size={14} /></button>
+                    </PermissionCheck>
                     <PermissionCheck resource="services" action="delete">
                       <button className="btn btn-ghost btn-icon" style={{ color: "var(--danger)" }} onClick={() => handleDelete(s.id)} title="Delete"><Trash2 size={14} /></button>
                     </PermissionCheck>

@@ -160,7 +160,7 @@ function Router() {
       </Route>
       <Route path="/master/pipeline">
         <ProtectedLayout>
-          <PermissionRoute resource="settings" action="read">
+          <PermissionRoute resource="pipeline" action="read">
             <PipelineMaster />
           </PermissionRoute>
         </ProtectedLayout>

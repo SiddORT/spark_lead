@@ -99,8 +99,9 @@ export function requirePermission(resource: string, action: string) {
 
 export async function getPermissionsForRole(role: string): Promise<Record<string, Record<string, boolean>>> {
   if (role === "admin") {
-    const resources = ["leads", "reports", "settings", "team", "audit"];
-    const actions = ["create", "read", "update", "delete", "export"];
+    // Admin has unrestricted access to every resource and action
+    const resources = ["leads", "companies", "services", "pipeline", "reports", "settings", "team", "audit"];
+    const actions   = ["create", "read", "update", "delete", "export"];
     const perms: Record<string, Record<string, boolean>> = {};
     for (const r of resources) {
       perms[r] = {};

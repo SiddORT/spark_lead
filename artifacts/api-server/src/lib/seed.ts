@@ -125,6 +125,27 @@ const DEFAULT_PERMISSIONS: PermRow[] = [
   { roleName: "deal_handler", resource: "services", action: "delete", allowed: false },
   { roleName: "manager",      resource: "services", action: "delete", allowed: false },
   { roleName: "member",       resource: "services", action: "delete", allowed: false },
+
+  // ── PIPELINE ───────────────────────────────────────────────────────────────
+  { roleName: "lead_owner",   resource: "pipeline", action: "read",   allowed: false },
+  { roleName: "deal_handler", resource: "pipeline", action: "read",   allowed: false },
+  { roleName: "manager",      resource: "pipeline", action: "read",   allowed: true  },
+  { roleName: "member",       resource: "pipeline", action: "read",   allowed: false },
+
+  { roleName: "lead_owner",   resource: "pipeline", action: "create", allowed: false },
+  { roleName: "deal_handler", resource: "pipeline", action: "create", allowed: false },
+  { roleName: "manager",      resource: "pipeline", action: "create", allowed: true  },
+  { roleName: "member",       resource: "pipeline", action: "create", allowed: false },
+
+  { roleName: "lead_owner",   resource: "pipeline", action: "update", allowed: false },
+  { roleName: "deal_handler", resource: "pipeline", action: "update", allowed: false },
+  { roleName: "manager",      resource: "pipeline", action: "update", allowed: true  },
+  { roleName: "member",       resource: "pipeline", action: "update", allowed: false },
+
+  { roleName: "lead_owner",   resource: "pipeline", action: "delete", allowed: false },
+  { roleName: "deal_handler", resource: "pipeline", action: "delete", allowed: false },
+  { roleName: "manager",      resource: "pipeline", action: "delete", allowed: false },
+  { roleName: "member",       resource: "pipeline", action: "delete", allowed: false },
 ];
 
 export async function seedInitialAdmin(): Promise<void> {

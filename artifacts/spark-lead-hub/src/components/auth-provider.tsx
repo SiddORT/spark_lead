@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
-import { useGetMe, useGetPermissions, setUnauthorizedHandler } from "@workspace/api-client-react";
+import { useGetMe, setUnauthorizedHandler } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
+
+type PermissionMap = Record<string, Record<string, boolean>>;
 
 interface AuthContextType {
   user: any;
@@ -8,13 +10,19 @@ interface AuthContextType {
   setToken: (token: string | null) => void;
   loading: boolean;
   role?: string;
-  permissions?: any[];
+  permissions?: PermissionMap;
   hasPermission: (resource: string, action: string) => boolean;
   isWhitelisted?: boolean;
   signOut: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
+  return context;
+}
 
 const IDLE_TIMEOUT  = 15 * 60 * 1000; // 15 min → auto logout
 const WARN_BEFORE   =  1 * 60 * 1000; // show popup 1 min before
@@ -32,18 +40,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const tokenRef     = useRef(token);
 
   const { data: user, isLoading: loadingUser, error } = useGetMe({
-    query: { enabled: !!token, retry: false }
-  });
-
-  const { data: permissions } = useGetPermissions({
     query: {
-      enabled: !!user && user.role !== 'admin',
+      enabled: !!token,
       retry: false,
-      refetchInterval: 5_000,        // poll every 5s — permission changes propagate in near real-time
-      refetchOnWindowFocus: true,    // instant update when user switches back to the tab
+      // Poll /auth/me every 5 s for non-admin users — permissions are embedded in the
+      // response, so changes made by an admin propagate within 5 s without re-login.
+      // Window-focus refetch means the update is instant when the user switches tabs.
+      refetchInterval: (query) => {
+        const d = query.state.data as any;
+        if (!d || d.role === 'admin') return false; // admins always have full access — no need to poll
+        return 5_000;
+      },
+      refetchOnWindowFocus: true,
       staleTime: 3_000,
     }
   });
+
+  // Permissions are returned directly by /api/auth/me — no separate API call needed.
+  // The old approach (useGetPermissions) polled the admin-only GET /api/permissions
+  // endpoint and always got 403 for non-admin users, leaving permissions undefined.
+  // getPermissionsForRole returns a nested map: { resource: { action: boolean } }
+  const permissions = (user as any)?.permissions as PermissionMap | undefined;
 
   // Keep tokenRef in sync so timers can read the latest value
   const setToken = useCallback((t: string | null) => {
@@ -183,7 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasPermission = (resource: string, action: string) => {
     if (user?.role === 'admin') return true;
-    return permissions?.some((p: any) => p.resource === resource && p.action === action && p.allowed) || false;
+    // permissions is a nested map: { [resource]: { [action]: boolean } }
+    return permissions?.[resource]?.[action] === true;
   };
 
   return (
@@ -316,12 +334,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   );
 }
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
-};
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
   const { token, loading, isWhitelisted } = useAuth();

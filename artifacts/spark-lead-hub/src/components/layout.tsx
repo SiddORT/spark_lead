@@ -20,6 +20,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // Section visibility — hide entire group when none of its items are accessible
   const hasMasterDataSection = hasPermission("companies", "read") ||
                                hasPermission("services",  "read") ||
+                               hasPermission("pipeline",  "read") ||
                                hasPermission("settings",  "read");
   const hasAdminSection      = hasPermission("reports",  "read") ||
                                hasPermission("team",     "read") ||
@@ -218,7 +219,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <PermissionCheck resource="services" action="read">
                 <NavItem href="/master/services" icon={Briefcase} label="Services" badge={servicesCount} />
               </PermissionCheck>
-              <PermissionCheck resource="settings" action="read">
+              <PermissionCheck resource="pipeline" action="read">
                 <NavItem href="/master/pipeline" icon={GitBranch} label="Pipeline" />
               </PermissionCheck>
             </>
