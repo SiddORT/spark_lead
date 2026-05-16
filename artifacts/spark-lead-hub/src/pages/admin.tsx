@@ -1,19 +1,29 @@
+import { useState } from "react";
 import {
   useGetPermissions, useUpdatePermission,
   useGetAuditLog, useSendTestActivityEmail, useSendTestPasswordEmail,
+  getGetPermissionsQueryKey,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui";
 import { format } from "date-fns";
-import { ShieldCheck, ScrollText, Mail, Activity, Settings } from "lucide-react";
+import { ShieldCheck, ScrollText, Mail, Activity, Settings, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth-provider";
 
+// Actions that depend on "read" being enabled — if read is OFF these must also be blocked
+const READ_DEPENDENTS = ["create", "update", "delete", "export"];
+
 export function Permissions() {
   const { user } = useAuth();
-  const { data: permissions = [] } = useGetPermissions();
+  const { data: permissions = [], isLoading } = useGetPermissions();
   const updatePermission = useUpdatePermission();
-  const sendActivity = useSendTestActivityEmail();
+  const queryClient = useQueryClient();
   const sendPassword = useSendTestPasswordEmail();
+  const sendActivity = useSendTestActivityEmail();
+
+  // Track which specific perm is in-flight: "roleName::resource::action"
+  const [saving, setSaving] = useState<string | null>(null);
 
   if (user?.role !== "admin") {
     return (
@@ -22,6 +32,16 @@ export function Permissions() {
           <div className="empty-state-icon"><ShieldCheck size={20} /></div>
           <div className="empty-state-title">Access Restricted</div>
           <div className="empty-state-desc">Only admins can view and manage permissions.</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="page">
+        <div className="empty-state">
+          <div className="empty-state-desc" style={{ color: "var(--text-muted)" }}>Loading permissions…</div>
         </div>
       </div>
     );
@@ -36,10 +56,35 @@ export function Permissions() {
 
   const roles = ["manager", "member"];
 
+  // Returns true if "read" for this role+resource is currently OFF
+  const isReadBlocked = (resource: string, roleName: string): boolean => {
+    const readPerm = grouped[resource]?.["read"]?.[roleName];
+    return readPerm ? !readPerm.allowed : false;
+  };
+
   const handleToggle = (perm: any) => {
-    updatePermission.mutate({ data: { ...perm, allowed: !perm.allowed } }, {
-      onSuccess: () => toast.success("Permission updated"),
-    });
+    const key = `${perm.roleName}::${perm.resource}::${perm.action}`;
+    if (saving) return; // prevent concurrent saves
+    setSaving(key);
+
+    const newAllowed = !perm.allowed;
+
+    updatePermission.mutate(
+      { data: { ...perm, allowed: newAllowed } },
+      {
+        onSuccess: () => {
+          toast.success(
+            `${perm.resource}.${perm.action} ${newAllowed ? "enabled" : "disabled"} for ${perm.roleName}`
+          );
+          // Invalidate so other users and this admin get fresh perms immediately
+          queryClient.invalidateQueries({ queryKey: getGetPermissionsQueryKey() });
+        },
+        onError: () => {
+          toast.error("Failed to update permission. Please try again.");
+        },
+        onSettled: () => setSaving(null),
+      }
+    );
   };
 
   return (
@@ -52,6 +97,24 @@ export function Permissions() {
           </h1>
           <p className="page-subtitle">Granular access control per resource. Admin role always has full access.</p>
         </div>
+      </div>
+
+      {/* Info banner */}
+      <div style={{
+        display: "flex", alignItems: "flex-start", gap: "var(--space-2)",
+        background: "hsl(172 75% 48% / 0.07)",
+        border: "1px solid hsl(172 75% 48% / 0.2)",
+        borderRadius: "var(--radius-md)",
+        padding: "var(--space-3) var(--space-4)",
+        marginBottom: "var(--space-5)",
+        fontSize: "var(--text-sm)",
+        color: "var(--text-secondary)",
+      }}>
+        <Info size={15} style={{ color: "var(--teal)", flexShrink: 0, marginTop: 1 }} />
+        <span>
+          Changes take effect <strong style={{ color: "var(--text-primary)" }}>immediately</strong> — the backend checks permissions live on every request.
+          Logged-in users automatically receive updated permissions within 30 seconds.
+        </span>
       </div>
 
       <div className="permissions-grid">
@@ -76,14 +139,41 @@ export function Permissions() {
                   <tr key={action}>
                     <td style={{ textAlign: "left", color: "var(--text-secondary)", textTransform: "capitalize", fontWeight: 500 }}>{action}</td>
                     <td style={{ textAlign: "center" }}>
-                      <Switch checked disabled />
+                      <Switch checked disabled title="Admin always has full access" />
                     </td>
                     {roles.map(r => {
                       const perm = rolePerms[r];
                       if (!perm) return <td key={r} style={{ textAlign: "center", color: "var(--text-muted)" }}>—</td>;
+
+                      const key = `${r}::${resource}::${action}`;
+                      const isSaving = saving === key;
+
+                      // Dependency rule: write/delete/export requires read to be ON
+                      const readBlocked = READ_DEPENDENTS.includes(action) && isReadBlocked(resource, r);
+                      const isDisabled = isSaving || !!saving || readBlocked;
+
                       return (
                         <td key={r} style={{ textAlign: "center" }}>
-                          <Switch checked={perm.allowed} onCheckedChange={() => handleToggle(perm)} />
+                          <div style={{ display: "inline-flex", alignItems: "center", flexDirection: "column", gap: 2 }}>
+                            <Switch
+                              checked={perm.allowed}
+                              onCheckedChange={() => handleToggle(perm)}
+                              disabled={isDisabled}
+                              title={
+                                readBlocked
+                                  ? `Enable "${resource}.read" for ${r} first`
+                                  : isSaving
+                                  ? "Saving…"
+                                  : undefined
+                              }
+                              style={{ opacity: isSaving ? 0.6 : 1, transition: "opacity 150ms ease" }}
+                            />
+                            {readBlocked && (
+                              <span style={{ fontSize: 9, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                                needs read
+                              </span>
+                            )}
+                          </div>
                         </td>
                       );
                     })}
@@ -147,51 +237,47 @@ export function AuditLog() {
         <div>
           <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
             <ScrollText size={28} style={{ color: "var(--teal)" }} />
-            System Audit Log
+            Audit Log
           </h1>
           <p className="page-subtitle">Complete history of all actions performed in the system</p>
         </div>
       </div>
-
-      <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      <div className="table-wrapper">
         <table className="data-table">
           <thead>
             <tr>
-              <th>Timestamp</th>
-              <th>Actor</th>
+              <th>Time</th>
+              <th>User</th>
               <th>Action</th>
               <th>Resource</th>
               <th>Details</th>
             </tr>
           </thead>
           <tbody>
-            {logs.map(log => (
-              <tr key={log.id} style={{ cursor: "default" }}>
-                <td style={{ whiteSpace: "nowrap", fontFamily: "monospace", fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
-                  {format(new Date(log.createdAt), "MMM d, yy HH:mm:ss")}
+            {logs.length === 0 ? (
+              <tr><td colSpan={5}>
+                <div className="empty-state">
+                  <div className="empty-state-icon"><ScrollText size={20} /></div>
+                  <div className="empty-state-title">No audit logs yet</div>
+                  <div className="empty-state-desc">System actions will appear here as they happen</div>
+                </div>
+              </td></tr>
+            ) : logs.map((log: any) => (
+              <tr key={log.id}>
+                <td style={{ whiteSpace: "nowrap", color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>
+                  {format(new Date(log.createdAt), "MMM d, HH:mm")}
                 </td>
-                <td style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "var(--text-sm)" }}>{log.actorName}</td>
+                <td style={{ fontWeight: 500 }}>{log.userEmail || log.userId?.slice(0, 8)}</td>
                 <td style={{ color: getActionColor(log.action), fontFamily: "monospace", fontSize: "var(--text-xs)" }}>{log.action}</td>
-                <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)" }}>
+                <td>
                   {log.resource}
                   {log.resourceId && <span style={{ opacity: 0.5, marginLeft: "var(--space-1)" }}>{log.resourceId.slice(0, 8)}…</span>}
                 </td>
-                <td style={{ color: "var(--text-muted)", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "var(--text-xs)" }}>
+                <td style={{ color: "var(--text-muted)", fontSize: "var(--text-xs)", maxWidth: 300, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {log.details ? JSON.stringify(log.details) : "—"}
                 </td>
               </tr>
             ))}
-            {logs.length === 0 && (
-              <tr style={{ cursor: "default" }}>
-                <td colSpan={5}>
-                  <div className="empty-state">
-                    <div className="empty-state-icon"><ScrollText size={20} /></div>
-                    <div className="empty-state-title">No audit logs</div>
-                    <div className="empty-state-desc">System actions will appear here as they happen</div>
-                  </div>
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>

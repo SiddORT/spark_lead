@@ -6,13 +6,13 @@ import {
   pipelineStatusesTable,
 } from "@workspace/db";
 import { asc, eq } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requirePermission } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { subDays, format, startOfWeek, endOfWeek, subWeeks } from "date-fns";
 
 const router = Router();
 
-router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
+router.get("/stats", requireAuth, requirePermission("reports", "read"), async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable);
     const statuses = await db.select().from(pipelineStatusesTable);
@@ -62,7 +62,7 @@ router.get("/stats", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.get("/lead-trend", requireAuth, async (req: AuthRequest, res) => {
+router.get("/lead-trend", requireAuth, requirePermission("reports", "read"), async (req: AuthRequest, res) => {
   try {
     const { subDays: sdFn, format: fmtFn } = await import("date-fns");
     const since = subDays(new Date(), 30);
@@ -90,7 +90,7 @@ router.get("/lead-trend", requireAuth, async (req: AuthRequest, res) => {
 });
 
 // Dynamic stage distribution using new pipeline stages
-router.get("/stage-distribution", requireAuth, async (req: AuthRequest, res) => {
+router.get("/stage-distribution", requireAuth, requirePermission("reports", "read"), async (req: AuthRequest, res) => {
   try {
     const stages = await db
       .select()
@@ -114,7 +114,7 @@ router.get("/stage-distribution", requireAuth, async (req: AuthRequest, res) => 
 });
 
 // Closure breakdown by terminal statuses
-router.get("/closure-breakdown", requireAuth, async (req: AuthRequest, res) => {
+router.get("/closure-breakdown", requireAuth, requirePermission("reports", "read"), async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable);
     const statuses = await db
@@ -138,7 +138,7 @@ router.get("/closure-breakdown", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.get("/kill-reasons", requireAuth, async (req: AuthRequest, res) => {
+router.get("/kill-reasons", requireAuth, requirePermission("reports", "read"), async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable);
     const reasons = ["feature_gap", "price", "ghosted"];
@@ -154,7 +154,7 @@ router.get("/kill-reasons", requireAuth, async (req: AuthRequest, res) => {
 });
 
 // Closure performance trend — Won / Lost / Postponed per day
-router.get("/closure-trend", requireAuth, async (req: AuthRequest, res) => {
+router.get("/closure-trend", requireAuth, requirePermission("reports", "read"), async (req: AuthRequest, res) => {
   try {
     const range = Math.min(Math.max(parseInt(String(req.query.range || "30"), 10), 7), 90);
     const leads = await db.select().from(leadsTable);
@@ -200,7 +200,7 @@ router.get("/closure-trend", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.get("/weekly-conversion", requireAuth, async (req: AuthRequest, res) => {
+router.get("/weekly-conversion", requireAuth, requirePermission("reports", "read"), async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable);
     const statuses = await db.select().from(pipelineStatusesTable);

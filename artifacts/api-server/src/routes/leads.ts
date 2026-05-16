@@ -17,7 +17,7 @@ import {
 } from "@workspace/db";
 import leadDocumentsRouter from "./lead-documents";
 import { eq, inArray, and, or, gte, asc, desc, sql } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requirePermission } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { sendActivityAlertEmail, type ActivityChange } from "../lib/email";
 
@@ -226,7 +226,7 @@ function formatLead(lead: any) {
   };
 }
 
-router.get("/export/csv", requireAuth, async (req: AuthRequest, res) => {
+router.get("/export/csv", requireAuth, requirePermission("leads", "export"), async (req: AuthRequest, res) => {
   try {
     const leads = await db.select().from(leadsTable).orderBy(desc(leadsTable.createdAt));
 
@@ -294,7 +294,7 @@ router.get("/export/csv", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.get("/", requireAuth, async (req: AuthRequest, res) => {
+router.get("/", requireAuth, requirePermission("leads", "read"), async (req: AuthRequest, res) => {
   try {
     const role = req.user!.role;
     const userId = req.user!.userId;
@@ -369,7 +369,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.post("/", requireAuth, async (req: AuthRequest, res) => {
+router.post("/", requireAuth, requirePermission("leads", "create"), async (req: AuthRequest, res) => {
   try {
     const { companyIds: rawCompanyIds, ...data } = req.body;
     const companyIds: string[] = [...new Set<string>((rawCompanyIds || []).filter(Boolean))];
@@ -421,7 +421,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.get("/:id", requireAuth, async (req: AuthRequest, res) => {
+router.get("/:id", requireAuth, requirePermission("leads", "read"), async (req: AuthRequest, res) => {
   try {
     const lead = await getLeadWithRelations(req.params.id);
     if (!lead) {
@@ -435,7 +435,7 @@ router.get("/:id", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
+router.patch("/:id", requireAuth, requirePermission("leads", "update"), async (req: AuthRequest, res) => {
   try {
     const existing = await db
       .select()
@@ -608,7 +608,7 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.delete("/:id", requireAuth, async (req: AuthRequest, res) => {
+router.delete("/:id", requireAuth, requirePermission("leads", "delete"), async (req: AuthRequest, res) => {
   try {
     const lead = await db.select().from(leadsTable).where(eq(leadsTable.id, req.params.id)).limit(1);
     if (!lead[0]) {
@@ -634,7 +634,7 @@ router.delete("/:id", requireAuth, async (req: AuthRequest, res) => {
 });
 
 // Notes
-router.get("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
+router.get("/:id/notes", requireAuth, requirePermission("leads", "read"), async (req: AuthRequest, res) => {
   try {
     const notes = await db
       .select()
@@ -665,7 +665,7 @@ router.get("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.post("/:id/notes", requireAuth, async (req: AuthRequest, res) => {
+router.post("/:id/notes", requireAuth, requirePermission("leads", "create"), async (req: AuthRequest, res) => {
   try {
     const { content, stageContext, followUpDate } = req.body;
     if (!content) {

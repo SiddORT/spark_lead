@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 import { db } from "@workspace/db";
 import { usersTable, whitelistedUsersTable, userRolesTable, rolePermissionsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const JWT_SECRET = process.env.JWT_SECRET || "spark-lead-hub-secret-change-me";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
@@ -51,6 +51,50 @@ export async function requireAdmin(req: AuthRequest, res: Response, next: NextFu
     return;
   }
   next();
+}
+
+/**
+ * Permission middleware factory.
+ * Admins bypass all checks. For every other role the permission row is
+ * fetched live from the DB so changes made in the admin UI take effect
+ * on the very next request — no restart or re-login required.
+ *
+ * Missing row  → DENY (safe default)
+ * allowed=false → DENY
+ * allowed=true  → pass through
+ */
+export function requirePermission(resource: string, action: string) {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+    if (req.user.role === "admin") {
+      next();
+      return;
+    }
+    try {
+      const [perm] = await db
+        .select()
+        .from(rolePermissionsTable)
+        .where(
+          and(
+            eq(rolePermissionsTable.roleName, req.user.role as any),
+            eq(rolePermissionsTable.resource, resource),
+            eq(rolePermissionsTable.action, action),
+          )
+        )
+        .limit(1);
+
+      if (!perm?.allowed) {
+        res.status(403).json({ message: `Permission denied: ${resource}.${action}` });
+        return;
+      }
+      next();
+    } catch (err) {
+      res.status(500).json({ message: "Permission check failed" });
+    }
+  };
 }
 
 export async function getPermissionsForRole(role: string): Promise<Record<string, Record<string, boolean>>> {

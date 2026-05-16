@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "@workspace/db";
 import { companiesTable, companyServicesTable, servicesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { requireAuth } from "../lib/auth";
+import { requireAuth, requirePermission } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 
 const router = Router();
@@ -24,7 +24,7 @@ async function getCompanyWithServices(companyId: string) {
   };
 }
 
-router.get("/", requireAuth, async (req: AuthRequest, res) => {
+router.get("/", requireAuth, requirePermission("companies", "read"), async (req: AuthRequest, res) => {
   try {
     const companies = await db.select().from(companiesTable).orderBy(companiesTable.name);
     const result = await Promise.all(companies.map((c) => getCompanyWithServices(c.id)));
@@ -45,7 +45,7 @@ router.get("/", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.post("/", requireAuth, async (req: AuthRequest, res) => {
+router.post("/", requireAuth, requirePermission("companies", "create"), async (req: AuthRequest, res) => {
   try {
     const { name, industry, notes } = req.body;
     if (!name) {
@@ -78,7 +78,7 @@ router.post("/", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
+router.patch("/:id", requireAuth, requirePermission("companies", "update"), async (req: AuthRequest, res) => {
   try {
     const { name, industry, notes } = req.body;
     const update: any = {};
@@ -109,12 +109,8 @@ router.patch("/:id", requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-router.delete("/:id", requireAuth, async (req: AuthRequest, res) => {
+router.delete("/:id", requireAuth, requirePermission("companies", "delete"), async (req: AuthRequest, res) => {
   try {
-    if (req.user!.role !== "admin") {
-      res.status(403).json({ message: "Admin access required" });
-      return;
-    }
     await db.delete(companiesTable).where(eq(companiesTable.id, req.params.id));
     res.json({ success: true, message: "Company deleted" });
   } catch (err) {

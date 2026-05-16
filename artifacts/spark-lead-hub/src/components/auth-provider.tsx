@@ -36,7 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const { data: permissions } = useGetPermissions({
-    query: { enabled: !!user && user.role !== 'admin', retry: false }
+    query: {
+      enabled: !!user && user.role !== 'admin',
+      retry: false,
+      refetchInterval: 30_000,   // refresh every 30s so role changes take effect without re-login
+      staleTime: 10_000,
+    }
   });
 
   // Keep tokenRef in sync so timers can read the latest value
