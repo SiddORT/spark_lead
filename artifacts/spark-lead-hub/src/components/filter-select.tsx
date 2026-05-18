@@ -85,11 +85,11 @@ export function FilterSelect({
           width: "100%",
           height: 40,
           padding: "0 var(--space-3)",
-          background: isActive ? "hsl(196 100% 46% / 0.06)" : "var(--bg-subtle)",
+          background: isActive ? "hsl(172 75% 48% / 0.06)" : "var(--bg-subtle)",
           border: open
             ? "1px solid var(--teal)"
             : isActive
-            ? "1px solid hsl(196 100% 46% / 0.4)"
+            ? "1px solid hsl(172 75% 48% / 0.4)"
             : "1px solid var(--border-default)",
           borderRadius: "var(--radius-md)",
           color: isActive ? "var(--teal)" : "var(--text-muted)",
@@ -100,7 +100,7 @@ export function FilterSelect({
           alignItems: "center",
           justifyContent: "space-between",
           gap: "var(--space-2)",
-          boxShadow: open ? "0 0 0 3px hsl(196 100% 46% / 0.12), 0 0 8px hsl(196 100% 46% / 0.15)" : "none",
+          boxShadow: open ? "0 0 0 3px hsl(172 75% 48% / 0.12), 0 0 8px hsl(172 75% 48% / 0.15)" : "none",
           transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
           outline: "none",
           userSelect: "none",
@@ -150,7 +150,7 @@ export function FilterSelect({
           borderRadius: "var(--radius-md)",
           zIndex: 200,
           overflow: "hidden",
-          boxShadow: "0 8px 32px hsl(222 22% 3% / 0.5), 0 0 0 1px hsl(196 100% 46% / 0.08)",
+          boxShadow: "0 8px 32px hsl(222 22% 3% / 0.5), 0 0 0 1px hsl(172 75% 48% / 0.08)",
         }}>
           {searchable && (
             <div style={{
@@ -219,7 +219,7 @@ export function FilterSelect({
                   marginLeft: "auto",
                   fontSize: 10, fontWeight: 700,
                   color: "var(--teal)",
-                  background: "hsl(196 100% 46% / 0.12)",
+                  background: "hsl(172 75% 48% / 0.12)",
                   borderRadius: 100,
                   padding: "1px 7px",
                   lineHeight: 1.8,

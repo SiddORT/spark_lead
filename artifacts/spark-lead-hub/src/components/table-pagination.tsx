@@ -103,10 +103,10 @@ function PageButton({ num, active, onClick }: { num: number; active: boolean; on
         border: "none",
         cursor: "pointer",
         background: active
-          ? "hsl(196 100% 46% / 0.1)"
+          ? "hsl(172 75% 48% / 0.1)"
           : hovered ? "var(--bg-subtle)" : "transparent",
         color: active ? "var(--teal)" : hovered ? "var(--text-primary)" : "var(--text-muted)",
-        boxShadow: active ? "0 0 10px hsl(196 100% 46% / 0.18)" : "none",
+        boxShadow: active ? "0 0 10px hsl(172 75% 48% / 0.18)" : "none",
         transition: "all 120ms ease",
         outline: "none",
         position: "relative",

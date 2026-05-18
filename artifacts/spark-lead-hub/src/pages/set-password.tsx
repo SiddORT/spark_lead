@@ -77,7 +77,7 @@ export function SetPassword() {
             <Zap size={22} />
           </div>
           <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "var(--text-xl)", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-            SparkLead
+            LeadFlow
           </span>
         </div>
 

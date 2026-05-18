@@ -863,7 +863,7 @@ function TimelineTab({ leadId }: { leadId: string }) {
                   <strong>{a.actorName}</strong>
                   <span style={{ color: "var(--text-secondary)" }}> added a note</span>
                   {a.noteContent && (
-                    <div style={{ marginTop: 6, padding: "6px 10px", background: "hsl(220 20% 10%)", borderLeft: "2px solid hsl(196 100% 46% / 0.4)", borderRadius: "0 4px 4px 0", fontSize: "var(--text-xs)", color: "var(--text-secondary)", fontStyle: "italic", lineHeight: 1.5 }}>
+                    <div style={{ marginTop: 6, padding: "6px 10px", background: "hsl(220 20% 10%)", borderLeft: "2px solid hsl(172 75% 48% / 0.4)", borderRadius: "0 4px 4px 0", fontSize: "var(--text-xs)", color: "var(--text-secondary)", fontStyle: "italic", lineHeight: 1.5 }}>
                       "{a.noteContent}"
                     </div>
                   )}
@@ -1214,7 +1214,7 @@ export function LeadDetailSheet({
                   const isToday   = diff === 0;
                   const color = isOverdue ? "hsl(0 80% 58%)" : isToday ? "hsl(45 95% 55%)" : "var(--teal)";
                   const bg    = isOverdue ? "hsl(0 80% 58% / 0.12)" : isToday ? "hsl(45 95% 55% / 0.12)" : "var(--teal-dim)";
-                  const border= isOverdue ? "hsl(0 80% 58% / 0.25)" : isToday ? "hsl(45 95% 55% / 0.25)" : "hsl(196 100% 46% / 0.35)";
+                  const border= isOverdue ? "hsl(0 80% 58% / 0.25)" : isToday ? "hsl(45 95% 55% / 0.25)" : "hsl(172 75% 48% / 0.35)";
                   const label = isOverdue
                     ? `${Math.abs(diff)}d overdue`
                     : isToday ? "Due today" : format(d, "MMM d, yyyy");

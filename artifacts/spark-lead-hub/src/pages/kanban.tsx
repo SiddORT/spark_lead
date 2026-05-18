@@ -135,7 +135,7 @@ function CardContent({ lead, stageColor, activeStages, resolveName }: {
           {(lead.companies as any[]).slice(0, 2).map((c: any) => (
             <span key={c.id} style={{
               display: "inline-block", padding: "2px 7px",
-              background: "hsl(196 100% 46% / 0.1)", border: "1px solid hsl(196 100% 46% / 0.25)",
+              background: "hsl(172 75% 48% / 0.1)", border: "1px solid hsl(172 75% 48% / 0.25)",
               borderRadius: "var(--radius-full)", color: "var(--teal)",
               fontSize: 11, fontWeight: 500, lineHeight: 1.6, whiteSpace: "nowrap",
             }}>{c.name}</span>
