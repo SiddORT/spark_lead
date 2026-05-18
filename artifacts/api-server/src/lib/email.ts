@@ -130,13 +130,13 @@ async function sendEmail(opts: {
 
 const LOGO_HEADER = `
 <tr>
-  <td style="background:#0a1a18;padding:24px 36px;border-bottom:1px solid #1e2433;">
+  <td style="background:#050816;padding:24px 36px;border-bottom:2px solid #00AEEC;">
     <table cellpadding="0" cellspacing="0"><tr>
-      <td style="background:#0d2e28;border-radius:8px;width:36px;height:36px;text-align:center;vertical-align:middle;">
-        <span style="color:#2dd4bf;font-size:18px;">⚡</span>
+      <td style="background:rgba(0,174,236,0.12);border:1px solid rgba(0,174,236,0.35);border-radius:8px;width:36px;height:36px;text-align:center;vertical-align:middle;">
+        <span style="color:#00AEEC;font-size:18px;">⚡</span>
       </td>
       <td style="padding-left:10px;">
-        <span style="font-family:Arial,sans-serif;font-size:18px;font-weight:700;color:#e8eaf0;letter-spacing:-0.5px;">LeadFlow</span>
+        <span style="font-family:Arial,sans-serif;font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">SparkLead</span><span style="font-family:Arial,sans-serif;font-size:18px;font-weight:800;color:#00AEEC;letter-spacing:-0.5px;">_</span>
       </td>
     </tr></table>
   </td>
@@ -147,18 +147,18 @@ const EMAIL_WRAPPER_OPEN = `
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
 </head>
-<body style="margin:0;padding:0;background:#0d0f14;font-family:'DM Sans',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#0d0f14;padding:40px 20px;">
+<body style="margin:0;padding:0;background:#050816;font-family:'DM Sans',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#050816;padding:40px 20px;">
 <tr><td align="center">
 <table width="560" cellpadding="0" cellspacing="0"
-  style="background:#12151e;border:1px solid #1e2433;border-radius:16px;overflow:hidden;max-width:560px;width:100%;">
+  style="background:#0D1324;border:1px solid rgba(0,174,236,0.18);border-radius:16px;overflow:hidden;max-width:560px;width:100%;">
 ${LOGO_HEADER}`;
 
 const EMAIL_WRAPPER_CLOSE = (year: number) => `
 <tr>
-  <td style="padding:16px 36px;border-top:1px solid #1e2433;background:#0d1117;">
+  <td style="padding:16px 36px;border-top:1px solid rgba(0,174,236,0.15);background:#050816;">
     <p style="margin:0;font-size:12px;color:#4a5568;text-align:center;">
-      © ${year} Spark Lead Hub. All rights reserved.
+      © ${year} SparkLead. All rights reserved.
     </p>
   </td>
 </tr>
@@ -191,13 +191,13 @@ export async function sendPasswordSetupEmail(params: {
     ${params.invitedByName
       ? `<strong style="color:#e8eaf0;">${params.invitedByName}</strong> has invited you to join`
       : "You have been invited to join"}
-    <strong style="color:#2dd4bf;">Spark Lead Hub</strong>
+    <strong style="color:#00AEEC;">Spark Lead Hub</strong>
     ${params.role ? `as a <strong style="color:#e8eaf0;">${rl}</strong>` : ""}.
   </p>
 
   <div style="background:#0d1117;border:1px solid #1e2433;border-radius:10px;padding:20px;margin-bottom:28px;">
     <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.08em;">Your account email</p>
-    <p style="margin:0;font-size:15px;color:#2dd4bf;font-weight:600;">${params.toEmail}</p>
+    <p style="margin:0;font-size:15px;color:#00AEEC;font-weight:600;">${params.toEmail}</p>
   </div>
 
   <p style="margin:0 0 20px;font-size:14px;color:#8892a4;line-height:1.6;">
@@ -206,14 +206,14 @@ export async function sendPasswordSetupEmail(params: {
 
   <table cellpadding="0" cellspacing="0" width="100%"><tr><td align="center">
     <a href="${params.setPasswordUrl}"
-       style="display:inline-block;background:#2dd4bf;color:#0d0f14;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;">
+       style="display:inline-block;background:#00AEEC;color:#0d0f14;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;">
       Set Your Password →
     </a>
   </td></tr></table>
 
   <p style="margin:24px 0 0;font-size:12px;color:#4a5568;line-height:1.6;text-align:center;">
     Or copy this link into your browser:<br>
-    <span style="color:#2dd4bf;word-break:break-all;">${params.setPasswordUrl}</span>
+    <span style="color:#00AEEC;word-break:break-all;">${params.setPasswordUrl}</span>
   </p>
 </td></tr>
 ${EMAIL_WRAPPER_CLOSE(new Date().getFullYear())}`;
@@ -253,13 +253,13 @@ export async function sendAccessApprovedEmail(params: {
 
   <table cellpadding="0" cellspacing="0" width="100%"><tr><td align="center">
     <a href="${params.setPasswordUrl}"
-       style="display:inline-block;background:#2dd4bf;color:#0d0f14;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;">
+       style="display:inline-block;background:#00AEEC;color:#0d0f14;font-weight:700;font-size:15px;padding:14px 36px;border-radius:10px;text-decoration:none;">
       Set Password &amp; Get Started →
     </a>
   </td></tr></table>
 
   <p style="margin:24px 0 0;font-size:12px;color:#4a5568;line-height:1.6;text-align:center;">
-    Link: <span style="color:#2dd4bf;word-break:break-all;">${params.setPasswordUrl}</span>
+    Link: <span style="color:#00AEEC;word-break:break-all;">${params.setPasswordUrl}</span>
   </p>
 </td></tr>
 ${EMAIL_WRAPPER_CLOSE(new Date().getFullYear())}`;
@@ -289,8 +289,8 @@ function renderChangeRows(changes: ActivityChange[]): string {
   <td style="background:#0d1117;border:1px solid #1e2433;border-radius:8px;overflow:hidden;">
     <table cellpadding="0" cellspacing="0" width="100%">
       <tr>
-        <td style="padding:8px 14px;background:#0a1a18;border-bottom:1px solid #1e2433;">
-          <span style="font-size:10px;font-weight:700;color:#2dd4bf;text-transform:uppercase;letter-spacing:0.08em;">📝 Note Added</span>
+        <td style="padding:8px 14px;background:#050816;border-bottom:1px solid #1e2433;">
+          <span style="font-size:10px;font-weight:700;color:#00AEEC;text-transform:uppercase;letter-spacing:0.08em;">📝 Note Added</span>
         </td>
       </tr>
       <tr>
@@ -320,7 +320,7 @@ function renderChangeRows(changes: ActivityChange[]): string {
           <table cellpadding="0" cellspacing="0">
             <tr>
               ${hasOld ? `<td style="font-size:14px;color:#6b7a9a;text-decoration:line-through;padding-right:10px;">${escapeHtml(c.oldValue)}</td>
-              <td style="font-size:16px;color:#2dd4bf;padding-right:10px;font-weight:700;">→</td>` : ""}
+              <td style="font-size:16px;color:#00AEEC;padding-right:10px;font-weight:700;">→</td>` : ""}
               <td style="font-size:14px;color:#e8eaf0;font-weight:600;">${escapeHtml(c.newValue)}</td>
             </tr>
           </table>
@@ -355,7 +355,7 @@ export async function sendActivityAlertEmail(params: {
   const html = `${EMAIL_WRAPPER_OPEN}
 <tr><td style="padding:32px 36px;">
   <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:0.08em;">Lead Update</p>
-  <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#2dd4bf;">${escapeHtml(params.leadName)}</h2>
+  <h2 style="margin:0 0 4px;font-size:20px;font-weight:700;color:#00AEEC;">${escapeHtml(params.leadName)}</h2>
   <p style="margin:0 0 24px;font-size:13px;color:#4a5568;">${summaryLine}</p>
 
   ${renderChangeRows(params.changes)}

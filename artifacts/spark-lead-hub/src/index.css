@@ -10,21 +10,21 @@
    ============================================ */
 :root {
   /* --- Backgrounds --- */
-  --bg-base:        hsl(222, 22%, 6%);
-  --bg-elevated:    hsl(222, 20%, 9%);
-  --bg-overlay:     hsl(222, 18%, 12%);
-  --bg-subtle:      hsl(222, 16%, 14%);
-  --bg-muted:       hsl(222, 14%, 18%);
+  --bg-base:        hsl(229, 63%, 5%);
+  --bg-elevated:    hsl(224, 47%, 10%);
+  --bg-overlay:     hsl(224, 44%, 12%);
+  --bg-subtle:      hsl(224, 40%, 14%);
+  --bg-muted:       hsl(224, 36%, 18%);
 
   /* --- Borders --- */
-  --border-subtle:  hsl(222, 15%, 20%);
-  --border-default: hsl(222, 15%, 25%);
-  --border-strong:  hsl(222, 15%, 35%);
+  --border-subtle:  rgba(0, 174, 236, 0.12);
+  --border-default: rgba(0, 174, 236, 0.20);
+  --border-strong:  rgba(0, 174, 236, 0.32);
 
   /* --- Brand / Accent Colors --- */
-  --teal:           hsl(172, 75%, 48%);
-  --teal-dim:       hsl(172 75% 48% / 0.15);
-  --teal-glow:      0 0 12px hsl(172 75% 48% / 0.4), 0 0 40px hsl(172 75% 48% / 0.15);
+  --teal:           hsl(196, 100%, 46%);
+  --teal-dim:       hsl(196 100% 46% / 0.15);
+  --teal-glow:      0 0 12px hsl(196 100% 46% / 0.4), 0 0 40px hsl(196 100% 46% / 0.15);
   --purple:         hsl(262, 65%, 62%);
   --purple-dim:     hsl(262 65% 62% / 0.15);
 
@@ -123,22 +123,22 @@
   --border-faint: hsl(222, 14%, 16%);
 
   /* Tailwind compat (kept for shadcn components) */
-  --background: 222 22% 6%;
+  --background: 229 63% 5%;
   --foreground: 210 30% 94%;
-  --border: 222 15% 20%;
-  --input: 222 15% 25%;
-  --ring: 172 75% 48%;
-  --card: 222 20% 9%;
+  --border: 196 100% 46% / 0.20;
+  --input: 224 40% 20%;
+  --ring: 196 100% 46%;
+  --card: 224 47% 10%;
   --card-foreground: 210 30% 94%;
-  --card-border: 222 15% 20%;
-  --popover: 222 18% 12%;
+  --card-border: 196 100% 46% / 0.12;
+  --popover: 224 44% 12%;
   --popover-foreground: 210 30% 94%;
-  --popover-border: 222 15% 20%;
-  --primary: 172 75% 48%;
-  --primary-foreground: 222 22% 6%;
-  --secondary: 222 16% 14%;
+  --popover-border: 196 100% 46% / 0.12;
+  --primary: 196 100% 46%;
+  --primary-foreground: 229 63% 5%;
+  --secondary: 224 40% 14%;
   --secondary-foreground: 210 30% 94%;
-  --muted: 222 14% 18%;
+  --muted: 224 36% 18%;
   --muted-foreground: 210 15% 45%;
   --accent: 262 65% 62%;
   --accent-foreground: 210 30% 94%;
@@ -146,20 +146,20 @@
   --destructive-foreground: 0 0% 100%;
   --success: 152 60% 44%;
   --warning: 38 90% 54%;
-  --chart-1: 172 75% 48%;
+  --chart-1: 196 100% 46%;
   --chart-2: 262 65% 62%;
   --chart-3: 38 90% 54%;
   --chart-4: 152 60% 44%;
   --chart-5: 0 70% 58%;
-  --sidebar: 222 20% 9%;
+  --sidebar: 224 47% 10%;
   --sidebar-foreground: 210 30% 94%;
-  --sidebar-border: 222 15% 20%;
-  --sidebar-primary: 172 75% 48%;
-  --sidebar-primary-foreground: 222 22% 6%;
+  --sidebar-border: 196 100% 46% / 0.12;
+  --sidebar-primary: 196 100% 46%;
+  --sidebar-primary-foreground: 229 63% 5%;
   --sidebar-accent: 262 65% 62%;
   --sidebar-accent-foreground: 210 30% 94%;
-  --sidebar-ring: 172 75% 48%;
-  --neon-glow: 172 75% 48%;
+  --sidebar-ring: 196 100% 46%;
+  --neon-glow: 196 100% 46%;
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-display: 'Syne', sans-serif;
   --app-font-serif: Georgia, serif;
@@ -177,9 +177,9 @@
   --muted-border: hsl(var(--muted));
   --accent-border: hsl(var(--accent));
   --destructive-border: hsl(var(--destructive));
-  --shadow-2xs: 0px 2px 0px 0px hsl(172 75% 48% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(172 75% 48% / 0.00);
-  --shadow-sm-tw: 0px 2px 0px 0px hsl(172 75% 48% / 0.05), 0px 1px 2px -1px hsl(172 75% 48% / 0.05);
+  --shadow-2xs: 0px 2px 0px 0px hsl(196 100% 46% / 0.00);
+  --shadow-xs: 0px 2px 0px 0px hsl(196 100% 46% / 0.00);
+  --shadow-sm-tw: 0px 2px 0px 0px hsl(196 100% 46% / 0.05), 0px 1px 2px -1px hsl(196 100% 46% / 0.05);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 }
@@ -261,7 +261,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 a { color: var(--teal); text-decoration: none; }
 a:hover { opacity: 0.85; }
-::selection { background: hsl(172 75% 48% / 0.25); }
+::selection { background: hsl(196 100% 46% / 0.25); }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -680,7 +680,7 @@ a:hover { opacity: 0.85; }
 .input::placeholder { color: var(--text-muted); }
 .input:focus, .select-field:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px hsl(172 75% 48% / 0.15);
+  box-shadow: 0 0 0 3px hsl(196 100% 46% / 0.15);
 }
 .input-label {
   display: block;
@@ -2998,9 +2998,10 @@ body { overflow-x: hidden; }
   --text-inverse:   hsl(0, 0%, 98%);
   --text-on-brand:  hsl(222, 22%, 6%);
 
-  /* --- Teal / accent adjusted for light bg --- */
-  --teal-dim:  hsl(172 75% 42% / 0.10);
-  --teal-glow: 0 0 10px hsl(172 75% 42% / 0.18), 0 0 24px hsl(172 75% 42% / 0.07);
+  /* --- Brand accent adjusted for light bg --- */
+  --teal:      hsl(196, 100%, 42%);
+  --teal-dim:  hsl(196 100% 46% / 0.12);
+  --teal-glow: 0 0 10px hsl(196 100% 46% / 0.20), 0 0 24px hsl(196 100% 46% / 0.08);
 
   /* --- Shadows (lighter) --- */
   --shadow-sm:   0 1px 3px hsl(222 20% 12% / 0.07);
@@ -3025,8 +3026,8 @@ body { overflow-x: hidden; }
   --popover:                 0 0% 100%;
   --popover-foreground:      222 28% 10%;
   --popover-border:          210 18% 89%;
-  --primary:                 172 75% 40%;
-  --primary-foreground:      222 22% 6%;
+  --primary:                 196 100% 42%;
+  --primary-foreground:      210 20% 98%;
   --secondary:               210 16% 93%;
   --secondary-foreground:    222 28% 10%;
   --muted:                   210 14% 88%;
@@ -3037,12 +3038,12 @@ body { overflow-x: hidden; }
   --destructive-foreground:  0 0% 100%;
   --sidebar:                 210 18% 95%;
   --sidebar-foreground:      222 28% 10%;
-  --sidebar-border:          210 18% 89%;
-  --sidebar-primary:         172 75% 40%;
-  --sidebar-primary-foreground: 222 22% 6%;
+  --sidebar-border:          196 100% 46% / 0.15;
+  --sidebar-primary:         196 100% 42%;
+  --sidebar-primary-foreground: 210 20% 98%;
   --sidebar-accent:          262 65% 58%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --neon-glow:               172 75% 40%;
+  --neon-glow:               196 100% 46%;
 }
 
 /* Light mode input / form overrides */
@@ -3079,7 +3080,7 @@ body { overflow-x: hidden; }
   background: hsl(210, 16%, 93%);
 }
 [data-theme="light"] .cselect-option.selected {
-  background: hsl(172 75% 40% / 0.10);
+  background: hsl(196 100% 46% / 0.10);
 }
 
 /* Light mode table rows */

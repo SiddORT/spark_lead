@@ -76,9 +76,9 @@ export function SetPassword() {
           <div className="auth-brand-icon">
             <Zap size={22} />
           </div>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "var(--text-xl)", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-            LeadFlow
-          </span>
+          <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--text-xl)", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+            SparkLead
+          </span><span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--text-xl)", color: "#00AEEC", letterSpacing: "-0.02em" }}>_</span>
         </div>
 
         {success ? (

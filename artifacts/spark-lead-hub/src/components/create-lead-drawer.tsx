@@ -49,7 +49,7 @@ const fieldStyle: React.CSSProperties = {
 
 const focusStyle: React.CSSProperties = {
   borderColor: "var(--teal)",
-  boxShadow: "0 0 0 3px hsl(172 75% 48% / 0.12), 0 0 8px hsl(172 75% 48% / 0.1)",
+  boxShadow: "0 0 0 3px hsl(196 100% 46% / 0.12), 0 0 8px hsl(196 100% 46% / 0.1)",
 };
 
 function StyledInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -240,7 +240,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
             width: 4, height: 28,
             background: "var(--teal)",
             borderRadius: 2,
-            boxShadow: "0 0 12px hsl(172 75% 48% / 0.5)",
+            boxShadow: "0 0 12px hsl(196 100% 46% / 0.5)",
             flexShrink: 0,
           }} />
           <div style={{ flex: 1 }}>
@@ -387,8 +387,8 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
                     onClick={() => { setNewServiceName(""); setNewServiceCompanyIds([]); setShowServiceModal(true); }}
                     style={{
                       height: 42, padding: "0 14px", flexShrink: 0,
-                      background: "hsl(172 75% 48% / 0.08)",
-                      border: "1px solid hsl(172 75% 48% / 0.3)",
+                      background: "hsl(196 100% 46% / 0.08)",
+                      border: "1px solid hsl(196 100% 46% / 0.3)",
                       borderRadius: "var(--radius-md)",
                       color: "var(--teal)",
                       fontSize: "var(--text-sm)", fontWeight: 600,
@@ -396,8 +396,8 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
                       cursor: "pointer", whiteSpace: "nowrap",
                       transition: "background 150ms ease, border-color 150ms ease",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "hsl(172 75% 48% / 0.15)"; e.currentTarget.style.borderColor = "hsl(172 75% 48% / 0.5)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "hsl(172 75% 48% / 0.08)"; e.currentTarget.style.borderColor = "hsl(172 75% 48% / 0.3)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "hsl(196 100% 46% / 0.15)"; e.currentTarget.style.borderColor = "hsl(196 100% 46% / 0.5)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "hsl(196 100% 46% / 0.08)"; e.currentTarget.style.borderColor = "hsl(196 100% 46% / 0.3)"; }}
                   >
                     + Add
                   </button>
@@ -524,7 +524,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
             onMouseLeave={() => setPrimaryHover(false)}
             style={{
               height: 42, padding: "0 32px",
-              background: createLead.isPending ? "hsl(172 75% 48% / 0.6)" : "var(--teal)",
+              background: createLead.isPending ? "hsl(196 100% 46% / 0.6)" : "var(--teal)",
               color: "hsl(222 22% 6%)",
               border: "none",
               borderRadius: "var(--radius-md)",
@@ -536,7 +536,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
               alignItems: "center",
               gap: "var(--space-2)",
               filter: primaryHover && !createLead.isPending ? "brightness(1.1)" : "none",
-              boxShadow: primaryHover && !createLead.isPending ? "0 0 20px hsl(172 75% 48% / 0.3)" : "none",
+              boxShadow: primaryHover && !createLead.isPending ? "0 0 20px hsl(196 100% 46% / 0.3)" : "none",
               transition: "filter 150ms ease, box-shadow 150ms ease",
             }}
           >

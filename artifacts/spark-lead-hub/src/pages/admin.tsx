@@ -121,8 +121,8 @@ export function Permissions() {
       {/* Info banner */}
       <div style={{
         display: "flex", alignItems: "flex-start", gap: "var(--space-2)",
-        background: "hsl(172 75% 48% / 0.07)",
-        border: "1px solid hsl(172 75% 48% / 0.2)",
+        background: "hsl(196 100% 46% / 0.07)",
+        border: "1px solid hsl(196 100% 46% / 0.2)",
         borderRadius: "var(--radius-md)",
         padding: "var(--space-3) var(--space-4)",
         marginBottom: "var(--space-5)",
