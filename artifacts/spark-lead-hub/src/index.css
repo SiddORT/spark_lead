@@ -9,22 +9,28 @@
    SPARK LEAD HUB — DESIGN TOKENS
    ============================================ */
 :root {
+  /* --- Brand Tokens --- */
+  --brand-primary:   #00AEEC;
+  --brand-secondary: #09A9E9;
+  --app-bg:          #050816;
+  --panel-bg:        #0D1324;
+
   /* --- Backgrounds --- */
-  --bg-base:        hsl(222, 22%, 6%);
-  --bg-elevated:    hsl(222, 20%, 9%);
-  --bg-overlay:     hsl(222, 18%, 12%);
-  --bg-subtle:      hsl(222, 16%, 14%);
-  --bg-muted:       hsl(222, 14%, 18%);
+  --bg-base:        hsl(229, 60%, 5%);
+  --bg-elevated:    hsl(224, 48%, 10%);
+  --bg-overlay:     hsl(224, 44%, 12%);
+  --bg-subtle:      hsl(224, 40%, 15%);
+  --bg-muted:       hsl(224, 34%, 19%);
 
   /* --- Borders --- */
-  --border-subtle:  hsl(222, 15%, 20%);
-  --border-default: hsl(222, 15%, 25%);
-  --border-strong:  hsl(222, 15%, 35%);
+  --border-subtle:  rgba(0, 174, 236, 0.12);
+  --border-default: rgba(0, 174, 236, 0.22);
+  --border-strong:  rgba(0, 174, 236, 0.36);
 
   /* --- Brand / Accent Colors --- */
-  --teal:           hsl(172, 75%, 48%);
-  --teal-dim:       hsl(172 75% 48% / 0.15);
-  --teal-glow:      0 0 12px hsl(172 75% 48% / 0.4), 0 0 40px hsl(172 75% 48% / 0.15);
+  --teal:           hsl(196, 100%, 46%);
+  --teal-dim:       hsl(196 100% 46% / 0.15);
+  --teal-glow:      0 0 12px hsl(196 100% 46% / 0.4), 0 0 40px hsl(196 100% 46% / 0.15);
   --purple:         hsl(262, 65%, 62%);
   --purple-dim:     hsl(262 65% 62% / 0.15);
 
@@ -42,7 +48,7 @@
   --text-primary:   hsl(210, 35%, 96%);
   --text-secondary: hsl(210, 20%, 72%);
   --text-muted:     hsl(210, 15%, 52%);
-  --text-inverse:   hsl(222, 22%, 6%);
+  --text-inverse:   hsl(229, 60%, 5%);
 
   /* --- Spacing Scale (4px base) --- */
   --space-1:  4px;
@@ -78,10 +84,10 @@
   --text-4xl:  40px;
 
   /* --- Shadows --- */
-  --shadow-sm:   0 1px 3px hsl(222 22% 3% / 0.4);
-  --shadow-md:   0 4px 16px hsl(222 22% 3% / 0.5);
-  --shadow-lg:   0 8px 32px hsl(222 22% 3% / 0.6);
-  --shadow-card: 0 2px 8px hsl(222 22% 3% / 0.5), inset 0 1px 0 hsl(210 30% 94% / 0.04);
+  --shadow-sm:   0 1px 3px hsl(229 60% 3% / 0.4);
+  --shadow-md:   0 4px 16px hsl(229 60% 3% / 0.5);
+  --shadow-lg:   0 8px 32px hsl(229 60% 3% / 0.6);
+  --shadow-card: 0 2px 8px hsl(229 60% 3% / 0.5), inset 0 1px 0 hsl(210 30% 94% / 0.04);
 
   /* --- Transitions --- */
   --transition-fast: 120ms ease;
@@ -116,29 +122,29 @@
   --t-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Extended text colors */
-  --text-on-brand: hsl(222, 22%, 6%);
+  --text-on-brand: hsl(229, 60%, 5%);
   --text-faint:    hsl(210, 12%, 40%);
 
   /* Extended border colors */
-  --border-faint: hsl(222, 14%, 16%);
+  --border-faint: rgba(0, 174, 236, 0.07);
 
   /* Tailwind compat (kept for shadcn components) */
-  --background: 222 22% 6%;
+  --background: 229 60% 5%;
   --foreground: 210 30% 94%;
-  --border: 222 15% 20%;
-  --input: 222 15% 25%;
-  --ring: 172 75% 48%;
-  --card: 222 20% 9%;
+  --border: 224 38% 22%;
+  --input: 224 38% 22%;
+  --ring: 196 100% 46%;
+  --card: 224 48% 10%;
   --card-foreground: 210 30% 94%;
-  --card-border: 222 15% 20%;
-  --popover: 222 18% 12%;
+  --card-border: 224 38% 22%;
+  --popover: 224 44% 12%;
   --popover-foreground: 210 30% 94%;
-  --popover-border: 222 15% 20%;
-  --primary: 172 75% 48%;
-  --primary-foreground: 222 22% 6%;
-  --secondary: 222 16% 14%;
+  --popover-border: 224 38% 22%;
+  --primary: 196 100% 46%;
+  --primary-foreground: 229 60% 5%;
+  --secondary: 224 40% 15%;
   --secondary-foreground: 210 30% 94%;
-  --muted: 222 14% 18%;
+  --muted: 224 34% 19%;
   --muted-foreground: 210 15% 45%;
   --accent: 262 65% 62%;
   --accent-foreground: 210 30% 94%;
@@ -146,20 +152,20 @@
   --destructive-foreground: 0 0% 100%;
   --success: 152 60% 44%;
   --warning: 38 90% 54%;
-  --chart-1: 172 75% 48%;
+  --chart-1: 196 100% 46%;
   --chart-2: 262 65% 62%;
   --chart-3: 38 90% 54%;
   --chart-4: 152 60% 44%;
   --chart-5: 0 70% 58%;
-  --sidebar: 222 20% 9%;
+  --sidebar: 224 48% 10%;
   --sidebar-foreground: 210 30% 94%;
-  --sidebar-border: 222 15% 20%;
-  --sidebar-primary: 172 75% 48%;
-  --sidebar-primary-foreground: 222 22% 6%;
+  --sidebar-border: 224 38% 22%;
+  --sidebar-primary: 196 100% 46%;
+  --sidebar-primary-foreground: 229 60% 5%;
   --sidebar-accent: 262 65% 62%;
   --sidebar-accent-foreground: 210 30% 94%;
-  --sidebar-ring: 172 75% 48%;
-  --neon-glow: 172 75% 48%;
+  --sidebar-ring: 196 100% 46%;
+  --neon-glow: 196 100% 46%;
   --app-font-sans: 'DM Sans', sans-serif;
   --app-font-display: 'Syne', sans-serif;
   --app-font-serif: Georgia, serif;
@@ -177,9 +183,9 @@
   --muted-border: hsl(var(--muted));
   --accent-border: hsl(var(--accent));
   --destructive-border: hsl(var(--destructive));
-  --shadow-2xs: 0px 2px 0px 0px hsl(172 75% 48% / 0.00);
-  --shadow-xs: 0px 2px 0px 0px hsl(172 75% 48% / 0.00);
-  --shadow-sm-tw: 0px 2px 0px 0px hsl(172 75% 48% / 0.05), 0px 1px 2px -1px hsl(172 75% 48% / 0.05);
+  --shadow-2xs: 0px 2px 0px 0px hsl(229 60% 3% / 0.20);
+  --shadow-xs: 0px 2px 4px 0px hsl(229 60% 3% / 0.30);
+  --shadow-sm-tw: 0px 2px 4px 0px hsl(229 60% 3% / 0.25), 0px 1px 2px -1px hsl(229 60% 3% / 0.20);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 }
@@ -261,7 +267,7 @@ h1, h2, h3, h4, h5, h6, .font-display {
 
 a { color: var(--teal); text-decoration: none; }
 a:hover { opacity: 0.85; }
-::selection { background: hsl(172 75% 48% / 0.25); }
+::selection { background: hsl(196 100% 46% / 0.25); }
 
 /* Scrollbar */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -401,7 +407,7 @@ a:hover { opacity: 0.85; }
     display: block;
     position: fixed;
     inset: 0;
-    background: hsl(222 22% 3% / 0.7);
+    background: hsl(229 60% 3% / 0.7);
     backdrop-filter: blur(4px);
     z-index: 99;
     animation: fade-in 200ms ease both;
@@ -552,7 +558,7 @@ a:hover { opacity: 0.85; }
 .card:hover { border-color: var(--border-default); transition: border-color var(--transition-base); }
 
 .card-glass {
-  background: hsl(222 20% 9% / 0.75);
+  background: hsl(224 48% 10% / 0.75);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid hsl(210 30% 94% / 0.06);
@@ -649,7 +655,7 @@ a:hover { opacity: 0.85; }
   text-decoration: none;
 }
 .btn-primary { background: var(--teal); color: var(--text-inverse); border-color: var(--teal); }
-.btn-primary:hover { background: hsl(172 75% 44%); box-shadow: var(--teal-glow); transform: translateY(-1px); }
+.btn-primary:hover { background: hsl(196 100% 42%); box-shadow: var(--teal-glow); transform: translateY(-1px); }
 .btn-secondary { background: transparent; color: var(--teal); border-color: var(--teal); }
 .btn-secondary:hover { background: var(--teal-dim); }
 .btn-ghost { background: transparent; color: var(--text-secondary); border-color: transparent; }
@@ -680,7 +686,7 @@ a:hover { opacity: 0.85; }
 .input::placeholder { color: var(--text-muted); }
 .input:focus, .select-field:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px hsl(172 75% 48% / 0.15);
+  box-shadow: 0 0 0 3px hsl(196 100% 46% / 0.15);
 }
 .input-label {
   display: block;
@@ -952,7 +958,7 @@ a:hover { opacity: 0.85; }
    ============================================ */
 .lead-sheet-overlay {
   position: fixed; inset: 0;
-  background: hsl(222 22% 3% / 0.6);
+  background: hsl(229 60% 3% / 0.6);
   backdrop-filter: blur(4px);
   z-index: 100;
   animation: fade-in 150ms ease both;
@@ -1047,7 +1053,7 @@ a:hover { opacity: 0.85; }
    ============================================ */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: hsl(222 22% 3% / 0.7);
+  background: hsl(229 60% 3% / 0.7);
   backdrop-filter: blur(6px);
   z-index: 200;
   display: flex; align-items: center; justify-content: center;
@@ -1126,7 +1132,7 @@ a:hover { opacity: 0.85; }
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px hsl(172, 75%, 48%, 0.18);
+  box-shadow: 0 0 0 3px hsl(196 100% 46% / 0.18);
   background: var(--bg-overlay);
 }
 .form-input.error,
@@ -1230,7 +1236,7 @@ a:hover { opacity: 0.85; }
   border: 1.5px solid transparent;
 }
 .checkbox-item:hover { background: var(--bg-subtle); }
-.checkbox-item.checked { background: var(--teal-dim); border-color: hsl(172, 75%, 48%, 0.3); }
+.checkbox-item.checked { background: var(--teal-dim); border-color: hsl(196 100% 46% / 0.3); }
 .checkbox-box {
   width: 18px; height: 18px;
   border-radius: 4px;
@@ -1323,8 +1329,8 @@ a:hover { opacity: 0.85; }
 .neon-glow-sm { box-shadow: 0 0 8px hsl(var(--neon-glow) / 0.2); }
 
 /* Glass utilities */
-.glass { background: hsl(222 18% 10% / 0.6); backdrop-filter: blur(20px); border: 1px solid hsl(222 15% 18% / 0.5); }
-.glass-strong { background: hsl(222 18% 10% / 0.8); backdrop-filter: blur(24px); border: 1px solid hsl(222 15% 18% / 0.6); }
+.glass { background: hsl(224 44% 12% / 0.6); backdrop-filter: blur(20px); border: 1px solid hsl(224 38% 20% / 0.5); }
+.glass-strong { background: hsl(224 44% 12% / 0.8); backdrop-filter: blur(24px); border: 1px solid hsl(224 38% 20% / 0.6); }
 
 /* ============================================
    EXTRA KEYFRAMES
@@ -1389,7 +1395,7 @@ a:hover { opacity: 0.85; }
 .field-select:focus,
 .field-textarea:focus {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px hsl(172, 75%, 48%, 0.18);
+  box-shadow: 0 0 0 3px hsl(196 100% 46% / 0.18);
   background: var(--bg-overlay);
 }
 .field-textarea {
@@ -1449,7 +1455,7 @@ a:hover { opacity: 0.85; }
   position: absolute;
   top: -160px; right: -160px;
   width: 420px; height: 420px;
-  background: hsl(172, 75%, 48%, 0.08);
+  background: hsl(196 100% 46% / 0.08);
   border-radius: var(--r-full);
   filter: blur(80px);
   pointer-events: none;
@@ -1486,7 +1492,7 @@ a:hover { opacity: 0.85; }
 .auth-brand-icon {
   width: 44px; height: 44px;
   background: var(--teal-dim);
-  border: 1px solid hsla(172, 75%, 48%, 0.35);
+  border: 1px solid hsla(196, 100%, 46%, 0.35);
   border-radius: var(--r-lg);
   display: flex; align-items: center; justify-content: center;
   color: var(--teal);
@@ -1553,7 +1559,7 @@ a:hover { opacity: 0.85; }
    ============================================ */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: hsl(222 22% 3% / 0.65);
+  background: hsl(229 60% 3% / 0.65);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 200;
@@ -1836,7 +1842,7 @@ a:hover { opacity: 0.85; }
 .company-chip-select:focus-within,
 .company-chip-select.open {
   border-color: var(--teal);
-  box-shadow: 0 0 0 3px hsl(172, 75%, 48%, 0.18);
+  box-shadow: 0 0 0 3px hsl(196 100% 46% / 0.18);
 }
 .company-chip {
   display: inline-flex;
@@ -2932,7 +2938,7 @@ a:hover { opacity: 0.85; }
   .bell-sheet-overlay {
     position: fixed;
     inset: 0;
-    background: hsl(222 22% 3% / 0.65);
+    background: hsl(229 60% 3% / 0.65);
     backdrop-filter: blur(4px);
     z-index: 9998;
     animation: fade-in 180ms ease both;
@@ -2999,8 +3005,8 @@ body { overflow-x: hidden; }
   --text-on-brand:  hsl(222, 22%, 6%);
 
   /* --- Teal / accent adjusted for light bg --- */
-  --teal-dim:  hsl(172 75% 42% / 0.10);
-  --teal-glow: 0 0 10px hsl(172 75% 42% / 0.18), 0 0 24px hsl(172 75% 42% / 0.07);
+  --teal-dim:  hsl(196 100% 44% / 0.10);
+  --teal-glow: 0 0 10px hsl(196 100% 44% / 0.18), 0 0 24px hsl(196 100% 44% / 0.07);
 
   /* --- Shadows (lighter) --- */
   --shadow-sm:   0 1px 3px hsl(222 20% 12% / 0.07);
@@ -3025,7 +3031,7 @@ body { overflow-x: hidden; }
   --popover:                 0 0% 100%;
   --popover-foreground:      222 28% 10%;
   --popover-border:          210 18% 89%;
-  --primary:                 172 75% 40%;
+  --primary:                 196 100% 42%;
   --primary-foreground:      222 22% 6%;
   --secondary:               210 16% 93%;
   --secondary-foreground:    222 28% 10%;
@@ -3038,11 +3044,11 @@ body { overflow-x: hidden; }
   --sidebar:                 210 18% 95%;
   --sidebar-foreground:      222 28% 10%;
   --sidebar-border:          210 18% 89%;
-  --sidebar-primary:         172 75% 40%;
+  --sidebar-primary:         196 100% 42%;
   --sidebar-primary-foreground: 222 22% 6%;
   --sidebar-accent:          262 65% 58%;
   --sidebar-accent-foreground: 0 0% 100%;
-  --neon-glow:               172 75% 40%;
+  --neon-glow:               196 100% 42%;
 }
 
 /* Light mode input / form overrides */
@@ -3079,7 +3085,7 @@ body { overflow-x: hidden; }
   background: hsl(210, 16%, 93%);
 }
 [data-theme="light"] .cselect-option.selected {
-  background: hsl(172 75% 40% / 0.10);
+  background: hsl(196 100% 42% / 0.10);
 }
 
 /* Light mode table rows */

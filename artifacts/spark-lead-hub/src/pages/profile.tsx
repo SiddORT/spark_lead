@@ -95,11 +95,11 @@ export function Profile() {
     }
   };
 
-  const ACCENT = "hsl(172 75% 48%)";
+  const ACCENT = "hsl(196 100% 46%)";
   const BADGE_BG: Record<string, string> = {
     superadmin: "hsl(280 70% 50% / 0.15)",
     admin:      "hsl(36 88% 52% / 0.15)",
-    member:     "hsl(172 75% 48% / 0.12)",
+    member:     "hsl(196 100% 46% / 0.12)",
   };
   const BADGE_COLOR: Record<string, string> = {
     superadmin: "hsl(280 70% 68%)",
@@ -166,9 +166,9 @@ export function Profile() {
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{
                 width: 88, height: 88, borderRadius: "50%",
-                background: avatarPreview ? "transparent" : "hsl(172 75% 48% / 0.15)",
+                background: avatarPreview ? "transparent" : "hsl(196 100% 46% / 0.15)",
                 border: `2px solid ${ACCENT}`,
-                boxShadow: `0 0 0 4px hsl(172 75% 48% / 0.12)`,
+                boxShadow: `0 0 0 4px hsl(196 100% 46% / 0.12)`,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 overflow: "hidden", fontSize: 28, fontWeight: 700,
                 color: ACCENT, fontFamily: "var(--font-display)",
@@ -211,16 +211,16 @@ export function Profile() {
                   onClick={() => fileRef.current?.click()}
                   style={{
                     height: 32, padding: "0 14px",
-                    background: "hsl(172 75% 48% / 0.1)",
-                    border: "1px solid hsl(172 75% 48% / 0.3)",
+                    background: "hsl(196 100% 46% / 0.1)",
+                    border: "1px solid hsl(196 100% 46% / 0.3)",
                     borderRadius: "var(--radius-sm)", color: ACCENT,
                     fontSize: "var(--text-xs)", fontWeight: 600,
                     fontFamily: "var(--font-sans)", cursor: "pointer",
                     display: "flex", alignItems: "center", gap: 5,
                     transition: "background 150ms ease",
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = "hsl(172 75% 48% / 0.18)"}
-                  onMouseLeave={e => e.currentTarget.style.background = "hsl(172 75% 48% / 0.1)"}
+                  onMouseEnter={e => e.currentTarget.style.background = "hsl(196 100% 46% / 0.18)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "hsl(196 100% 46% / 0.1)"}
                 >
                   <Camera size={12} /> Upload Photo
                 </button>
@@ -273,7 +273,7 @@ export function Profile() {
                   transition: "border-color 150ms ease, box-shadow 150ms ease",
                   boxSizing: "border-box",
                 }}
-                onFocus={e => { e.target.style.borderColor = ACCENT; e.target.style.boxShadow = "0 0 0 3px hsl(172 75% 48% / 0.12)"; }}
+                onFocus={e => { e.target.style.borderColor = ACCENT; e.target.style.boxShadow = "0 0 0 3px hsl(196 100% 46% / 0.12)"; }}
                 onBlur={e => { e.target.style.borderColor = "var(--border-default)"; e.target.style.boxShadow = "none"; }}
               />
             </div>
@@ -316,7 +316,7 @@ export function Profile() {
                 <span style={{
                   display: "inline-flex", alignItems: "center",
                   height: 28, padding: "0 12px",
-                  background: BADGE_BG[role] ?? "hsl(172 75% 48% / 0.12)",
+                  background: BADGE_BG[role] ?? "hsl(196 100% 46% / 0.12)",
                   color: BADGE_COLOR[role] ?? ACCENT,
                   borderRadius: "var(--radius-sm)",
                   fontSize: "var(--text-xs)", fontWeight: 600,
@@ -360,7 +360,7 @@ export function Profile() {
               disabled={!isDirty || !displayName.trim() || saving}
               style={{
                 height: 42, padding: "0 28px",
-                background: (!isDirty || saving) ? "hsl(172 75% 48% / 0.5)" : ACCENT,
+                background: (!isDirty || saving) ? "hsl(196 100% 46% / 0.5)" : ACCENT,
                 color: "hsl(222 22% 6%)", border: "none",
                 borderRadius: "var(--radius-md)",
                 fontSize: "var(--text-sm)", fontWeight: 700, fontFamily: "var(--font-sans)",

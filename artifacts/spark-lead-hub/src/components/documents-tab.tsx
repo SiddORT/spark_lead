@@ -215,9 +215,9 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
               <span style={{
                 display: "inline-flex", alignItems: "center", gap: 4,
                 fontSize: 11, fontWeight: 600,
-                background: "hsl(172 75% 48% / 0.10)",
+                background: "hsl(196 100% 46% / 0.10)",
                 color: "var(--teal)",
-                border: "1px solid hsl(172 75% 48% / 0.25)",
+                border: "1px solid hsl(196 100% 46% / 0.25)",
                 borderRadius: 6, padding: "3px 9px",
               }}>
                 📌 {leadStatusName}
@@ -280,8 +280,8 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
                   {doc.status && (
                     <span style={{
                       display: "inline-flex", alignItems: "center",
-                      background: "hsl(172 75% 48% / 0.10)", color: "var(--teal)",
-                      border: "1px solid hsl(172 75% 48% / 0.22)",
+                      background: "hsl(196 100% 46% / 0.10)", color: "var(--teal)",
+                      border: "1px solid hsl(196 100% 46% / 0.22)",
                       borderRadius: 5, padding: "1px 7px", fontWeight: 600, fontSize: "10px",
                     }}>
                       📌 {doc.status}

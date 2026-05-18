@@ -50,7 +50,7 @@ const fieldStyle: React.CSSProperties = {
 
 const focusStyle: React.CSSProperties = {
   borderColor: "var(--teal)",
-  boxShadow: "0 0 0 3px hsl(172 75% 48% / 0.12), 0 0 8px hsl(172 75% 48% / 0.1)",
+  boxShadow: "0 0 0 3px hsl(196 100% 46% / 0.12), 0 0 8px hsl(196 100% 46% / 0.1)",
 };
 
 function StyledInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
@@ -280,7 +280,7 @@ export function NewLead() {
             width: 4, height: 28,
             background: "var(--teal)",
             borderRadius: 2,
-            boxShadow: "0 0 12px hsl(172 75% 48% / 0.5)",
+            boxShadow: "0 0 12px hsl(196 100% 46% / 0.5)",
             flexShrink: 0,
           }} />
           <div>
@@ -413,8 +413,8 @@ export function NewLead() {
                   onClick={() => { setNewServiceName(""); setNewServiceCompanyIds([]); setShowServiceModal(true); }}
                   style={{
                     height: 42, padding: "0 14px", flexShrink: 0,
-                    background: "hsl(172 75% 48% / 0.08)",
-                    border: "1px solid hsl(172 75% 48% / 0.3)",
+                    background: "hsl(196 100% 46% / 0.08)",
+                    border: "1px solid hsl(196 100% 46% / 0.3)",
                     borderRadius: "var(--radius-md)",
                     color: "var(--teal)",
                     fontSize: "var(--text-sm)", fontWeight: 600,
@@ -422,8 +422,8 @@ export function NewLead() {
                     cursor: "pointer", whiteSpace: "nowrap",
                     transition: "background 150ms ease, border-color 150ms ease",
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "hsl(172 75% 48% / 0.15)"; e.currentTarget.style.borderColor = "hsl(172 75% 48% / 0.5)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "hsl(172 75% 48% / 0.08)"; e.currentTarget.style.borderColor = "hsl(172 75% 48% / 0.3)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "hsl(196 100% 46% / 0.15)"; e.currentTarget.style.borderColor = "hsl(196 100% 46% / 0.5)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "hsl(196 100% 46% / 0.08)"; e.currentTarget.style.borderColor = "hsl(196 100% 46% / 0.3)"; }}
                 >
                   + Add
                 </button>
@@ -558,7 +558,7 @@ export function NewLead() {
               onMouseLeave={() => setPrimaryHover(false)}
               style={{
                 height: 42, padding: "0 32px",
-                background: createLead.isPending ? "hsl(172 75% 48% / 0.6)" : "var(--teal)",
+                background: createLead.isPending ? "hsl(196 100% 46% / 0.6)" : "var(--teal)",
                 color: "hsl(222 22% 6%)",
                 border: "none",
                 borderRadius: "var(--radius-md)",
@@ -570,7 +570,7 @@ export function NewLead() {
                 alignItems: "center",
                 gap: "var(--space-2)",
                 filter: primaryHover && !createLead.isPending ? "brightness(1.1)" : "none",
-                boxShadow: primaryHover && !createLead.isPending ? "0 0 20px hsl(172 75% 48% / 0.3)" : "none",
+                boxShadow: primaryHover && !createLead.isPending ? "0 0 20px hsl(196 100% 46% / 0.3)" : "none",
                 transition: "filter 150ms ease, box-shadow 150ms ease",
               }}
             >
@@ -598,7 +598,7 @@ export function NewLead() {
             background: "var(--bg-elevated)",
             border: "1px solid var(--border-subtle)",
             borderRadius: "var(--radius-xl)",
-            boxShadow: "0 32px 64px hsl(222 22% 3% / 0.6), 0 0 0 1px hsl(172 75% 48% / 0.08)",
+            boxShadow: "0 32px 64px hsl(222 22% 3% / 0.6), 0 0 0 1px hsl(196 100% 46% / 0.08)",
             overflow: "hidden",
           }}>
             {/* Modal header */}
@@ -610,8 +610,8 @@ export function NewLead() {
               <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: "var(--radius-md)",
-                  background: "hsl(172 75% 48% / 0.12)",
-                  border: "1px solid hsl(172 75% 48% / 0.25)",
+                  background: "hsl(196 100% 46% / 0.12)",
+                  border: "1px solid hsl(196 100% 46% / 0.25)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
                   <Building2 size={15} style={{ color: "var(--teal)" }} />
@@ -682,10 +682,10 @@ export function NewLead() {
                             display: "flex", alignItems: "center", gap: "var(--space-3)",
                             padding: "8px 10px", borderRadius: "var(--radius-sm)",
                             cursor: "pointer", transition: "background 120ms ease",
-                            background: checked ? "hsl(172 75% 48% / 0.08)" : "transparent",
+                            background: checked ? "hsl(196 100% 46% / 0.08)" : "transparent",
                           }}
                           onMouseEnter={e => { if (!checked) e.currentTarget.style.background = "var(--bg-elevated)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = checked ? "hsl(172 75% 48% / 0.08)" : "transparent"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = checked ? "hsl(196 100% 46% / 0.08)" : "transparent"; }}
                         >
                           <input
                             type="checkbox"
@@ -735,7 +735,7 @@ export function NewLead() {
                 disabled={savingService}
                 style={{
                   height: 38, padding: "0 24px",
-                  background: savingService ? "hsl(172 75% 48% / 0.6)" : "var(--teal)",
+                  background: savingService ? "hsl(196 100% 46% / 0.6)" : "var(--teal)",
                   color: "hsl(222 22% 6%)", border: "none",
                   borderRadius: "var(--radius-md)", fontSize: "var(--text-sm)",
                   fontWeight: 700, fontFamily: "var(--font-sans)",

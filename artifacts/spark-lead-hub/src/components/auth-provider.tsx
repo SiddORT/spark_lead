@@ -274,7 +274,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             borderRadius: "var(--radius-xl)",
             padding: "var(--space-8)",
             width: 360,
-            boxShadow: "0 24px 64px hsl(222 22% 3% / 0.6), 0 0 0 1px hsl(172 75% 48% / 0.08)",
+            boxShadow: "0 24px 64px hsl(222 22% 3% / 0.6), 0 0 0 1px hsl(196 100% 46% / 0.08)",
             textAlign: "center",
             display: "flex",
             flexDirection: "column",
@@ -316,8 +316,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               width: 72, height: 72, borderRadius: "50%",
               background: countdown <= 10
                 ? "hsl(0 72% 51% / 0.12)"
-                : "hsl(172 75% 48% / 0.1)",
-              border: `2px solid ${countdown <= 10 ? "hsl(0 72% 51% / 0.5)" : "hsl(172 75% 48% / 0.4)"}`,
+                : "hsl(196 100% 46% / 0.1)",
+              border: `2px solid ${countdown <= 10 ? "hsl(0 72% 51% / 0.5)" : "hsl(196 100% 46% / 0.4)"}`,
               display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
               transition: "background 400ms ease, border-color 400ms ease",
@@ -341,7 +341,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 disabled={refreshing}
                 style={{
                   flex: 1, height: 42,
-                  background: refreshing ? "hsl(172 75% 48% / 0.5)" : "var(--teal)",
+                  background: refreshing ? "hsl(196 100% 46% / 0.5)" : "var(--teal)",
                   color: "hsl(222 22% 6%)",
                   border: "none",
                   borderRadius: "var(--radius-md)",

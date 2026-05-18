@@ -53,7 +53,7 @@ function QuickChip({
   label: string;
 }) {
   const colors: Record<string, { bg: string; border: string; text: string; activeBg: string; activeBorder: string }> = {
-    teal:    { bg: "hsl(172 75% 48% / 0.08)", border: "hsl(172 75% 48% / 0.22)", text: "var(--teal)",    activeBg: "hsl(172 75% 48% / 0.20)", activeBorder: "var(--teal)"    },
+    teal:    { bg: "hsl(196 100% 46% / 0.08)", border: "hsl(196 100% 46% / 0.22)", text: "var(--teal)",    activeBg: "hsl(196 100% 46% / 0.20)", activeBorder: "var(--teal)"    },
     danger:  { bg: "hsl(0 75% 50% / 0.08)",   border: "hsl(0 75% 50% / 0.22)",   text: "var(--danger)",  activeBg: "hsl(0 75% 50% / 0.20)",   activeBorder: "var(--danger)"  },
     warning: { bg: "hsl(38 90% 55% / 0.08)",  border: "hsl(38 90% 55% / 0.22)",  text: "var(--warning)", activeBg: "hsl(38 90% 55% / 0.20)",  activeBorder: "var(--warning)" },
   };
@@ -328,9 +328,9 @@ export function FollowUp() {
           marginBottom: "var(--space-2)",
           padding: "8px 14px",
           background: quickFilter === "today"
-            ? "hsl(172 75% 48% / 0.06)"
+            ? "hsl(196 100% 46% / 0.06)"
             : "hsl(0 75% 50% / 0.06)",
-          border: `1px solid ${quickFilter === "today" ? "hsl(172 75% 48% / 0.18)" : "hsl(0 75% 50% / 0.18)"}`,
+          border: `1px solid ${quickFilter === "today" ? "hsl(196 100% 46% / 0.18)" : "hsl(0 75% 50% / 0.18)"}`,
           borderRadius: "var(--radius-md)",
           fontSize: "var(--text-xs)", fontWeight: 500,
           color: quickFilter === "today" ? "var(--teal)" : "var(--danger)",
@@ -395,7 +395,7 @@ export function FollowUp() {
             }}
             onFocus={e => {
               e.currentTarget.style.borderColor = "var(--teal)";
-              e.currentTarget.style.boxShadow   = "0 0 0 3px hsl(172 75% 48% / 0.12), 0 0 8px hsl(172 75% 48% / 0.12)";
+              e.currentTarget.style.boxShadow   = "0 0 0 3px hsl(196 100% 46% / 0.12), 0 0 8px hsl(196 100% 46% / 0.12)";
             }}
             onBlur={e => {
               e.currentTarget.style.borderColor = "var(--border-default)";
@@ -610,8 +610,8 @@ export function FollowUp() {
                             <div style={{ display: "flex", flexWrap: "nowrap", gap: 3, overflow: "hidden" }}>
                               <span style={{
                                 display: "inline-block", padding: "1px 7px",
-                                background: "hsl(172 75% 48% / 0.1)",
-                                border: "1px solid hsl(172 75% 48% / 0.25)",
+                                background: "hsl(196 100% 46% / 0.1)",
+                                border: "1px solid hsl(196 100% 46% / 0.25)",
                                 borderRadius: "var(--radius-full)",
                                 color: "var(--teal)", fontSize: 10, fontWeight: 600,
                                 lineHeight: 1.8, whiteSpace: "nowrap",

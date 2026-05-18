@@ -67,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           fontWeight: 500,
           fontFamily: "var(--font-sans)",
           color: active ? "var(--teal)" : "var(--text-secondary)",
-          background: active ? "hsl(172 75% 48% / 0.08)" : "transparent",
+          background: active ? "hsl(196 100% 46% / 0.08)" : "transparent",
           borderLeft: active ? "2px solid var(--teal)" : "2px solid transparent",
           marginLeft: active ? 0 : 0,
           transition: "background 150ms ease, color 150ms ease",
@@ -107,8 +107,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 height: 18,
                 padding: "0 6px",
                 borderRadius: 999,
-                background: "hsl(172 75% 48% / 0.12)",
-                border: "1px solid hsl(172 75% 48% / 0.3)",
+                background: "hsl(196 100% 46% / 0.12)",
+                border: "1px solid hsl(196 100% 46% / 0.3)",
                 color: "var(--teal)",
                 fontSize: 10,
                 fontWeight: 700,
@@ -172,8 +172,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div style={{
             width: 32, height: 32,
             display: "flex", alignItems: "center", justifyContent: "center",
-            background: "hsl(172 75% 48% / 0.12)",
-            border: "1px solid hsl(172 75% 48% / 0.3)",
+            background: "hsl(196 100% 46% / 0.12)",
+            border: "1px solid hsl(196 100% 46% / 0.3)",
             borderRadius: "var(--radius-md)",
             flexShrink: 0,
           }}>
@@ -184,11 +184,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               fontFamily: "var(--font-display)",
               fontSize: "var(--text-base)",
               fontWeight: 800,
-              color: "var(--teal)",
+              color: "var(--text-primary)",
               letterSpacing: "-0.01em",
-              filter: "drop-shadow(0 0 8px hsl(172 75% 48% / 0.35))",
+              borderBottom: "2px solid #00AEEC",
+              paddingBottom: 1,
             }}>
-              LeadFlow
+              SparkLead
             </span>
           )}
         </div>
@@ -263,7 +264,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 margin: "-4px -4px var(--space-2) -4px",
                 transition: "background 150ms ease",
               }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(172 75% 48% / 0.06)"}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "hsl(196 100% 46% / 0.06)"}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
                 title="View profile"
               >
@@ -329,7 +330,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "var(--space-2)" }}>
               <Link href="/profile" title="View profile" style={{ textDecoration: "none" }}>
                 <div className="avatar avatar-sm" style={{ cursor: "pointer", transition: "box-shadow 150ms ease" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 2px hsl(172 75% 48% / 0.5)"}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = "0 0 0 2px hsl(196 100% 46% / 0.5)"}
                   onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = "none"}
                 >
                   {user?.avatarUrl
@@ -380,10 +381,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
               fontFamily: "var(--font-display)",
               fontWeight: 800,
               fontSize: "var(--text-base)",
-              color: "var(--teal)",
+              color: "var(--text-primary)",
               letterSpacing: "-0.01em",
+              borderBottom: "2px solid #00AEEC",
+              paddingBottom: 1,
             }}>
-              LeadFlow
+              SparkLead
             </span>
           </div>
           <div className="avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
@@ -413,19 +416,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 4px 24px hsl(172 75% 48% / 0.45), 0 2px 8px hsl(222 22% 3% / 0.4)",
+            boxShadow: "0 4px 24px hsl(196 100% 46% / 0.45), 0 2px 8px hsl(222 22% 3% / 0.4)",
             zIndex: 9990,
             transition: "transform 150ms ease, box-shadow 150ms ease, filter 150ms ease",
             flexShrink: 0,
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = "scale(1.1)";
-            e.currentTarget.style.boxShadow = "0 6px 32px hsl(172 75% 48% / 0.6), 0 2px 12px hsl(222 22% 3% / 0.5)";
+            e.currentTarget.style.boxShadow = "0 6px 32px hsl(196 100% 46% / 0.6), 0 2px 12px hsl(222 22% 3% / 0.5)";
             e.currentTarget.style.filter = "brightness(1.1)";
           }}
           onMouseLeave={e => {
             e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.boxShadow = "0 4px 24px hsl(172 75% 48% / 0.45), 0 2px 8px hsl(222 22% 3% / 0.4)";
+            e.currentTarget.style.boxShadow = "0 4px 24px hsl(196 100% 46% / 0.45), 0 2px 8px hsl(222 22% 3% / 0.4)";
             e.currentTarget.style.filter = "none";
           }}
         >

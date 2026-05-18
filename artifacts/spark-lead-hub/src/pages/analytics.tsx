@@ -147,14 +147,14 @@ export function Analytics() {
             <AreaChart data={trendData}>
               <defs>
                 <linearGradient id="tealFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor="hsl(172 75% 48%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(172 75% 48%)" stopOpacity={0} />
+                  <stop offset="5%"  stopColor="hsl(196 100% 46%)" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="hsl(196 100% 46%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={d => d.slice(5)} />
               <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} width={28} />
               <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} wrapperStyle={tooltipWrapperStyle} cursor={{ stroke: "var(--border-default)" }} />
-              <Area type="monotone" dataKey="count" stroke="hsl(172 75% 48%)" strokeWidth={2.5} fillOpacity={1} fill="url(#tealFill)" />
+              <Area type="monotone" dataKey="count" stroke="hsl(196 100% 46%)" strokeWidth={2.5} fillOpacity={1} fill="url(#tealFill)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

@@ -26,7 +26,7 @@ function AuthInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
         ...inputBase,
         ...(focused ? {
           borderColor: "var(--teal)",
-          boxShadow: "0 0 0 3px hsl(172 75% 48% / 0.14), 0 0 10px hsl(172 75% 48% / 0.12)",
+          boxShadow: "0 0 0 3px hsl(196 100% 46% / 0.14), 0 0 10px hsl(196 100% 46% / 0.12)",
           background: "hsl(222 22% 12% / 0.9)",
         } : {}),
         ...props.style,
@@ -119,25 +119,25 @@ export function AuthPage() {
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
       }}>
-        {/* Teal center-behind-card glow */}
+        {/* Brand blue center-behind-card glow */}
         <div style={{
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%, -60%)",
-          width: 600, height: 600,
-          background: "radial-gradient(ellipse at center, hsl(172 75% 48% / 0.12) 0%, transparent 70%)",
+          width: 700, height: 700,
+          background: "radial-gradient(ellipse at center, hsl(196 100% 46% / 0.10) 0%, transparent 70%)",
           pointerEvents: "none",
         }} />
-        {/* Teal top-left */}
+        {/* Top-left blue glow */}
         <div style={{
           position: "absolute", top: "-80px", left: "-80px",
-          width: 360, height: 360,
-          background: "radial-gradient(ellipse at center, hsl(172 75% 48% / 0.1) 0%, transparent 70%)",
+          width: 400, height: 400,
+          background: "radial-gradient(ellipse at center, hsl(196 100% 46% / 0.08) 0%, transparent 70%)",
         }} />
-        {/* Purple bottom-right */}
+        {/* Purple bottom-right accent */}
         <div style={{
           position: "absolute", bottom: "-80px", right: "-80px",
           width: 360, height: 360,
-          background: "radial-gradient(ellipse at center, hsl(258 89% 66% / 0.09) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse at center, hsl(258 89% 66% / 0.07) 0%, transparent 70%)",
         }} />
       </div>
 
@@ -149,11 +149,11 @@ export function AuthPage() {
             alignItems: "center",
             justifyContent: "center",
             width: 56, height: 56,
-            background: "hsl(172 75% 48% / 0.12)",
-            border: "1px solid hsl(172 75% 48% / 0.3)",
+            background: "hsl(196 100% 46% / 0.12)",
+            border: "1px solid hsl(196 100% 46% / 0.3)",
             borderRadius: "var(--radius-lg)",
             marginBottom: 16,
-            boxShadow: "0 0 24px hsl(172 75% 48% / 0.2)",
+            boxShadow: "0 0 28px hsl(196 100% 46% / 0.25)",
           }}>
             <Zap size={26} style={{ color: "var(--teal)" }} />
           </div>
@@ -161,28 +161,34 @@ export function AuthPage() {
             fontFamily: "var(--font-display)",
             fontSize: 36,
             fontWeight: 800,
-            color: "var(--teal)",
+            color: "var(--text-primary)",
             letterSpacing: "-0.02em",
             lineHeight: 1,
-            filter: "drop-shadow(0 0 18px hsl(172 75% 48% / 0.45))",
-            marginBottom: 8,
+            marginBottom: 4,
           }}>
-            LeadFlow
+            SparkLead
           </div>
+          <div style={{
+            height: 3,
+            width: 60,
+            background: "#00AEEC",
+            borderRadius: 2,
+            margin: "0 auto 10px",
+          }} />
           <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", letterSpacing: "0.02em" }}>
-            Spark Lead Hub — Team Access Only
+            Enterprise CRM — Team Access Only
           </div>
         </div>
 
         {/* Glass card */}
         <div style={{
-          background: "rgba(15, 23, 42, 0.65)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(255, 255, 255, 0.1)",
+          background: "rgba(10, 16, 36, 0.72)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(0, 174, 236, 0.14)",
           borderRadius: "var(--radius-lg)",
           padding: 40,
-          boxShadow: "0 32px 64px hsl(222 30% 2% / 0.7), 0 0 0 1px hsl(172 75% 48% / 0.06)",
+          boxShadow: "0 32px 64px hsl(229 60% 2% / 0.8), 0 0 0 1px hsl(196 100% 46% / 0.08)",
         }}>
           <h2 style={{
             fontFamily: "var(--font-display)",
@@ -285,7 +291,7 @@ export function AuthPage() {
                 opacity: loading ? 0.6 : 1,
                 transform: btnActive ? "scale(0.97)" : "scale(1)",
                 filter: btnHover && !loading ? "brightness(1.12)" : "none",
-                boxShadow: btnHover && !loading ? "0 0 20px hsl(172 75% 48% / 0.35)" : "none",
+                boxShadow: btnHover && !loading ? "0 0 20px hsl(196 100% 46% / 0.35)" : "none",
                 transition: "transform 120ms ease, filter 150ms ease, box-shadow 150ms ease",
                 display: "flex",
                 alignItems: "center",
