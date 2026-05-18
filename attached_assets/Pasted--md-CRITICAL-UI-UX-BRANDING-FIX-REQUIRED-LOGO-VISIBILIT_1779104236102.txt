@@ -1,0 +1,441 @@
+````md
+# 🚨 CRITICAL UI/UX + BRANDING FIX REQUIRED — LOGO VISIBILITY & LOGIN PAGE BROKEN
+
+The current SparkLead branding implementation is still visually broken and highly inconsistent across both themes.
+
+The application currently looks:
+- incomplete
+- visually unstable
+- unpolished
+- unbalanced
+- unprofessional
+
+The logo system and login page UI require a COMPLETE redesign pass.
+
+---
+
+# 🚨 CURRENT ISSUES IDENTIFIED
+
+## ❌ LIGHT MODE ISSUES
+
+In light mode:
+- the SparkLead text is disappearing
+- logo visibility is poor
+- branding area feels empty
+- logo size is extremely tiny
+- proportions are broken
+- spacing is incorrect
+
+Result:
+The app looks visually broken.
+
+---
+
+## ❌ DARK MODE ISSUES
+
+In dark mode:
+- only the text is visible
+- the actual logo mark/icon disappears
+- logo composition breaks
+- alignment is inconsistent
+
+Result:
+Brand identity becomes incomplete.
+
+---
+
+## ❌ LOGIN PAGE ISSUES
+
+The login page currently:
+- looks generic
+- feels outdated
+- lacks branding polish
+- has poor spacing
+- weak visual hierarchy
+- weak contrast balance
+- poor container styling
+- incorrect logo scaling
+- inconsistent theme rendering
+
+It does NOT feel like an enterprise-grade CRM login experience.
+
+---
+
+# 🎯 OBJECTIVE
+
+Transform SparkLead branding into a:
+- premium
+- polished
+- enterprise-grade
+- visually balanced
+- theme-perfect
+system.
+
+The branding must feel:
+- modern
+- sharp
+- scalable
+- professional
+- consistent
+
+---
+
+# 🚨 ROOT CAUSE
+
+The logo is likely being:
+- rendered without proper container sizing
+- using incorrect object-fit rules
+- constrained by max-width/max-height
+- clipped inside flex containers
+- rendered with incorrect transparent behavior
+- affected by theme filters/inversion
+- stretched inconsistently
+
+---
+
+# ✅ REQUIRED FIXES
+
+# 1️⃣ COMPLETE LOGO SYSTEM REDESIGN
+
+Implement proper brand rendering system.
+
+---
+
+# ✅ SIDEBAR BRANDING RULES
+
+The sidebar logo section MUST:
+- feel premium
+- be balanced vertically
+- use proper spacing
+- maintain consistent proportions
+
+---
+
+# ✅ REQUIRED STRUCTURE
+
+```tsx
+<div className="brand-container">
+  <img className="brand-logo" />
+</div>
+````
+
+---
+
+# ✅ REQUIRED SIDEBAR LOGO STYLING
+
+```css
+.brand-container {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  min-height: 72px;
+}
+
+.brand-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+}
+```
+
+---
+
+# 🚨 VERY IMPORTANT
+
+DO NOT:
+
+* crop logo
+* scale logo using width only
+* use fixed width constraints
+* use overflow hidden
+* use icon-only fallback
+* compress inside sidebar
+
+---
+
+# 2️⃣ FIX LIGHT MODE LOGO VISIBILITY
+
+The light mode logo currently disappears because:
+
+* black portions are blending incorrectly
+* transparency handling is broken
+* rendering contrast is weak
+
+---
+
+# ✅ REQUIRED
+
+Use:
+
+* dedicated LIGHT logo asset
+* BLACK typography
+* BLUE underline
+* transparent-safe rendering
+
+The logo MUST remain:
+
+* sharp
+* readable
+* crisp
+
+against light backgrounds.
+
+---
+
+# 3️⃣ FIX DARK MODE LOGO VISIBILITY
+
+The dark logo currently loses:
+
+* icon visibility
+* symbol visibility
+* rendering clarity
+
+---
+
+# ✅ REQUIRED
+
+Use:
+
+* dedicated DARK logo asset
+* WHITE typography
+* BLUE underline
+* NO brightness filters
+* NO CSS inversion
+
+---
+
+# 🚨 NEVER USE:
+
+```css
+filter: invert()
+```
+
+This causes:
+
+* blur
+* incorrect colors
+* inconsistent rendering
+
+---
+
+# 4️⃣ IMPLEMENT TRUE THEME-BASED LOGO SWITCHING
+
+Correct implementation:
+
+```tsx
+const logoSrc = isDarkMode
+  ? "/branding/sparklead-dark.png"
+  : "/branding/sparklead-light.png";
+```
+
+The switch MUST happen:
+
+* instantly
+* reactively
+* without refresh
+
+---
+
+# 5️⃣ REDESIGN LOGIN PAGE COMPLETELY
+
+The login page currently feels:
+
+* unfinished
+* flat
+* weak
+* visually outdated
+
+It needs a PREMIUM redesign.
+
+---
+
+# ✅ REQUIRED LOGIN PAGE DESIGN
+
+The login experience should feel like:
+
+* Linear
+* Notion
+* Stripe Dashboard
+* HubSpot
+* Salesforce modern auth
+
+---
+
+# ✅ LOGIN PAGE REQUIREMENTS
+
+## Layout
+
+* centered vertically
+* centered horizontally
+* responsive
+* balanced spacing
+
+---
+
+## Branding Area
+
+Top branding block should include:
+
+```text
+SparkLead
+Team Access Portal
+```
+
+with:
+
+* large premium logo
+* strong hierarchy
+* elegant spacing
+
+---
+
+# ✅ LOGO SIZE ON LOGIN PAGE
+
+Desktop:
+
+```css
+height: 64px;
+```
+
+Mobile:
+
+```css
+height: 48px;
+```
+
+---
+
+# 6️⃣ LOGIN CARD REDESIGN
+
+Current login form looks:
+
+* dull
+* too flat
+* weak contrast
+* poor padding
+
+---
+
+# ✅ REQUIRED LOGIN CARD STYLING
+
+```css
+background: rgba(10, 14, 25, 0.88);
+backdrop-filter: blur(16px);
+border-radius: 28px;
+padding: 40px;
+border: 1px solid rgba(0,174,236,0.18);
+box-shadow:
+  0 10px 40px rgba(0,0,0,0.45);
+```
+
+---
+
+# ✅ FORM IMPROVEMENTS
+
+Inputs must:
+
+* have better height
+* better padding
+* improved focus states
+* subtle glow on focus
+* premium transitions
+
+---
+
+# ✅ BUTTON IMPROVEMENTS
+
+Primary button should:
+
+* use SparkLead blue gradient
+* have hover animation
+* proper shadow
+* premium feel
+
+Example:
+
+```css
+background: linear-gradient(
+  135deg,
+  #00AEEC,
+  #0095D9
+);
+```
+
+---
+
+# 7️⃣ ADD BACKGROUND DEPTH
+
+Current login background feels empty.
+
+Add:
+
+* subtle radial gradients
+* soft glow effects
+* premium ambient lighting
+
+BUT:
+
+* keep it clean
+* keep it enterprise
+* avoid gaming UI
+
+---
+
+# 8️⃣ MOBILE RESPONSIVE FIXES
+
+Ensure:
+
+* logo never crops
+* text never overlaps
+* login card scales properly
+* sidebar branding remains readable
+* no element clipping
+
+---
+
+# 9️⃣ VERIFY ALL STATES
+
+Test thoroughly in:
+
+✅ Dark mode
+✅ Light mode
+✅ Desktop
+✅ Tablet
+✅ Mobile
+✅ Collapsed sidebar
+✅ Expanded sidebar
+✅ Login page
+✅ Auth loading state
+
+---
+
+# 🔟 FINAL EXPECTED RESULT
+
+After fixes:
+
+The application should feel:
+
+* premium
+* polished
+* visually balanced
+* enterprise-ready
+* consistent across themes
+
+The logo should:
+
+* NEVER disappear
+* NEVER crop
+* NEVER become unreadable
+* ALWAYS maintain proportions
+* ALWAYS feel centered and sharp
+
+The login page should feel:
+
+* modern
+* trustworthy
+* elegant
+* visually premium
+* production-grade
+
+```
+```

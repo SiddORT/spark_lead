@@ -165,12 +165,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           display: "flex",
           alignItems: "center",
           justifyContent: collapsed ? "center" : "flex-start",
-          padding: "var(--space-4) var(--space-4)",
+          padding: "16px 20px",
           borderBottom: "1px solid var(--border-subtle)",
           flexShrink: 0,
-          minHeight: 56,
+          minHeight: 72,
         }}>
-          {!collapsed && <BrandLogo height={22} />}
+          {!collapsed && <BrandLogo height={34} />}
         </div>
 
         {/* Nav */}

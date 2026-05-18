@@ -4,56 +4,6 @@ import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
-import { BRAND } from "@/lib/brand";
-
-const inputBase: React.CSSProperties = {
-  width: "100%",
-  height: 44,
-  padding: "0 14px",
-  background: "hsl(222 22% 10% / 0.8)",
-  border: "1px solid hsl(222 16% 22%)",
-  borderRadius: "var(--radius-md)",
-  color: "var(--text-primary)",
-  fontSize: "var(--text-sm)",
-  outline: "none",
-  transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
-  boxSizing: "border-box",
-};
-
-function AuthInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <input
-      {...props}
-      style={{
-        ...inputBase,
-        ...(focused ? {
-          borderColor: "var(--teal)",
-          boxShadow: "0 0 0 3px hsl(196 100% 46% / 0.14), 0 0 10px hsl(196 100% 46% / 0.12)",
-          background: "hsl(222 22% 12% / 0.9)",
-        } : {}),
-        ...props.style,
-      }}
-      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
-      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
-    />
-  );
-}
-
-const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-  <label style={{
-    display: "block",
-    fontFamily: "var(--font-sans)",
-    fontSize: "var(--text-xs)",
-    fontWeight: 600,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "var(--text-secondary)",
-    marginBottom: 6,
-  }}>
-    {children}
-  </label>
-);
 
 export function AuthPage() {
   const [email, setEmail] = useState("");
@@ -64,9 +14,12 @@ export function AuthPage() {
   const { theme, toggleTheme } = useTheme();
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passFocused, setPassFocused] = useState(false);
   const [btnHover, setBtnHover] = useState(false);
   const [btnActive, setBtnActive] = useState(false);
-  const [eyeHover, setEyeHover] = useState(false);
+
+  const isLight = theme === "light";
 
   useEffect(() => {
     if (!authLoading && token) setLocation("/");
@@ -102,159 +55,199 @@ export function AuthPage() {
 
   if (authLoading) {
     return (
-      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg-base)" }}>
-        <div style={{ width: 40, height: 40, border: "3px solid var(--teal)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: isLight ? "#f4f6fa" : "hsl(228,16%,6%)" }}>
+        <div style={{ width: 36, height: 36, border: `3px solid #00AEEC`, borderTopColor: "transparent", borderRadius: "50%", animation: "sl-spin 0.75s linear infinite" }} />
       </div>
     );
   }
 
+  const inputStyle = (focused: boolean): React.CSSProperties => ({
+    width: "100%",
+    height: 50,
+    padding: "0 16px",
+    background: isLight
+      ? focused ? "#ffffff" : "rgba(0,0,0,0.03)"
+      : focused ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.04)",
+    border: `1.5px solid ${focused
+      ? "#00AEEC"
+      : isLight ? "rgba(0,0,0,0.14)" : "rgba(255,255,255,0.10)"}`,
+    borderRadius: 12,
+    color: isLight ? "#0d0d0d" : "#f0f4f8",
+    fontSize: 15,
+    outline: "none",
+    transition: "border-color 180ms ease, box-shadow 180ms ease, background 180ms ease",
+    boxSizing: "border-box",
+    boxShadow: focused ? "0 0 0 4px rgba(0,174,236,0.12)" : "none",
+    fontFamily: "var(--font-body)",
+  });
+
   return (
     <div style={{
       minHeight: "100vh",
-      background: "var(--bg-base)",
+      background: isLight
+        ? "linear-gradient(135deg, #eef5fb 0%, #f8fafc 50%, #eef2fb 100%)"
+        : "hsl(228,16%,6%)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: "var(--space-5)",
+      padding: "24px 16px",
       position: "relative",
       overflow: "hidden",
     }}>
+
       {/* Theme toggle */}
       <button
         onClick={toggleTheme}
-        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        title={isLight ? "Switch to dark mode" : "Switch to light mode"}
         style={{
-          position: "absolute", top: 16, right: 16, zIndex: 10,
-          width: 36, height: 36,
+          position: "absolute", top: 20, right: 20, zIndex: 10,
+          width: 38, height: 38,
           display: "flex", alignItems: "center", justifyContent: "center",
-          background: theme === "light" ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)",
-          border: `1px solid ${theme === "light" ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.10)"}`,
-          borderRadius: "var(--radius-md)",
-          color: "var(--text-muted)",
+          background: isLight ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.06)",
+          border: `1px solid ${isLight ? "rgba(0,0,0,0.09)" : "rgba(255,255,255,0.09)"}`,
+          borderRadius: 10,
+          color: isLight ? "#555" : "#8899aa",
           cursor: "pointer",
-          transition: "background 150ms, border-color 150ms",
+          transition: "all 150ms ease",
         }}
       >
-        {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+        {isLight ? <Moon size={15} /> : <Sun size={15} />}
       </button>
 
-      {/* Background glow orbs */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
-      }}>
-        <div style={{
-          position: "absolute", top: "50%", left: "50%",
-          transform: "translate(-50%, -60%)",
-          width: 600, height: 600,
-          background: "radial-gradient(ellipse at center, rgba(0,174,236,0.12) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }} />
-        <div style={{
-          position: "absolute", top: "-80px", left: "-80px",
-          width: 360, height: 360,
-          background: "radial-gradient(ellipse at center, rgba(0,174,236,0.09) 0%, transparent 70%)",
-        }} />
-        <div style={{
-          position: "absolute", bottom: "-80px", right: "-80px",
-          width: 360, height: 360,
-          background: "radial-gradient(ellipse at center, rgba(9,169,233,0.08) 0%, transparent 70%)",
-        }} />
-      </div>
+      {/* Background ambient glow (dark only) */}
+      {!isLight && (
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+          <div style={{
+            position: "absolute",
+            top: "30%", left: "50%", transform: "translate(-50%, -50%)",
+            width: 700, height: 500,
+            background: "radial-gradient(ellipse at center, rgba(0,174,236,0.08) 0%, transparent 65%)",
+          }} />
+          <div style={{
+            position: "absolute", bottom: 0, right: 0,
+            width: 400, height: 400,
+            background: "radial-gradient(ellipse at bottom right, rgba(0,149,217,0.06) 0%, transparent 65%)",
+          }} />
+        </div>
+      )}
 
-      <div style={{ width: "100%", maxWidth: 420, position: "relative", zIndex: 1, animation: "authFadeIn 0.4s ease both" }}>
-        {/* Brand mark */}
-        <div style={{ textAlign: "center", marginBottom: 36, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <BrandLogo height={38} />
-          <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", letterSpacing: "0.02em" }}>
-            {BRAND.tagline}
-          </div>
+      {/* Main content */}
+      <div style={{ width: "100%", maxWidth: 440, position: "relative", zIndex: 1, animation: "sl-fadein 0.45s cubic-bezier(0.16,1,0.3,1) both" }}>
+
+        {/* Logo block */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 32, gap: 10 }}>
+          <BrandLogo height={56} />
+          <p style={{
+            margin: 0,
+            fontSize: 13,
+            color: isLight ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.35)",
+            letterSpacing: "0.04em",
+            fontFamily: "var(--font-body)",
+          }}>
+            Team Access Portal
+          </p>
         </div>
 
-        {/* Glass card */}
+        {/* Login card */}
         <div style={{
-          background: "rgba(5, 8, 22, 0.75)",
+          background: isLight
+            ? "rgba(255,255,255,0.90)"
+            : "rgba(10,14,26,0.88)",
           backdropFilter: "blur(20px)",
           WebkitBackdropFilter: "blur(20px)",
-          border: "1px solid rgba(0, 174, 236, 0.14)",
-          borderRadius: "var(--radius-lg)",
-          padding: 40,
-          boxShadow: "0 32px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,174,236,0.06)",
+          border: `1px solid ${isLight ? "rgba(0,0,0,0.08)" : "rgba(0,174,236,0.14)"}`,
+          borderRadius: 24,
+          padding: "40px 40px 36px",
+          boxShadow: isLight
+            ? "0 8px 40px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.8) inset"
+            : "0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,174,236,0.06)",
         }}>
-          <h2 style={{
+          <h1 style={{
+            margin: "0 0 28px",
             fontFamily: "var(--font-display)",
-            fontSize: "var(--text-lg)",
+            fontSize: 22,
             fontWeight: 700,
             textAlign: "center",
-            color: "var(--text-primary)",
-            marginBottom: 28,
+            color: isLight ? "#0d0d0d" : "#f0f4f8",
+            letterSpacing: "-0.02em",
           }}>
-            Sign In
-          </h2>
+            Welcome back
+          </h1>
 
           {error && (
             <div style={{
               marginBottom: 20,
-              padding: "10px 14px",
-              borderRadius: "var(--radius-md)",
-              background: "hsl(0 75% 50% / 0.1)",
-              border: "1px solid hsl(0 75% 50% / 0.3)",
-              color: "var(--danger)",
-              fontSize: "var(--text-sm)",
+              padding: "11px 16px",
+              borderRadius: 10,
+              background: "rgba(220,50,50,0.08)",
+              border: "1px solid rgba(220,50,50,0.22)",
+              color: "hsl(0,70%,58%)",
+              fontSize: 14,
+              fontFamily: "var(--font-body)",
             }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             <div>
-              <FieldLabel>Email Address</FieldLabel>
-              <AuthInput
+              <label style={{
+                display: "block", marginBottom: 7,
+                fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
+                color: isLight ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.38)",
+                fontFamily: "var(--font-body)",
+              }}>
+                Email address
+              </label>
+              <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="your@email.com"
+                placeholder="you@company.com"
                 required
+                style={inputStyle(emailFocused)}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
               />
             </div>
 
             <div>
-              <FieldLabel>Password</FieldLabel>
+              <label style={{
+                display: "block", marginBottom: 7,
+                fontSize: 12, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
+                color: isLight ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.38)",
+                fontFamily: "var(--font-body)",
+              }}>
+                Password
+              </label>
               <div style={{ position: "relative" }}>
-                <AuthInput
+                <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  style={{ paddingRight: 44 }}
+                  style={{ ...inputStyle(passFocused), paddingRight: 48 }}
+                  onFocus={() => setPassFocused(true)}
+                  onBlur={() => setPassFocused(false)}
                 />
                 <button
                   type="button"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword(v => !v)}
-                  onMouseEnter={() => setEyeHover(true)}
-                  onMouseLeave={() => setEyeHover(false)}
                   style={{
-                    position: "absolute",
-                    top: "50%",
-                    right: 12,
+                    position: "absolute", top: "50%", right: 14,
                     transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: eyeHover ? "var(--teal)" : "var(--text-muted)",
+                    background: "none", border: "none", padding: 4,
+                    cursor: "pointer", display: "flex", alignItems: "center",
+                    color: isLight ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.35)",
                     transition: "color 150ms ease",
                     lineHeight: 0,
                   }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "#00AEEC")}
+                  onMouseLeave={e => (e.currentTarget.style.color = isLight ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.35)")}
                 >
-                  {showPassword
-                    ? <EyeOff size={17} strokeWidth={1.8} />
-                    : <Eye size={17} strokeWidth={1.8} />
-                  }
+                  {showPassword ? <EyeOff size={16} strokeWidth={1.8} /> : <Eye size={16} strokeWidth={1.8} />}
                 </button>
               </div>
             </div>
@@ -267,31 +260,29 @@ export function AuthPage() {
               onMouseDown={() => setBtnActive(true)}
               onMouseUp={() => setBtnActive(false)}
               style={{
-                width: "100%",
-                height: 44,
-                marginTop: 4,
-                background: "var(--teal)",
-                color: "hsl(222 22% 6%)",
+                width: "100%", height: 50,
+                marginTop: 6,
+                background: "linear-gradient(135deg, #00AEEC 0%, #0095D9 100%)",
+                color: "#ffffff",
                 border: "none",
-                borderRadius: "var(--radius-md)",
-                fontSize: "var(--text-sm)",
+                borderRadius: 12,
+                fontSize: 15,
                 fontWeight: 700,
-                fontFamily: "var(--font-sans)",
+                fontFamily: "var(--font-display)",
                 cursor: loading ? "not-allowed" : "pointer",
-                opacity: loading ? 0.6 : 1,
-                transform: btnActive ? "scale(0.97)" : "scale(1)",
-                filter: btnHover && !loading ? "brightness(1.12)" : "none",
-                boxShadow: btnHover && !loading ? "0 0 20px hsl(196 100% 46% / 0.35)" : "none",
-                transition: "transform 120ms ease, filter 150ms ease, box-shadow 150ms ease",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
+                opacity: loading ? 0.7 : 1,
+                transform: btnActive ? "scale(0.98)" : "scale(1)",
+                boxShadow: btnHover && !loading
+                  ? "0 6px 24px rgba(0,174,236,0.40), 0 2px 8px rgba(0,149,217,0.30)"
+                  : "0 2px 10px rgba(0,174,236,0.20)",
+                transition: "transform 120ms ease, box-shadow 180ms ease, opacity 150ms ease",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                letterSpacing: "-0.01em",
               }}
             >
               {loading ? (
                 <>
-                  <div style={{ width: 15, height: 15, border: "2px solid hsl(222 22% 6%)", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
+                  <div style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#ffffff", borderRadius: "50%", animation: "sl-spin 0.7s linear infinite" }} />
                   Signing in…
                 </>
               ) : "Sign In"}
@@ -299,19 +290,19 @@ export function AuthPage() {
           </form>
 
           <div style={{
-            marginTop: 28,
-            paddingTop: 20,
-            borderTop: "1px solid rgba(255,255,255,0.07)",
+            marginTop: 28, paddingTop: 22,
+            borderTop: `1px solid ${isLight ? "rgba(0,0,0,0.07)" : "rgba(255,255,255,0.06)"}`,
             textAlign: "center",
-            fontSize: "var(--text-sm)",
-            color: "var(--text-muted)",
+            fontSize: 14,
+            color: isLight ? "rgba(0,0,0,0.42)" : "rgba(255,255,255,0.32)",
+            fontFamily: "var(--font-body)",
           }}>
             Don't have access?{" "}
             <a
               href="/request-access"
-              style={{ color: "var(--text-muted)", textDecoration: "none", fontWeight: 500, transition: "color 150ms ease" }}
-              onMouseEnter={e => (e.currentTarget.style.color = "var(--teal)")}
-              onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
+              style={{ color: "#00AEEC", textDecoration: "none", fontWeight: 600 }}
+              onMouseEnter={e => (e.currentTarget.style.textDecoration = "underline")}
+              onMouseLeave={e => (e.currentTarget.style.textDecoration = "none")}
             >
               Request Access
             </a>
@@ -320,11 +311,11 @@ export function AuthPage() {
       </div>
 
       <style>{`
-        @keyframes authFadeIn {
-          from { opacity: 0; transform: translateY(16px); }
+        @keyframes sl-fadein {
+          from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes spin {
+        @keyframes sl-spin {
           to { transform: rotate(360deg); }
         }
       `}</style>

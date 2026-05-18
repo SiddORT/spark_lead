@@ -5,7 +5,7 @@ interface BrandLogoProps {
   height?: number;
 }
 
-export function BrandLogo({ height = 24 }: BrandLogoProps) {
+export function BrandLogo({ height = 32 }: BrandLogoProps) {
   const { theme } = useTheme();
 
   if (theme === "light") {
@@ -13,31 +13,53 @@ export function BrandLogo({ height = 24 }: BrandLogoProps) {
       <img
         src={BRAND.lightLogo}
         alt={BRAND.appName}
-        style={{ height, width: "auto", display: "block", flexShrink: 0 }}
+        style={{
+          height,
+          width: "auto",
+          display: "block",
+          flexShrink: 0,
+          objectFit: "contain",
+          maxWidth: "100%",
+        }}
         draggable={false}
       />
     );
   }
 
-  const fontSize = Math.round(height * 1.05);
+  const fontSize = Math.round(height * 0.92);
   return (
-    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0, flexShrink: 0 }}>
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 0,
+        flexShrink: 0,
+        height,
+        lineHeight: `${height}px`,
+      }}
+    >
       <span style={{
-        fontFamily: "var(--font-display)",
+        fontFamily: "'Syne', sans-serif",
         fontSize,
         fontWeight: 800,
         color: "#ffffff",
-        letterSpacing: "-0.02em",
+        letterSpacing: "-0.025em",
         lineHeight: 1,
-      }}>{BRAND.appName}</span>
+        userSelect: "none",
+      }}>
+        {BRAND.appName}
+      </span>
       <span style={{
-        fontFamily: "var(--font-display)",
+        fontFamily: "'Syne', sans-serif",
         fontSize,
         fontWeight: 800,
         color: BRAND.accentColor,
-        letterSpacing: "-0.02em",
+        letterSpacing: "-0.025em",
         lineHeight: 1,
-      }}>_</span>
+        userSelect: "none",
+      }}>
+        _
+      </span>
     </span>
   );
 }
