@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useTheme } from "@/components/theme-provider";
 import { Zap, CheckCircle, AlertCircle, Eye, EyeOff, ChevronLeft, Check } from "lucide-react";
 
 function getPasswordStrength(pw: string): { score: number; label: string } {
@@ -18,6 +19,7 @@ function getPasswordStrength(pw: string): { score: number; label: string } {
 const SEG_CLASSES = ["", "s-weak", "s-fair", "s-good", "s-strong"];
 
 export function SetPassword() {
+  const { theme } = useTheme();
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm]   = useState("");
@@ -76,9 +78,13 @@ export function SetPassword() {
           <div className="auth-brand-icon">
             <Zap size={22} />
           </div>
-          <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--text-xl)", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
-            SparkLead
-          </span><span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--text-xl)", color: "#00AEEC", letterSpacing: "-0.02em" }}>_</span>
+          {theme === "light" ? (
+            <img src="/logo-light.png" alt="SparkLead" style={{ height: 28, width: "auto", display: "block" }} />
+          ) : (
+            <><span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--text-xl)", color: "#ffffff", letterSpacing: "-0.02em" }}>
+              SparkLead
+            </span><span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--text-xl)", color: "#00AEEC", letterSpacing: "-0.02em" }}>_</span></>
+          )}
         </div>
 
         {success ? (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/components/auth-provider";
+import { useTheme } from "@/components/theme-provider";
 import { Zap, Eye, EyeOff } from "lucide-react";
 
 const inputBase: React.CSSProperties = {
@@ -58,6 +59,7 @@ export function AuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { token, setToken, loading: authLoading } = useAuth();
+  const { theme } = useTheme();
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [btnHover, setBtnHover] = useState(false);
@@ -155,19 +157,23 @@ export function AuthPage() {
             <Zap size={26} style={{ color: "#00AEEC" }} />
           </div>
           <div style={{ lineHeight: 1, marginBottom: 8 }}>
-            <span style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 36,
-              fontWeight: 800,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.02em",
-            }}>SparkLead</span><span style={{
-              fontFamily: "var(--font-display)",
-              fontSize: 36,
-              fontWeight: 800,
-              color: "#00AEEC",
-              letterSpacing: "-0.02em",
-            }}>_</span>
+            {theme === "light" ? (
+              <img src="/logo-light.png" alt="SparkLead" style={{ height: 38, width: "auto", display: "block" }} />
+            ) : (
+              <><span style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 36,
+                fontWeight: 800,
+                color: "#ffffff",
+                letterSpacing: "-0.02em",
+              }}>SparkLead</span><span style={{
+                fontFamily: "var(--font-display)",
+                fontSize: 36,
+                fontWeight: 800,
+                color: "#00AEEC",
+                letterSpacing: "-0.02em",
+              }}>_</span></>
+            )}
           </div>
           <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", letterSpacing: "0.02em" }}>
             SparkLead — Team Access Only

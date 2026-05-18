@@ -180,24 +180,28 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Zap size={16} style={{ color: "#00AEEC" }} />
           </div>
           {!collapsed && (
-            <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
-              <span style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "var(--text-base)",
-                fontWeight: 800,
-                color: theme === "light" ? "#0d0d0d" : "#ffffff",
-                letterSpacing: "-0.01em",
-              }}>
-                SparkLead
+            theme === "light" ? (
+              <img src="/logo-light.png" alt="SparkLead" style={{ height: 20, width: "auto", display: "block" }} />
+            ) : (
+              <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
+                <span style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "var(--text-base)",
+                  fontWeight: 800,
+                  color: "#ffffff",
+                  letterSpacing: "-0.01em",
+                }}>
+                  SparkLead
+                </span>
+                <span style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "var(--text-base)",
+                  fontWeight: 800,
+                  color: "#00AEEC",
+                  letterSpacing: "-0.01em",
+                }}>_</span>
               </span>
-              <span style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "var(--text-base)",
-                fontWeight: 800,
-                color: "#00AEEC",
-                letterSpacing: "-0.01em",
-              }}>_</span>
-            </span>
+            )
           )}
         </div>
 
