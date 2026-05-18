@@ -181,7 +181,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           {!collapsed && (
             theme === "light" ? (
-              <img src="/logo-light.png" alt="SparkLead" style={{ height: 20, width: "auto", display: "block" }} />
+              <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="SparkLead" style={{ height: 20, width: "auto", display: "block" }} />
             ) : (
               <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
                 <span style={{
@@ -388,22 +388,26 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               <Menu size={20} />
             </button>
-            <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
-              <span style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 800,
-                fontSize: "var(--text-base)",
-                color: theme === "light" ? "#0d0d0d" : "#ffffff",
-                letterSpacing: "-0.01em",
-              }}>SparkLead</span>
-              <span style={{
-                fontFamily: "var(--font-display)",
-                fontWeight: 800,
-                fontSize: "var(--text-base)",
-                color: "#00AEEC",
-                letterSpacing: "-0.01em",
-              }}>_</span>
-            </span>
+            {theme === "light" ? (
+              <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="SparkLead" style={{ height: 20, width: "auto", display: "block" }} />
+            ) : (
+              <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
+                <span style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 800,
+                  fontSize: "var(--text-base)",
+                  color: "#ffffff",
+                  letterSpacing: "-0.01em",
+                }}>SparkLead</span>
+                <span style={{
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 800,
+                  fontSize: "var(--text-base)",
+                  color: "#00AEEC",
+                  letterSpacing: "-0.01em",
+                }}>_</span>
+              </span>
+            )}
           </div>
           <div className="avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
             {user?.displayName?.[0] ?? "?"}

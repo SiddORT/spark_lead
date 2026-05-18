@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
-import { Zap, Eye, EyeOff } from "lucide-react";
+import { Zap, Eye, EyeOff, Sun, Moon } from "lucide-react";
 
 const inputBase: React.CSSProperties = {
   width: "100%",
@@ -59,7 +59,7 @@ export function AuthPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { token, setToken, loading: authLoading } = useAuth();
-  const { theme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [btnHover, setBtnHover] = useState(false);
@@ -117,6 +117,25 @@ export function AuthPage() {
       position: "relative",
       overflow: "hidden",
     }}>
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+        style={{
+          position: "absolute", top: 16, right: 16, zIndex: 10,
+          width: 36, height: 36,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: theme === "light" ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)",
+          border: `1px solid ${theme === "light" ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.10)"}`,
+          borderRadius: "var(--radius-md)",
+          color: "var(--text-muted)",
+          cursor: "pointer",
+          transition: "background 150ms, border-color 150ms",
+        }}
+      >
+        {theme === "light" ? <Moon size={15} /> : <Sun size={15} />}
+      </button>
+
       {/* Background glow orbs */}
       <div style={{
         position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0,
@@ -158,7 +177,7 @@ export function AuthPage() {
           </div>
           <div style={{ lineHeight: 1, marginBottom: 8 }}>
             {theme === "light" ? (
-              <img src="/logo-light.png" alt="SparkLead" style={{ height: 38, width: "auto", display: "block" }} />
+              <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="SparkLead" style={{ height: 38, width: "auto", display: "block" }} />
             ) : (
               <><span style={{
                 fontFamily: "var(--font-display)",

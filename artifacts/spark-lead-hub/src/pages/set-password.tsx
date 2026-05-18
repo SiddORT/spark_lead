@@ -79,7 +79,7 @@ export function SetPassword() {
             <Zap size={22} />
           </div>
           {theme === "light" ? (
-            <img src="/logo-light.png" alt="SparkLead" style={{ height: 28, width: "auto", display: "block" }} />
+            <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="SparkLead" style={{ height: 28, width: "auto", display: "block" }} />
           ) : (
             <><span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "var(--text-xl)", color: "#ffffff", letterSpacing: "-0.02em" }}>
               SparkLead
