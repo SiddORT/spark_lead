@@ -7,8 +7,8 @@ const inputBase: React.CSSProperties = {
   width: "100%",
   height: 44,
   padding: "0 14px",
-  background: "hsl(222 22% 10% / 0.8)",
-  border: "1px solid hsl(222 16% 22%)",
+  background: "hsl(222 35% 5% / 0.85)",
+  border: "1px solid rgba(0, 174, 236, 0.16)",
   borderRadius: "var(--radius-md)",
   color: "var(--text-primary)",
   fontSize: "var(--text-sm)",
@@ -25,9 +25,9 @@ function AuthInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
       style={{
         ...inputBase,
         ...(focused ? {
-          borderColor: "var(--teal)",
+          border: "1px solid var(--teal)",
           boxShadow: "0 0 0 3px hsl(196 100% 46% / 0.14), 0 0 10px hsl(196 100% 46% / 0.12)",
-          background: "hsl(222 22% 12% / 0.9)",
+          background: "hsl(222 35% 6% / 0.92)",
         } : {}),
         ...props.style,
       }}

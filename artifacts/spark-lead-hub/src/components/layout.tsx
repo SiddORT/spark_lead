@@ -66,7 +66,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           fontSize: "var(--text-sm)",
           fontWeight: 500,
           fontFamily: "var(--font-sans)",
-          color: active ? "var(--teal)" : "var(--text-secondary)",
+          color: active ? "var(--teal)" : "hsl(210, 28%, 62%)",
           background: active ? "hsl(196 100% 46% / 0.08)" : "transparent",
           borderLeft: active ? "2px solid var(--teal)" : "2px solid transparent",
           marginLeft: active ? 0 : 0,
@@ -76,14 +76,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         }}
         onMouseEnter={e => {
           if (!active) {
-            e.currentTarget.style.background = theme === "light" ? "hsl(210 16% 90%)" : "hsl(222 16% 16%)";
+            e.currentTarget.style.background = theme === "light" ? "hsl(210 16% 90%)" : "hsl(222 38% 10%)";
             e.currentTarget.style.color = "var(--text-primary)";
           }
         }}
         onMouseLeave={e => {
           if (!active) {
             e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "var(--text-secondary)";
+            e.currentTarget.style.color = "hsl(210, 28%, 62%)";
           }
         }}
       >
@@ -91,7 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           flexShrink: 0,
           display: "flex",
           alignItems: "center",
-          color: active ? "var(--teal)" : "var(--text-secondary)",
+          color: active ? "var(--teal)" : "hsl(196, 45%, 52%)",
         }}>
           <Icon size={18} />
         </span>
