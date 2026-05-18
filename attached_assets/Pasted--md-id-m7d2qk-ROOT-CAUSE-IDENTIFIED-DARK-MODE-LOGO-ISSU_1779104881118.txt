@@ -1,0 +1,215 @@
+````md id="m7d2qk"
+# 🚨 ROOT CAUSE IDENTIFIED — DARK MODE LOGO ISSUE
+
+If the “ort_” logo is COMPLETELY invisible in dark mode, then the system is NOT loading the correct asset.
+
+The application is still likely doing one of these:
+
+```tsx
+<img src="/logo.png" />
+````
+
+OR
+
+```tsx
+filter: invert(1)
+```
+
+OR
+
+using the LIGHT logo in dark mode.
+
+This is WRONG.
+
+---
+
+# ✅ REQUIRED IMPLEMENTATION
+
+You MUST use TWO SEPARATE LOGO FILES.
+
+---
+
+# ✅ REQUIRED ASSETS
+
+```text
+/public/branding/sparklead-dark.png
+/public/branding/sparklead-light.png
+```
+
+---
+
+# ✅ WHICH FILE TO USE
+
+## DARK THEME
+
+Use:
+
+```text
+sparklead-dark.png
+```
+
+This image MUST contain:
+
+* WHITE text
+* BLUE underline
+* transparent background
+
+---
+
+## LIGHT THEME
+
+Use:
+
+```text
+sparklead-light.png
+```
+
+This image MUST contain:
+
+* BLACK text
+* BLUE underline
+* transparent background
+
+---
+
+# 🚨 CRITICAL
+
+DO NOT:
+
+* invert colors
+* use CSS filters
+* brightness()
+* contrast()
+* grayscale()
+
+These are causing the logo disappearance.
+
+---
+
+# ✅ REQUIRED THEME LOGIC
+
+## React / Next.js / Vite
+
+```tsx
+const logoSrc = theme === "dark"
+  ? "/branding/sparklead-dark.png"
+  : "/branding/sparklead-light.png";
+```
+
+---
+
+# ✅ IMAGE TAG
+
+```tsx
+<img
+  src={logoSrc}
+  alt="SparkLead"
+  className="sidebar-logo"
+/>
+```
+
+---
+
+# 🚨 YOUR CURRENT ISSUE
+
+Right now dark mode is likely trying to render:
+
+```text
+BLACK LOGO on BLACK BACKGROUND
+```
+
+which makes the logo invisible.
+
+That is why:
+
+* only partial clipping appears
+* or entire logo disappears
+
+---
+
+# ✅ REQUIRED EXPORT SETTINGS FOR BOTH FILES
+
+## sparklead-dark.png
+
+Background:
+
+```text
+TRANSPARENT
+```
+
+Text:
+
+```text
+WHITE
+```
+
+Underline:
+
+```text
+#00AEEC
+```
+
+---
+
+## sparklead-light.png
+
+Background:
+
+```text
+TRANSPARENT
+```
+
+Text:
+
+```text
+BLACK
+```
+
+Underline:
+
+```text
+#00AEEC
+```
+
+---
+
+# 🚨 ALSO FIX THIS
+
+The sidebar currently clips the logo width.
+
+So EVEN AFTER fixing assets, apply:
+
+```css
+.sidebar-logo {
+  height: 42px;
+  width: auto;
+  max-width: none;
+  object-fit: contain;
+}
+```
+
+---
+
+# ✅ FINAL EXPECTED RESULT
+
+## DARK MODE
+
+* full WHITE SparkLead logo visible
+* blue underline visible
+* no clipping
+* no disappearance
+
+## LIGHT MODE
+
+* full BLACK SparkLead logo visible
+* blue underline visible
+* no clipping
+
+## LOGIN PAGE
+
+* same behavior
+* centered properly
+* correct asset loaded automatically
+
+```
+```
