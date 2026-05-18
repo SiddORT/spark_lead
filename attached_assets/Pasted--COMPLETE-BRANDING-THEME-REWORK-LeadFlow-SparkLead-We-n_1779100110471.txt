@@ -1,0 +1,595 @@
+# 🎨 COMPLETE BRANDING + THEME REWORK — LeadFlow → SparkLead
+
+We now need a complete branding transformation of the application.
+
+The current:
+
+```text id="v17b3f"
+LeadFlow
+```
+
+branding must be replaced with:
+
+```text id="kjgj2v"
+SparkLead
+```
+
+The entire application theme, logo system, sidebar styling, header styling, accents, buttons, charts, active states, hover states, notifications, pills, badges, and highlights must now align with the new SparkLead branding.
+
+The uploaded logo references have been attached and MUST be followed precisely.
+
+---
+
+# 🎯 PRIMARY OBJECTIVE
+
+Transform the application from:
+
+```text id="h0npb8"
+LeadFlow
+```
+
+to:
+
+```text id="civ9yc"
+SparkLead
+```
+
+with:
+
+* premium SaaS appearance
+* cleaner branding
+* modern enterprise CRM feel
+* stronger visual identity
+* professional dark/light mode adaptation
+
+The system should feel:
+
+* premium
+* futuristic
+* enterprise-grade
+* polished
+* visually balanced
+* brand consistent
+
+---
+
+# 🎨 BRAND COLORS
+
+---
+
+# ✅ PRIMARY BLUE
+
+Use:
+
+```text id="f4w7jo"
+#00AEEC
+```
+
+as the PRIMARY BRAND COLOR.
+
+This becomes:
+
+* primary accent
+* active state
+* selected menu state
+* links
+* highlights
+* buttons
+* focus states
+* hover glow
+* chart accents
+* counters
+* toggles
+* pills
+* graph lines
+
+---
+
+# ✅ SECONDARY BLUE
+
+Use:
+
+```text id="v4u7gr"
+#09A9E9
+```
+
+for:
+
+* soft highlights
+* gradients
+* glow effects
+* panel borders
+* subtle accents
+* secondary active states
+
+---
+
+# 🚨 IMPORTANT
+
+The logo underline/accent line MUST ALWAYS remain:
+
+```text id="ngy0s8"
+#00AEEC
+```
+
+REGARDLESS OF:
+
+* dark mode
+* light mode
+
+This color must NEVER invert.
+
+---
+
+# 🖤 DARK THEME REQUIREMENT
+
+For DARK MODE:
+
+Use:
+
+* BLACK logo text
+  → converted visually for dark theme
+  → meaning WHITE/INVERTED text rendering on dark background
+
+BUT:
+
+* underline/accent line stays BLUE
+
+---
+
+# ☀️ LIGHT THEME REQUIREMENT
+
+For LIGHT MODE:
+
+Use:
+
+* BLACK logo text
+* blue underline retained
+
+---
+
+# 🚨 REQUIRED LOGO BEHAVIOR
+
+---
+
+# ✅ DARK MODE
+
+Logo should appear:
+
+```text id="29ep2x"
+WHITE TEXT + BLUE LINE
+```
+
+Example:
+
+```text id="kpb4of"
+SparkLead_
+```
+
+on dark background.
+
+---
+
+# ✅ LIGHT MODE
+
+Logo should appear:
+
+```text id="0xjlwm"
+BLACK TEXT + BLUE LINE
+```
+
+on light background.
+
+---
+
+# 🚨 DO NOT:
+
+* tint logo blue
+* apply gradients to logo text
+* blur logo
+* overglow logo
+* distort proportions
+* compress logo
+* stretch logo
+
+Keep it:
+
+* sharp
+* minimal
+* premium
+
+---
+
+# 1️⃣ REPLACE APP NAME GLOBALLY
+
+Replace ALL occurrences of:
+
+```text id="b7wzpo"
+LeadFlow
+```
+
+with:
+
+```text id="h1wgna"
+SparkLead
+```
+
+---
+
+# ✅ UPDATE EVERYWHERE
+
+Including:
+
+* sidebar
+* auth screens
+* emails
+* page titles
+* browser metadata
+* favicon metadata
+* notification headers
+* loading screens
+* dashboards
+* exported PDFs
+* system emails
+* footer
+* mobile headers
+* toast branding
+* audit logs
+* generated documents
+
+---
+
+# 2️⃣ COMPLETE THEME RETHEMING
+
+The current teal/cyan theme must be replaced with the new SparkLead blue palette.
+
+---
+
+# ✅ UPDATE ALL UI ELEMENTS
+
+---
+
+## Sidebar
+
+Use:
+
+* dark charcoal background
+* blue active states
+* blue hover glow
+* cleaner active indicators
+
+---
+
+## Buttons
+
+Primary buttons:
+
+```text id="uxmy22"
+#00AEEC
+```
+
+Hover:
+
+```text id="xuqaqw"
+#09A9E9
+```
+
+---
+
+## Toggle Switches
+
+Use SparkLead blue instead of teal.
+
+---
+
+## Charts & Analytics
+
+Replace:
+
+* teal graph lines
+* teal bars
+* teal active states
+
+with:
+
+```text id="c8j7pi"
+#00AEEC
+```
+
+---
+
+## Notification Badges
+
+Use:
+
+* cleaner blue glow
+* improved contrast
+* premium subtle appearance
+
+---
+
+## Pills / Tags
+
+Re-theme:
+
+* active states
+* selected filters
+* badges
+* pipeline states
+
+using new blue palette.
+
+---
+
+# 3️⃣ IMPROVE DARK THEME QUALITY
+
+Dark theme should feel:
+
+* richer
+* softer
+* more premium
+
+---
+
+# ✅ RECOMMENDED DARK COLORS
+
+Background:
+
+```text id="hl69l5"
+#050816
+```
+
+Panels:
+
+```text id="4h0td6"
+#0D1324
+```
+
+Borders:
+
+```text id="eq09c2"
+rgba(0,174,236,0.12)
+```
+
+Hover glow:
+
+```text id="7y20dv"
+rgba(0,174,236,0.18)
+```
+
+---
+
+# 4️⃣ LIGHT MODE IMPROVEMENTS
+
+Light mode must:
+
+* feel premium
+* not washed out
+* maintain strong contrast
+
+Use:
+
+* subtle blue accents
+* soft borders
+* clean typography
+* restrained shadows
+
+---
+
+# 5️⃣ RESPONSIVE BRANDING FIXES
+
+Ensure:
+
+* logo never crops
+* sidebar branding never truncates
+* mobile header scales correctly
+* text remains crisp
+* logo alignment remains centered
+
+---
+
+# 6️⃣ UPDATE EMAIL TEMPLATES
+
+Current emails still look:
+
+* partially broken
+* inconsistent
+* developer-like
+
+---
+
+# ✅ REQUIRED
+
+Re-theme ALL emails using:
+
+* SparkLead branding
+* dark premium card style
+* blue accent line
+* proper typography
+* readable metadata
+* structured activity formatting
+
+---
+
+# 🚨 REMOVE RAW OBJECT DATA
+
+Current issue:
+
+```text id="wm21c8"
+pipelineStatusId: "" → "044756..."
+```
+
+This is unacceptable.
+
+---
+
+# ✅ Replace with HUMAN READABLE TEXT
+
+Example:
+
+```text id="a2v5ur"
+Lead moved from:
+Proposal Shared
+→
+Negotiation
+```
+
+---
+
+# 7️⃣ UPDATE LOGIN/AUTH SCREENS
+
+Re-theme:
+
+* login page
+* forgot password
+* reset password
+* OTP screens
+* session expired screens
+
+using SparkLead identity.
+
+---
+
+# 8️⃣ UPDATE MOBILE EXPERIENCE
+
+Ensure:
+
+* logo scaling correct
+* no cropping
+* no overflow
+* no compressed branding
+* proper spacing
+* touch-friendly layout
+
+---
+
+# 9️⃣ UPDATE FAVICON + META
+
+Replace favicon with SparkLead icon branding.
+
+Update:
+
+* browser title
+* OpenGraph
+* metadata
+* manifest
+* PWA branding
+
+---
+
+# 🔟 CREATE CONSISTENT DESIGN TOKENS
+
+Centralize branding variables.
+
+Example:
+
+```ts id="gfo3th"
+--brand-primary: #00AEEC;
+--brand-secondary: #09A9E9;
+--panel-bg: #0D1324;
+--app-bg: #050816;
+```
+
+NO hardcoded scattered colors.
+
+---
+
+# 1️⃣1️⃣ ENSURE ACCESSIBILITY
+
+Maintain:
+
+* proper contrast ratios
+* readable text
+* accessible buttons
+* visible focus states
+* dark/light clarity
+
+---
+
+# 🧪 TESTING REQUIREMENTS
+
+Conduct full visual QA across:
+
+---
+
+# ✅ DARK MODE
+
+Verify:
+
+* logo visibility
+* blue consistency
+* panel contrast
+* readability
+* hover states
+
+---
+
+# ✅ LIGHT MODE
+
+Verify:
+
+* black logo visible
+* blue underline retained
+* no washed out UI
+* clean visual hierarchy
+
+---
+
+# ✅ MOBILE
+
+Verify:
+
+* no logo cropping
+* no sidebar overflow
+* no broken header alignment
+
+---
+
+# ✅ EMAILS
+
+Verify:
+
+* branding consistency
+* no raw JSON/object rendering
+* readable layouts
+
+---
+
+# 🚀 FINAL EXPECTED RESULT
+
+The platform should now feel like:
+
+```text id="m0k4jw"
+SparkLead
+```
+
+A premium enterprise CRM platform with:
+
+* modern branding
+* elegant dark mode
+* professional light mode
+* refined blue visual identity
+* strong UI consistency
+* polished responsive behavior
+
+The system should visually feel:
+
+* smarter
+* cleaner
+* premium
+* modern
+* trustworthy
+* enterprise-grade
+
+There should be ZERO:
+
+* old LeadFlow references
+* teal leftovers
+* cropped logos
+* broken theme states
+* inconsistent branding
+* unreadable emails
+* mismatched colors
+* raw technical text
+* stretched logos
+* visual inconsistencies
