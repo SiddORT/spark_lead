@@ -4,10 +4,11 @@ import { useAuth, PermissionCheck } from "./auth-provider";
 import { useGetLeads, useGetCompanies, useGetServices } from "@workspace/api-client-react";
 import { CreateLeadDrawer } from "./create-lead-drawer";
 import { useTheme } from "./theme-provider";
+import { BrandLogo } from "./brand-logo";
 import {
   LayoutDashboard, Kanban, PlusCircle, Building2,
   Briefcase, BarChart3, Users, ShieldCheck, ScrollText,
-  LogOut, Zap, ChevronLeft, ChevronRight, Menu, X, GitBranch, CalendarClock,
+  LogOut, ChevronLeft, ChevronRight, Menu, X, GitBranch, CalendarClock,
   Sun, Moon
 } from "lucide-react";
 
@@ -163,46 +164,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div style={{
           display: "flex",
           alignItems: "center",
-          gap: collapsed ? 0 : "var(--space-3)",
-          padding: collapsed ? "var(--space-4) var(--space-3)" : "var(--space-4) var(--space-4)",
           justifyContent: collapsed ? "center" : "flex-start",
+          padding: "var(--space-4) var(--space-4)",
           borderBottom: "1px solid var(--border-subtle)",
           flexShrink: 0,
+          minHeight: 56,
         }}>
-          <div style={{
-            width: 32, height: 32,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            background: "rgba(0, 174, 236, 0.12)",
-            border: "1px solid rgba(0, 174, 236, 0.30)",
-            borderRadius: "var(--radius-md)",
-            flexShrink: 0,
-          }}>
-            <Zap size={16} style={{ color: "#00AEEC" }} />
-          </div>
-          {!collapsed && (
-            theme === "light" ? (
-              <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="SparkLead" style={{ height: 20, width: "auto", display: "block" }} />
-            ) : (
-              <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
-                <span style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "var(--text-base)",
-                  fontWeight: 800,
-                  color: "#ffffff",
-                  letterSpacing: "-0.01em",
-                }}>
-                  SparkLead
-                </span>
-                <span style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: "var(--text-base)",
-                  fontWeight: 800,
-                  color: "#00AEEC",
-                  letterSpacing: "-0.01em",
-                }}>_</span>
-              </span>
-            )
-          )}
+          {!collapsed && <BrandLogo height={22} />}
         </div>
 
         {/* Nav */}
@@ -388,26 +356,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             >
               <Menu size={20} />
             </button>
-            {theme === "light" ? (
-              <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="SparkLead" style={{ height: 20, width: "auto", display: "block" }} />
-            ) : (
-              <span style={{ display: "inline-flex", alignItems: "baseline", gap: 0 }}>
-                <span style={{
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 800,
-                  fontSize: "var(--text-base)",
-                  color: "#ffffff",
-                  letterSpacing: "-0.01em",
-                }}>SparkLead</span>
-                <span style={{
-                  fontFamily: "var(--font-display)",
-                  fontWeight: 800,
-                  fontSize: "var(--text-base)",
-                  color: "#00AEEC",
-                  letterSpacing: "-0.01em",
-                }}>_</span>
-              </span>
-            )}
+            <BrandLogo height={20} />
           </div>
           <div className="avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
             {user?.displayName?.[0] ?? "?"}

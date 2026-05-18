@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
-import { Zap, Eye, EyeOff, Sun, Moon } from "lucide-react";
+import { Eye, EyeOff, Sun, Moon } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
+import { BRAND } from "@/lib/brand";
 
 const inputBase: React.CSSProperties = {
   width: "100%",
@@ -161,41 +163,10 @@ export function AuthPage() {
 
       <div style={{ width: "100%", maxWidth: 420, position: "relative", zIndex: 1, animation: "authFadeIn 0.4s ease both" }}>
         {/* Brand mark */}
-        <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: 56, height: 56,
-            background: "rgba(0, 174, 236, 0.12)",
-            border: "1px solid rgba(0, 174, 236, 0.30)",
-            borderRadius: "var(--radius-lg)",
-            marginBottom: 16,
-            boxShadow: "0 0 24px rgba(0, 174, 236, 0.20)",
-          }}>
-            <Zap size={26} style={{ color: "#00AEEC" }} />
-          </div>
-          <div style={{ lineHeight: 1, marginBottom: 8 }}>
-            {theme === "light" ? (
-              <img src={`${import.meta.env.BASE_URL}logo-light.png`} alt="SparkLead" style={{ height: 38, width: "auto", display: "block" }} />
-            ) : (
-              <><span style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 36,
-                fontWeight: 800,
-                color: "#ffffff",
-                letterSpacing: "-0.02em",
-              }}>SparkLead</span><span style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 36,
-                fontWeight: 800,
-                color: "#00AEEC",
-                letterSpacing: "-0.02em",
-              }}>_</span></>
-            )}
-          </div>
+        <div style={{ textAlign: "center", marginBottom: 36, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+          <BrandLogo height={38} />
           <div style={{ fontSize: "var(--text-sm)", color: "var(--text-muted)", letterSpacing: "0.02em" }}>
-            SparkLead — Team Access Only
+            {BRAND.tagline}
           </div>
         </div>
 

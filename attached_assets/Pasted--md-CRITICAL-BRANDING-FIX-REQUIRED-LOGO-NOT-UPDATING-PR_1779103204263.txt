@@ -1,0 +1,346 @@
+````md
+# 🚨 CRITICAL BRANDING FIX REQUIRED — LOGO NOT UPDATING PROPERLY
+
+The SparkLead branding implementation is still incomplete and incorrect.
+
+Despite multiple updates/prompts, the OLD ICON / OLD LOGO SYSTEM is still partially visible across the application.
+
+The highlighted area in the sidebar header is STILL showing:
+- old icon container
+- incorrect icon rendering
+- broken logo proportions
+- inconsistent branding behavior
+
+The login page logo is ALSO not updating.
+
+This means the logo system is likely:
+- hardcoded in multiple places
+- cached incorrectly
+- using fallback assets
+- referencing old SVG/icon imports
+- not connected to centralized branding assets
+
+This must now be fixed PROPERLY and GLOBALLY.
+
+---
+
+# 🎯 OBJECTIVE
+
+Completely replace the old branding/logo system with the new SparkLead logo assets.
+
+NO old:
+- LeadFlow icon
+- lightning icon
+- old SVG
+- old favicon
+- old sidebar brand mark
+- old login logo
+should remain ANYWHERE in the application.
+
+---
+
+# 🚨 VERY IMPORTANT
+
+I have provided TWO logo variants:
+
+---
+
+# 🌙 DARK THEME LOGO
+Use:
+- WHITE text
+- BLUE underline
+- optimized for dark backgrounds
+
+This MUST be used in:
+- dark mode
+- sidebar
+- dark auth screens
+- dark emails
+- dark modals
+
+---
+
+# ☀️ LIGHT THEME LOGO
+Use:
+- BLACK text
+- BLUE underline
+
+This MUST be used in:
+- light mode
+- white backgrounds
+- PDFs
+- exports
+- light auth screens
+
+---
+
+# 🚨 THE BLUE UNDERLINE MUST ALWAYS REMAIN:
+
+```css
+#00AEEC
+````
+
+DO NOT:
+
+* recolor it
+* invert it
+* grayscale it
+* opacity fade it
+
+---
+
+# 🔥 ROOT ISSUE TO FIX
+
+The system is likely using:
+
+* old inline SVG
+* old icon component
+* old asset references
+* cached image imports
+* fallback branding
+
+This is why the logo is NOT updating everywhere.
+
+---
+
+# ✅ REQUIRED IMPLEMENTATION
+
+---
+
+# 1️⃣ CREATE CENTRALIZED BRAND ASSET SYSTEM
+
+Create a centralized branding config:
+
+Example:
+
+```ts
+export const BRAND = {
+  appName: "SparkLead",
+  darkLogo: "/assets/branding/sparklead-dark.png",
+  lightLogo: "/assets/branding/sparklead-light.png",
+  favicon: "/assets/branding/favicon.ico",
+};
+```
+
+NO hardcoded logos anywhere.
+
+---
+
+# 2️⃣ REMOVE OLD ICON COMPONENTS
+
+Search entire codebase and REMOVE:
+
+* old LeadFlow icon component
+* old SVG imports
+* old lightning icon
+* old sidebar icon
+* old favicon assets
+
+Likely locations:
+
+* Sidebar.tsx
+* AppShell.tsx
+* Login.tsx
+* Navbar.tsx
+* Header.tsx
+* AuthLayout.tsx
+* Email templates
+* Manifest
+* Metadata
+* Favicon configs
+
+---
+
+# 3️⃣ FIX SIDEBAR HEADER LOGO
+
+The current sidebar logo area is broken.
+
+Current problems:
+
+* icon still visible
+* wrong spacing
+* logo compressed
+* inconsistent height
+* icon container remains
+
+---
+
+# ✅ REQUIRED
+
+Replace entire sidebar branding section with:
+
+* proper image logo
+* responsive scaling
+* centered alignment
+* proper padding
+* consistent height
+
+---
+
+# ✅ LOGO SIZE RULES
+
+Desktop:
+
+```css
+height: 34px;
+width: auto;
+```
+
+Collapsed sidebar:
+
+* ONLY show symbol mark if available
+  OR
+* scale logo properly
+
+DO NOT crop.
+
+---
+
+# 4️⃣ LOGIN PAGE FIX
+
+The login page STILL uses old branding.
+
+Replace:
+
+* old logo
+* old icon
+* old app name
+
+with:
+
+```text
+SparkLead
+```
+
+and proper dark/light logo rendering.
+
+---
+
+# 5️⃣ FAVICON FIX
+
+Update:
+
+* favicon
+* browser tab icon
+* manifest icons
+* apple-touch-icon
+* PWA icons
+
+Remove ALL old branding remnants.
+
+---
+
+# 6️⃣ FORCE CACHE INVALIDATION
+
+The browser is likely caching old assets.
+
+Implement:
+
+* hashed filenames
+  OR
+* versioned branding assets
+
+Example:
+
+```text
+sparklead-dark-v2.png
+```
+
+Also ensure:
+
+* vite cache cleared
+* build cache cleared
+* service worker cache cleared
+* static asset cache refreshed
+
+---
+
+# 7️⃣ DARK/LIGHT THEME SWITCHING
+
+Logo must automatically switch based on theme.
+
+Example:
+
+```ts
+const logo = isDarkMode
+  ? BRAND.darkLogo
+  : BRAND.lightLogo;
+```
+
+This should happen:
+
+* instantly
+* reactively
+* without refresh
+
+---
+
+# 8️⃣ RESPONSIVE LOGO HANDLING
+
+Ensure:
+
+* no cropping
+* no overflow
+* no stretching
+* no distortion
+* crisp rendering on retina screens
+
+---
+
+# 9️⃣ UPDATE EMAIL BRANDING
+
+Emails still may contain:
+
+* old app name
+* old logo
+* old accent colors
+
+Update ALL email templates.
+
+---
+
+# 🔟 VERIFY EVERY LOCATION
+
+The new SparkLead branding MUST appear correctly in:
+
+✅ Sidebar
+✅ Login page
+✅ Forgot password
+✅ Reset password
+✅ Dashboard
+✅ Mobile header
+✅ Emails
+✅ Notifications
+✅ Favicon
+✅ Browser title
+✅ Exported PDFs
+✅ PWA splash
+✅ Manifest
+✅ Loader screen
+✅ Empty states
+✅ Mobile responsive mode
+
+---
+
+# 🚨 FINAL EXPECTED RESULT
+
+The application should feel like a professionally branded enterprise CRM.
+
+There should be:
+
+* ZERO old branding remnants
+* ZERO old icons
+* ZERO lightning icons
+* ZERO LeadFlow references
+* ZERO broken logo rendering
+
+The SparkLead logo should:
+
+* render sharply
+* switch correctly between themes
+* scale properly
+* appear consistently everywhere
+* feel premium and polished
+
+```
+```
