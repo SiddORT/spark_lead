@@ -1,0 +1,174 @@
+````md id="2o7xqf"
+# Update SparkLead Typography to Match System-Wide Design Language
+
+The current font style/family used for the `SparkLead` branding does not match the typography used across the rest of the system.
+
+Right now the SparkLead text/logo feels:
+- visually disconnected
+- inconsistent
+- stylistically different from the UI
+- less premium compared to the rest of the design system
+
+The entire platform already has a strong modern SaaS typography style, but the SparkLead branding is not aligned with it.
+
+We need to refine the typography so the branding feels:
+- consistent
+- elegant
+- premium
+- modern
+- integrated with the product UI
+
+---
+
+# REQUIRED TYPOGRAPHY UPDATE
+
+## Update SparkLead font styling to match the system typography language
+
+The SparkLead branding should use:
+- a modern geometric sans-serif
+- cleaner letterforms
+- balanced weight
+- slightly tighter spacing
+- smoother rendering
+
+The typography should visually align with:
+- dashboard headings
+- sidebar text
+- login page headings
+- overall system UI
+
+---
+
+# TYPOGRAPHY REQUIREMENTS
+
+## SparkLead font should feel similar to:
+
+- Inter
+- Plus Jakarta Sans
+- Manrope
+- Satoshi
+- General Sans
+
+DO NOT use:
+- overly futuristic fonts
+- gaming fonts
+- stretched fonts
+- ultra-bold display fonts
+- decorative fonts
+
+---
+
+# REQUIRED FONT WEIGHT
+
+Use:
+
+```css
+font-weight: 600;
+```
+
+Avoid:
+```css
+font-weight: 800;
+font-weight: 900;
+```
+
+The current weight is too aggressive.
+
+---
+
+# REQUIRED LETTER SPACING
+
+Use:
+
+```css
+letter-spacing: -0.02em;
+```
+
+This will make the typography feel cleaner and more premium.
+
+---
+
+# REQUIRED LOGO TEXT STYLING
+
+Apply styling similar to:
+
+```css
+.sparklead-brand-text {
+  font-family: 'Inter', 'Plus Jakarta Sans', sans-serif;
+
+  font-size: 1.85rem;
+
+  font-weight: 600;
+
+  letter-spacing: -0.02em;
+
+  line-height: 1;
+
+  color: #12B5EA;
+
+  text-rendering: optimizeLegibility;
+
+  -webkit-font-smoothing: antialiased;
+
+  -moz-osx-font-smoothing: grayscale;
+}
+```
+
+---
+
+# SIDEBAR BRANDING
+
+Sidebar SparkLead text should:
+- remain readable
+- feel balanced beside ORT
+- not appear oversized
+- align properly vertically
+
+Recommended sidebar sizing:
+
+```css
+.sidebar-brand .sparklead-brand-text {
+  font-size: 1.55rem;
+}
+```
+
+---
+
+# LOGIN PAGE BRANDING
+
+Login page SparkLead branding can be slightly larger:
+
+```css
+.login-brand .sparklead-brand-text {
+  font-size: 2.1rem;
+}
+```
+
+---
+
+# IMPORTANT
+
+The final branding should feel like:
+- a world-class SaaS platform
+- enterprise-grade CRM
+- clean and modern
+
+NOT:
+- flashy
+- bulky
+- cartoonish
+- mismatched
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ SparkLead typography matches the system UI  
+✅ branding looks modern and premium  
+✅ typography feels cleaner and more elegant  
+✅ better visual consistency across the platform  
+✅ improved professional appearance  
+✅ balanced logo hierarchy beside ORT  
+````

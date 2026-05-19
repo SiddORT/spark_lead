@@ -4,20 +4,23 @@ import { BRAND } from "@/lib/brand";
 interface BrandBlockProps {
   layout?: "horizontal" | "vertical";
   ortHeight?: number;
-  nameHeight?: number;
+  nameSize?: number;
   gap?: number;
+  /** @deprecated use nameSize */
+  nameHeight?: number;
 }
 
 export function BrandBlock({
   layout = "horizontal",
-  ortHeight = 38,
-  nameHeight = 26,
-  gap = 14,
+  ortHeight = 28,
+  nameSize,
+  nameHeight,
+  gap = 12,
 }: BrandBlockProps) {
   const { theme } = useTheme();
   const logos = BRAND.logos[theme as "dark" | "light"] ?? BRAND.logos.dark;
-
   const isVertical = layout === "vertical";
+  const fontSize = nameSize ?? nameHeight ?? 18;
 
   return (
     <div
@@ -41,19 +44,22 @@ export function BrandBlock({
         }}
         draggable={false}
       />
-      <img
-        src={logos.sparklead}
-        alt={BRAND.appName}
+      <span
         style={{
-          height: nameHeight,
-          width: "auto",
-          maxWidth: "none",
-          objectFit: "contain",
-          display: "block",
+          fontFamily: "'DM Sans', 'Inter', sans-serif",
+          fontSize,
+          fontWeight: 600,
+          letterSpacing: "-0.02em",
+          lineHeight: 1,
+          color: BRAND.accentColor,
+          WebkitFontSmoothing: "antialiased",
+          MozOsxFontSmoothing: "grayscale",
+          userSelect: "none",
           flexShrink: 0,
         }}
-        draggable={false}
-      />
+      >
+        {BRAND.appName}
+      </span>
     </div>
   );
 }
