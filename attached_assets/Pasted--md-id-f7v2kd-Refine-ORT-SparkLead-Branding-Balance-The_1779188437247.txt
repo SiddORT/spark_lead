@@ -1,0 +1,206 @@
+````md id="f7v2kd"
+# Refine ORT + SparkLead Branding Balance
+
+The branding is now close, but there are still two important visual issues that need refinement.
+
+The UI should feel:
+- premium
+- balanced
+- elegant
+- modern SaaS
+
+Currently:
+- the ORT logo on the login page is still too large and visually too bold
+- the SparkLead name in the sidebar is too small and lacks presence
+
+Please apply the following refinements carefully.
+
+---
+
+# 1. Reduce ORT Logo Size on Login Page
+
+## Current Issue
+
+The ORT logo on the login page:
+- appears oversized
+- visually dominates the layout
+- feels too heavy/bold
+- creates imbalance above the form
+
+We want:
+- a lighter visual hierarchy
+- more breathing space
+- a cleaner premium appearance
+
+---
+
+# REQUIRED LOGIN LOGO FIX
+
+## Replace current login ORT logo styling with:
+
+```css
+.login-ort-logo {
+  height: 42px !important;
+  width: auto !important;
+
+  object-fit: contain;
+
+  opacity: 0.90;
+
+  margin-bottom: 4px;
+}
+```
+
+---
+
+# IMPORTANT
+
+Remove any styling like:
+
+```css
+transform: scale(...);
+zoom: ...;
+font-weight: 800;
+font-weight: 900;
+filter: contrast(...);
+```
+
+DO NOT artificially enlarge or bold the logo.
+
+The logo should feel:
+- refined
+- lightweight
+- premium
+- subtle
+
+---
+
+# 2. Reduce ORT Logo Bold Appearance
+
+The ORT logo itself still looks visually heavy.
+
+Apply:
+
+```css
+.login-ort-logo img,
+.sidebar-brand .ort-logo img {
+  opacity: 0.92;
+}
+```
+
+This should soften the visual dominance slightly.
+
+---
+
+# 3. Increase SparkLead Visibility in Sidebar
+
+## Current Issue
+
+The SparkLead text in the sidebar is:
+- too small
+- visually weak
+- losing presence beside ORT
+
+We need:
+- slightly more prominence
+- better readability
+- improved balance
+
+BUT:
+- do NOT make it oversized
+- do NOT make it bold-heavy
+
+---
+
+# REQUIRED SIDEBAR SparkLead FIX
+
+Use:
+
+```css
+.sparklead-logo {
+  height: 24px !important;
+  width: auto !important;
+
+  object-fit: contain;
+
+  opacity: 0.98;
+}
+```
+
+---
+
+# 4. Sidebar Brand Alignment
+
+Ensure branding alignment remains clean:
+
+```css
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 16px 18px;
+
+  min-height: 68px;
+}
+```
+
+---
+
+# 5. Final Visual Goal
+
+The final branding should feel like:
+- Linear
+- Vercel
+- HubSpot
+- modern CRM SaaS
+
+NOT:
+- oversized
+- stretched
+- bulky
+- gaming-style
+- ultra-bold
+
+---
+
+# 6. Desired Branding Hierarchy
+
+## Login Page
+
+### ORT
+- smaller
+- lighter
+- elegant
+
+### SparkLead
+- visible
+- readable
+- premium
+
+---
+
+## Sidebar
+
+### ORT
+- compact
+- lightweight
+
+### SparkLead
+- slightly more prominent
+- balanced with ORT
+
+---
+
+# 7. Final Expected Result
+
+After refinement:
+
+✅ cleaner hierarchy  
+✅ premium SaaS feel  
+✅ better visual balance  
+✅ more elegant branding  
+✅ lighter logo presentation  
+✅ improved sidebar readability  
+```
+````

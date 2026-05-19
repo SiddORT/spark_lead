@@ -464,7 +464,7 @@ img[src*="ort-light"] {
 }
 img[src*="sparklead-dark"],
 img[src*="sparklead-light"] {
-  opacity: 0.96;
+  opacity: 0.98;
 }
 .light img[src*="ort-light"] { opacity: 0.88; }
 .dark  img[src*="ort-dark"]  { opacity: 0.96; }
