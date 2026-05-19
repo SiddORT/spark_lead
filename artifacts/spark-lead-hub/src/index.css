@@ -361,8 +361,8 @@ a:hover { opacity: 0.85; }
    SIDEBAR
    ============================================ */
 .sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 280px;
+  min-width: 280px;
   height: 100vh;
   background: var(--bg-elevated);
   border-right: 1px solid var(--border-subtle);
@@ -2737,7 +2737,7 @@ a:hover { opacity: 0.85; }
 
 /* ── Tablet (≤1024px) ── */
 @media (max-width: 1024px) {
-  .sidebar { width: 200px; min-width: 200px; }
+  .sidebar { width: 240px; min-width: 240px; }
   .stats-grid { grid-template-columns: repeat(3, 1fr); }
   .permissions-grid { grid-template-columns: 1fr; }
   .kanban-grid { grid-template-columns: repeat(2, minmax(260px, 1fr)); }

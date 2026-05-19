@@ -1,0 +1,350 @@
+````md id="sparklead-brand-final"
+# ✅ FINAL BRANDING IMPLEMENTATION — EXACT TARGET UI
+
+The latest reference screenshots now clearly show the intended branding direction.
+
+You want:
+
+- `ort_` logo as primary symbol
+- `SparkLead` wordmark beside/below it
+- identical branding behavior in:
+  - sidebar
+  - login page
+  - dark mode
+  - light mode
+- proper scaling
+- no clipping
+- clean enterprise appearance
+
+The current implementation is still structurally wrong because:
+- logos are being rendered separately without layout control
+- scaling is inconsistent
+- vertical alignment is broken
+- sidebar logo area is too compressed
+- login logo stack lacks spacing hierarchy
+
+---
+
+# ✅ EXACT IMPLEMENTATION REQUIRED
+
+# 1️⃣ BRAND STRUCTURE
+
+You are NOT using:
+```text
+ONE combined image
+````
+
+You are using:
+
+```text
+ort_ logo + SparkLead wordmark
+```
+
+as a composed brand block.
+
+This is CORRECT.
+
+---
+
+# 2️⃣ REQUIRED FILES
+
+## LIGHT THEME
+
+```text
+/public/branding/ort-light.png
+/public/branding/sparklead-light.png
+```
+
+---
+
+## DARK THEME
+
+```text
+/public/branding/ort-dark.png
+/public/branding/sparklead-dark.png
+```
+
+---
+
+# 3️⃣ DARK/LIGHT RULES
+
+## DARK MODE
+
+### ort logo:
+
+* WHITE text
+* BLUE underline
+
+### SparkLead:
+
+* BLUE text (#00AEEC)
+
+---
+
+## LIGHT MODE
+
+### ort logo:
+
+* BLACK text
+* BLUE underline
+
+### SparkLead:
+
+* BLUE text (#00AEEC)
+
+---
+
+# 🚨 IMPORTANT
+
+DO NOT:
+
+* invert images
+* apply CSS filters
+* brightness()
+* grayscale()
+
+Use real assets only.
+
+---
+
+# 4️⃣ SIDEBAR BRAND LAYOUT
+
+## REQUIRED STRUCTURE
+
+```tsx
+<div className="sidebar-brand">
+  <img src={ortLogo} className="ort-logo" />
+  <img src={sparkleadLogo} className="sparklead-logo" />
+</div>
+```
+
+---
+
+# ✅ REQUIRED CSS
+
+```css
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  padding: 20px 18px;
+
+  min-height: 82px;
+
+  overflow: visible;
+}
+
+.ort-logo {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.sparklead-logo {
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+```
+
+---
+
+# 🚨 REMOVE THIS COMPLETELY
+
+```css
+overflow: hidden;
+max-width: 100%;
+object-fit: cover;
+```
+
+These are breaking the branding.
+
+---
+
+# 5️⃣ SIDEBAR WIDTH FIX
+
+Current sidebar width is still too narrow.
+
+## REQUIRED
+
+```css
+.sidebar {
+  width: 280px;
+}
+```
+
+---
+
+# 6️⃣ LOGIN PAGE — EXACT STRUCTURE
+
+The login page should use VERTICAL STACKING.
+
+---
+
+# ✅ REQUIRED STRUCTURE
+
+```tsx
+<div className="login-brand">
+  <img src={ortLogo} className="login-ort-logo" />
+
+  <img
+    src={sparkleadLogo}
+    className="login-sparklead-logo"
+  />
+
+  <p className="login-tagline">
+    SparkLead — Team Access Only
+  </p>
+</div>
+```
+
+---
+
+# ✅ REQUIRED CSS
+
+```css
+.login-brand {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  margin-bottom: 28px;
+
+  overflow: visible;
+}
+
+.login-ort-logo {
+  height: 74px;
+  width: auto;
+  object-fit: contain;
+
+  margin-bottom: 10px;
+}
+
+.login-sparklead-logo {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+
+  margin-bottom: 10px;
+}
+
+.login-tagline {
+  font-size: 16px;
+  color: #7f8da3;
+  letter-spacing: 0.3px;
+}
+```
+
+---
+
+# 7️⃣ LOGIN CARD IMPROVEMENT
+
+The current login form still looks weak.
+
+---
+
+# ✅ REQUIRED CARD DESIGN
+
+```css
+.login-card {
+  width: 460px;
+
+  border-radius: 24px;
+
+  padding: 42px;
+
+  background: rgba(8, 14, 28, 0.92);
+
+  border: 1px solid rgba(0, 174, 236, 0.16);
+
+  backdrop-filter: blur(18px);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.45),
+    0 0 40px rgba(0,174,236,0.08);
+}
+```
+
+---
+
+# 8️⃣ LIGHT MODE LOGIN CARD
+
+```css
+.light .login-card {
+  background: rgba(255,255,255,0.92);
+
+  border: 1px solid rgba(0,174,236,0.14);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.10);
+}
+```
+
+---
+
+# 9️⃣ LOGIN PAGE BACKGROUND
+
+## DARK MODE
+
+Use:
+
+* deep navy gradient
+* subtle blue glow
+
+NOT plain black.
+
+---
+
+## REQUIRED
+
+```css
+background:
+radial-gradient(circle at top,
+rgba(0,174,236,0.12),
+transparent 40%),
+#040816;
+```
+
+---
+
+# 🔟 FINAL EXPECTED RESULT
+
+## SIDEBAR
+
+* ort_ visible properly
+* SparkLead aligned perfectly
+* no clipping
+* premium SaaS feel
+
+## LOGIN PAGE
+
+* large centered branding
+* elegant hierarchy
+* modern enterprise look
+
+## DARK MODE
+
+* white ort_ logo
+* blue SparkLead
+* strong contrast
+
+## LIGHT MODE
+
+* black ort_ logo
+* blue SparkLead
+* crisp visibility
+
+## BOTH THEMES
+
+* no disappearing logos
+* no truncation
+* no scaling bugs
+* no overflow clipping
+
+```
+```

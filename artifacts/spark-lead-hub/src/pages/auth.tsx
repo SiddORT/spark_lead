@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
 import { Eye, EyeOff, Sun, Moon } from "lucide-react";
-import { BrandLogo } from "@/components/brand-logo";
+import { BrandBlock } from "@/components/brand-logo";
 
 export function AuthPage() {
   const [email, setEmail] = useState("");
@@ -86,7 +86,7 @@ export function AuthPage() {
       minHeight: "100vh",
       background: isLight
         ? "linear-gradient(135deg, #eef5fb 0%, #f8fafc 50%, #eef2fb 100%)"
-        : "hsl(228,16%,6%)",
+        : "radial-gradient(circle at 50% 0%, rgba(0,174,236,0.12), transparent 40%), #040816",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -132,35 +132,35 @@ export function AuthPage() {
       )}
 
       {/* Main content */}
-      <div style={{ width: "100%", maxWidth: 440, position: "relative", zIndex: 1, animation: "sl-fadein 0.45s cubic-bezier(0.16,1,0.3,1) both" }}>
+      <div style={{ width: "100%", maxWidth: 460, position: "relative", zIndex: 1, animation: "sl-fadein 0.45s cubic-bezier(0.16,1,0.3,1) both" }}>
 
-        {/* Logo block */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 32, gap: 10 }}>
-          <BrandLogo height={56} />
+        {/* Brand block */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28, gap: 10, overflow: "visible" }}>
+          <BrandBlock layout="vertical" ortHeight={74} nameHeight={42} gap={10} />
           <p style={{
             margin: 0,
-            fontSize: 13,
-            color: isLight ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.35)",
-            letterSpacing: "0.04em",
+            fontSize: 14,
+            color: isLight ? "rgba(0,0,0,0.42)" : "rgba(255,255,255,0.35)",
+            letterSpacing: "0.3px",
             fontFamily: "var(--font-body)",
           }}>
-            Team Access Portal
+            SparkLead — Team Access Only
           </p>
         </div>
 
         {/* Login card */}
         <div style={{
           background: isLight
-            ? "rgba(255,255,255,0.90)"
-            : "rgba(10,14,26,0.88)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          border: `1px solid ${isLight ? "rgba(0,0,0,0.08)" : "rgba(0,174,236,0.14)"}`,
+            ? "rgba(255,255,255,0.92)"
+            : "rgba(8,14,28,0.92)",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          border: `1px solid ${isLight ? "rgba(0,174,236,0.14)" : "rgba(0,174,236,0.16)"}`,
           borderRadius: 24,
-          padding: "40px 40px 36px",
+          padding: "42px",
           boxShadow: isLight
-            ? "0 8px 40px rgba(0,0,0,0.10), 0 1px 0 rgba(255,255,255,0.8) inset"
-            : "0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,174,236,0.06)",
+            ? "0 20px 60px rgba(0,0,0,0.10)"
+            : "0 20px 60px rgba(0,0,0,0.45), 0 0 40px rgba(0,174,236,0.08)",
         }}>
           <h1 style={{
             margin: "0 0 28px",
