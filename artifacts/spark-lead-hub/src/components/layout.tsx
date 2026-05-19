@@ -171,7 +171,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           minHeight: 68,
           overflow: "visible",
         }}>
-          {!collapsed && <BrandLogo layout="horizontal" ortHeight={34} nameSize={28} gap={12} />}
+          {!collapsed && <BrandLogo layout="horizontal" ortHeight={22} nameSize={20} gap={10} />}
         </div>
 
         {/* Nav */}
