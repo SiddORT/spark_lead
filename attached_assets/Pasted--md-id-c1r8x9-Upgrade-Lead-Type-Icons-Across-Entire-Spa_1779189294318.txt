@@ -1,0 +1,252 @@
+````md id="c1r8x9"
+# Upgrade Lead Type Icons Across Entire SparkLead System
+
+The current icons used for Lead Types (`Hot`, `Warm`, `Cold`, `Ghosted`) look:
+- immature
+- emoji-like
+- visually inconsistent
+- out of place
+- not aligned with the premium UI design language
+
+The current icons reduce the professional feel of the CRM.
+
+We need to completely redesign and replace the Lead Type icons across the ENTIRE system with a much more:
+- sophisticated
+- minimal
+- enterprise-grade
+- classy
+- modern SaaS style
+
+---
+
+# IMPORTANT
+
+This update must be implemented globally across the entire platform.
+
+The icons should be updated everywhere including:
+- Lead table
+- Filters
+- Dropdowns
+- Kanban board
+- Lead cards
+- Details pages
+- Badges
+- Mobile views
+- Notifications
+- Search/filter chips
+- Reports/analytics
+- Any future reusable components
+
+DO NOT update only one screen.
+
+---
+
+# CURRENT PROBLEM
+
+Current icons:
+- 🔥 Hot
+- 🌞 Warm
+- 🧊 Cold
+- 👻 Ghosted
+
+These icons:
+- feel childish
+- look like emojis
+- clash with the modern UI
+- do not match sidebar/dashboard icon styling
+- reduce enterprise quality perception
+
+---
+
+# REQUIRED NEW DESIGN STYLE
+
+The new icons must:
+- match Lucide / Heroicons / modern SaaS iconography
+- use clean vector-style outlines
+- have balanced stroke width
+- look subtle and elegant
+- blend naturally with the rest of the UI
+- feel premium and enterprise-ready
+
+---
+
+# RECOMMENDED ICON STYLE
+
+Use icons from:
+- Lucide React
+- Heroicons
+- Tabler Icons
+
+Preferred icon style:
+- outline or duotone
+- 1.75px–2px stroke
+- rounded edges
+- minimal geometry
+- modern SaaS aesthetic
+
+---
+
+# SUGGESTED ICON REPLACEMENTS
+
+## HOT
+Replace fire emoji with:
+- TrendingUp
+- Flame (minimal outline version)
+- Activity
+- Zap subtle outline
+
+Preferred:
+```tsx
+<TrendingUp />
+```
+
+Color:
+```css
+#F97316
+```
+
+---
+
+## WARM
+Replace sun emoji with:
+- SunMedium
+- Sparkles
+- CircleDashed
+- Gauge
+
+Preferred:
+```tsx
+<SunMedium />
+```
+
+Color:
+```css
+#EAB308
+```
+
+---
+
+## COLD
+Replace ice cube emoji with:
+- Snowflake
+- ThermometerSnowflake
+- CloudSnow
+- MinusCircle
+
+Preferred:
+```tsx
+<Snowflake />
+```
+
+Color:
+```css
+#3B82F6
+```
+
+---
+
+## GHOSTED
+Replace ghost emoji with:
+- UserX
+- UserMinus
+- Ban
+- CircleOff
+
+Preferred:
+```tsx
+<UserX />
+```
+
+Color:
+```css
+#94A3B8
+```
+
+---
+
+# ICON SIZE REQUIREMENTS
+
+Table badges:
+```css
+width: 14px;
+height: 14px;
+```
+
+Dropdowns:
+```css
+width: 16px;
+height: 16px;
+```
+
+Cards/Kanban:
+```css
+width: 18px;
+height: 18px;
+```
+
+---
+
+# BADGE DESIGN IMPROVEMENTS
+
+Update lead type badges to feel cleaner and more premium.
+
+Recommended badge style:
+
+```css
+border-radius: 10px;
+font-weight: 500;
+padding: 6px 10px;
+gap: 6px;
+```
+
+Avoid:
+- overly rounded pills
+- cartoon styling
+- emoji alignment
+- oversized icons
+
+---
+
+# REQUIRED UI CONSISTENCY
+
+The lead type icons must visually align with:
+- sidebar icons
+- dashboard stat icons
+- action icons
+- filters
+- menu system
+- charts
+- overall product identity
+
+Everything should feel like part of ONE unified design system.
+
+---
+
+# HOVER + INTERACTION STATES
+
+Dropdown and filter icons should have:
+- subtle hover states
+- smooth transitions
+- modern interaction polish
+
+Recommended:
+
+```css
+transition: all 0.2s ease;
+```
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ No emoji-style icons anywhere  
+✅ Premium enterprise CRM appearance  
+✅ Sophisticated and modern icon system  
+✅ Consistent UI language across the platform  
+✅ Better visual hierarchy  
+✅ Cleaner lead badges and filters  
+✅ Icons feel native to the design system  
+✅ World-class SaaS UI quality  
+````

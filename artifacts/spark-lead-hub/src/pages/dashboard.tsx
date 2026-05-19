@@ -22,6 +22,8 @@ import {
   Activity, TrendingUp, LayoutDashboard,
   ChevronUp, ChevronDown, ChevronsUpDown, Layers, ShieldOff,
 } from "lucide-react";
+import { LeadTypeBadge } from "@/components/lead-type-badge";
+import { LEAD_TYPE_FILTER_OPTIONS } from "@/lib/lead-type-config";
 import { PermissionCheck, useAuth } from "@/components/auth-provider";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -33,26 +35,12 @@ const STAGE_COLORS: Record<string, string> = {
   resolution:    "hsl(152, 58%, 43%)",
 };
 
-const TYPE_CONFIG: Record<string, { emoji: string; label: string; cls: string }> = {
-  hot:     { emoji: "🔥", label: "Hot",     cls: "badge-hot" },
-  warm:    { emoji: "☀️", label: "Warm",    cls: "badge-warm" },
-  cold:    { emoji: "🧊", label: "Cold",    cls: "badge-cold" },
-  ghosted: { emoji: "👻", label: "Ghosted", cls: "badge-ghosted" },
-};
-
 const STAGE_BADGE: Record<string, string> = {
   discovery:     "badge-discovery",
   qualification: "badge-qualification",
   strategy:      "badge-strategy",
   resolution:    "badge-resolution",
 };
-
-const LEAD_TYPE_OPTIONS = [
-  { value: "hot",     label: "🔥 Hot" },
-  { value: "warm",    label: "☀️ Warm" },
-  { value: "cold",    label: "🧊 Cold" },
-  { value: "ghosted", label: "👻 Ghosted" },
-];
 
 const OUTCOME_OPTIONS = [
   { value: "won",  label: "✅ Won" },
@@ -403,7 +391,6 @@ export function Dashboard() {
     tbodyRows = Array.from({ length: 6 }).map((_, i) => <TableRowSkeleton key={i} cols={8} />);
   } else if (paginatedLeads.length > 0) {
     tbodyRows = paginatedLeads.map((lead: any) => {
-      const tc = TYPE_CONFIG[lead.leadType || "cold"] || TYPE_CONFIG.cold;
       const isLeadLost = lead.statusIsLost === true || lead.outcome === "lost";
       return (
         <tr
@@ -426,7 +413,7 @@ export function Dashboard() {
             </div>
           </td>
           <td>
-            <span className={`badge ${tc.cls}`}>{tc.emoji} {tc.label}</span>
+            <LeadTypeBadge type={lead.leadType} size={13} />
           </td>
           <td title={lead.serviceName || undefined} style={{
             color: "var(--text-muted)", fontSize: "var(--text-xs)",
@@ -902,7 +889,7 @@ export function Dashboard() {
         <FilterSelect
           value={typeFilter}
           onChange={setTypeFilter}
-          options={LEAD_TYPE_OPTIONS}
+          options={LEAD_TYPE_FILTER_OPTIONS}
           placeholder="All Types"
           width={145}
         />

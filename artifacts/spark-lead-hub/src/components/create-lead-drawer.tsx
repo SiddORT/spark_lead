@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { PlusCircle, X } from "lucide-react";
 import { StageStatusSelect } from "@/components/stage-status-select";
 import { CustomSelect } from "@/components/custom-select";
+import { leadTypeSelectOptions } from "@/lib/lead-type-config";
 
 function getDefaultFollowUpDate(): string {
   const d = new Date();
@@ -309,12 +310,7 @@ export function CreateLeadDrawer({ open, onClose }: CreateLeadDrawerProps) {
                   <CustomSelect
                     value={formData.leadType}
                     onChange={val => set("leadType", val)}
-                    options={[
-                      { value: "hot",     label: "Hot",     prefix: "🔥" },
-                      { value: "warm",    label: "Warm",    prefix: "☀️" },
-                      { value: "cold",    label: "Cold",    prefix: "🧊" },
-                      { value: "ghosted", label: "Ghosted", prefix: "👻" },
-                    ]}
+                    options={leadTypeSelectOptions(14)}
                   />
                 </div>
                 <div>

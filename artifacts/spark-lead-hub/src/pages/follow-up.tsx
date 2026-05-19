@@ -13,23 +13,11 @@ import {
   CalendarClock, AlertCircle, Search, CheckCircle2,
   ChevronsUpDown, ChevronUp, ChevronDown, X,
 } from "lucide-react";
+import { LeadTypeBadge } from "@/components/lead-type-badge";
+import { LEAD_TYPE_FILTER_OPTIONS } from "@/lib/lead-type-config";
 
 // ─── Constants ────────────────────────────────────────
-const LEAD_TYPE_OPTIONS = [
-  { value: "hot",     label: "🔥 Hot" },
-  { value: "warm",    label: "☀️ Warm" },
-  { value: "cold",    label: "🧊 Cold" },
-  { value: "ghosted", label: "👻 Ghosted" },
-];
-
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
-
-const LEAD_TYPE_BADGE: Record<string, string> = {
-  hot: "badge-danger", warm: "badge-warning", cold: "badge-info", ghosted: "badge-muted",
-};
-const LEAD_TYPE_EMOJI: Record<string, string> = {
-  hot: "🔥", warm: "☀️", cold: "🧊", ghosted: "👻",
-};
 
 // ─── Overdue helpers ───────────────────────────────────
 function getOverdueDays(followUpDate: string): number {
@@ -419,7 +407,7 @@ export function FollowUp() {
 
         <FilterSelect value={serviceFilter} onChange={setServiceFilter} options={serviceOptions} placeholder="All Services" width={165} />
         <FilterSelect value={companyFilter} onChange={setCompanyFilter} options={companyOptions} placeholder="All Companies" width={165} />
-        <FilterSelect value={typeFilter}    onChange={setTypeFilter}    options={LEAD_TYPE_OPTIONS} placeholder="All Types" width={145} />
+        <FilterSelect value={typeFilter}    onChange={setTypeFilter}    options={LEAD_TYPE_FILTER_OPTIONS} placeholder="All Types" width={145} />
         <FilterSelect value={stageFilter}   onChange={setStageFilter}   options={stageOptions} placeholder="All Stages" width={175} />
 
         {hasAnyFilter && (
@@ -589,10 +577,7 @@ export function FollowUp() {
 
                         {/* Type */}
                         <td>
-                          <span className={`badge ${LEAD_TYPE_BADGE[lead.leadType] || "badge-muted"}`} style={{ gap: 4 }}>
-                            <span>{LEAD_TYPE_EMOJI[lead.leadType] || ""}</span>
-                            <span>{lead.leadType ? lead.leadType.charAt(0).toUpperCase() + lead.leadType.slice(1) : "—"}</span>
-                          </span>
+                          <LeadTypeBadge type={lead.leadType} size={13} />
                         </td>
 
                         {/* Service */}

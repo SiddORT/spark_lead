@@ -20,10 +20,7 @@ import { LeadDetailSheet } from "@/components/lead-detail-sheet";
 import { formatValue } from "@/lib/utils";
 import { toast } from "sonner";
 import { Kanban as KanbanIcon, AlertCircle } from "lucide-react";
-
-const TYPE_EMOJI: Record<string, string> = {
-  hot: "🔥", warm: "☀️", cold: "🧊", ghosted: "👻",
-};
+import { LeadTypeIcon } from "@/components/lead-type-badge";
 
 // ─── Draggable card ───────────────────────────────────
 function KanbanCard({
@@ -103,9 +100,7 @@ function CardContent({ lead, stageColor, activeStages, resolveName }: {
         <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.35, flex: 1 }}>
           {lead.leadName}
         </span>
-        <span style={{ fontSize: 16, flexShrink: 0 }}>
-          {TYPE_EMOJI[lead.leadType || "cold"] || "🧊"}
-        </span>
+        <LeadTypeIcon type={lead.leadType} size={16} />
       </div>
 
       {lead.company && (

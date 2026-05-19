@@ -23,6 +23,8 @@ import { toast } from "sonner";
 import { usePipelineStages } from "@/hooks/use-pipeline";
 import { PipelineProgressBar } from "./stage-status-select";
 import { CustomSelect } from "./custom-select";
+import { LeadTypeBadge } from "./lead-type-badge";
+import { leadTypeSelectOptions } from "@/lib/lead-type-config";
 
 // ─── Helpers ──────────────────────────────────────────
 function getDefaultFollowUpDate(): string {
@@ -46,9 +48,6 @@ function capitalize(s: string) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
-const LEAD_TYPE_EMOJI: Record<string, string> = {
-  hot: "🔥", warm: "☀️", cold: "🧊", ghosted: "👻",
-};
 
 // ─── Timeline field-label & value-resolution helpers ──
 const FIELD_LABELS: Record<string, string> = {
@@ -675,12 +674,7 @@ function DetailsTab({
                 value={lead.leadType ?? null}
                 placeholder="Select type…"
                 onChange={(v) => handleUpdate("leadType", v)}
-                options={[
-                  { value: "hot",     label: "Hot",     prefix: "🔥" },
-                  { value: "warm",    label: "Warm",    prefix: "☀️" },
-                  { value: "cold",    label: "Cold",    prefix: "🧊" },
-                  { value: "ghosted", label: "Ghosted", prefix: "👻" },
-                ]}
+                options={leadTypeSelectOptions(14)}
               />
             </div>
             <div className="form-field">
@@ -1168,9 +1162,7 @@ export function LeadDetailSheet({
                   </span>
                 )}
                 {lead.leadType && (
-                  <span className="sheet-badge sheet-badge-type">
-                    {LEAD_TYPE_EMOJI[lead.leadType]} {capitalize(lead.leadType)}
-                  </span>
+                  <LeadTypeBadge type={lead.leadType} size={13} />
                 )}
                 {(lead.dealValue || lead.finalValue) && (() => {
                   const isWon = lead.statusIsWon;
