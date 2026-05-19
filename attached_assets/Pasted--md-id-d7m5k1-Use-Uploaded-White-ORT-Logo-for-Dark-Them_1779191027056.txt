@@ -1,0 +1,154 @@
+````md id="d7m5k1"
+# Use Uploaded White ORT Logo for Dark Theme Branding
+
+Use the newly uploaded white `ORT` logo asset specifically for DARK MODE across the entire SparkLead system.
+
+This white version has much better contrast and visibility on dark backgrounds and should become the official dark-theme branding asset.
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+## Theme-Based Logo Switching
+
+Implement dynamic logo switching based on the active theme:
+
+### LIGHT THEME
+Use:
+```text
+ort-logo-light.png
+```
+
+### DARK THEME
+Use:
+```text
+ort-logo-dark.png
+```
+
+The newly uploaded white logo must be used for:
+- dark sidebar
+- dark login page
+- dark headers
+- dark mobile navigation
+- dark splash/loading screens
+
+---
+
+# REQUIRED FILE STRUCTURE
+
+Place branding assets inside:
+
+```text
+/public/assets/branding/
+```
+
+Example:
+
+```text
+/public/assets/branding/ort-logo-light.png
+/public/assets/branding/ort-logo-dark.png
+```
+
+---
+
+# REQUIRED COMPONENT LOGIC
+
+Implement proper theme-aware logo rendering.
+
+Example:
+
+```tsx
+const logoSrc = isDarkMode
+  ? "/assets/branding/ort-logo-dark.png"
+  : "/assets/branding/ort-logo-light.png";
+```
+
+Then:
+
+```tsx
+<img
+  src={logoSrc}
+  alt="ORT"
+  className="ort-logo"
+/>
+```
+
+---
+
+# IMPORTANT
+
+DO NOT:
+- invert colors using CSS
+- use filters
+- apply brightness tricks
+- dynamically recolor the image
+- recreate the logo using text
+
+Use the uploaded dark logo asset directly.
+
+---
+
+# REQUIRED STYLING
+
+## Sidebar Logo
+
+```css
+.ort-logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+}
+```
+
+---
+
+## Login Page Logo
+
+```css
+.login-logo {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+}
+```
+
+---
+
+# REQUIRED QUALITY CHECKS
+
+Verify:
+- logo visibility in dark mode
+- correct contrast
+- no stretching
+- no cropping
+- underscore fully visible
+- sharp rendering on retina displays
+- proper alignment beside SparkLead text
+
+---
+
+# REQUIRED SYSTEM-WIDE COVERAGE
+
+Apply the dark logo across:
+
+✅ Sidebar  
+✅ Login page  
+✅ Header branding  
+✅ Mobile menu  
+✅ Fullscreen layouts  
+✅ Loading screens  
+✅ Any reusable branding component  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ White ORT logo visible clearly in dark mode  
+✅ Proper professional branding contrast  
+✅ Theme-aware logo switching works correctly  
+✅ Premium enterprise SaaS appearance  
+✅ Consistent branding across entire platform  
+✅ No CSS-filtered fake logo rendering  
+````

@@ -5,6 +5,7 @@ export const BRAND = {
   tagline: "SparkLead — Team Access Only",
   accentColor: "#00AEEC",
   logos: {
-    ort: `${base}assets/branding/ort-logo.png`,
+    ortLight: `${base}assets/branding/ort-logo-light.png`,
+    ortDark:  `${base}assets/branding/ort-logo-dark.png`,
   },
 } as const;
