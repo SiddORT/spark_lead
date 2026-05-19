@@ -1,0 +1,258 @@
+````md
+# Refine ORT + SparkLead Branding Across Entire System
+
+The current branding implementation is visually too heavy and oversized.
+
+We need to refine the branding to make it look like a premium SaaS CRM dashboard similar to:
+- Linear
+- HubSpot
+- Vercel
+- Notion
+
+The UI should feel:
+- elegant
+- lightweight
+- premium
+- balanced
+- modern
+
+NOT:
+- oversized
+- bulky
+- gaming-style
+- over-bold
+
+---
+
+# REQUIRED FIXES
+
+## 1. Reduce ORT Logo Visual Weight
+
+The `ort_` logo currently appears:
+- too bold
+- too thick
+- too dominant
+
+Reduce its visual weight everywhere in the system:
+- sidebar
+- login page
+- header branding
+- all themes
+
+Do NOT artificially enlarge the logo using:
+- transform: scale()
+- zoom
+- excessive font-weight
+- oversized height
+
+---
+
+# 2. Sidebar Branding Fix
+
+Reduce the branding height and spacing.
+
+## Sidebar should use:
+
+```css
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 16px 18px;
+
+  min-height: 68px;
+}
+```
+
+---
+
+## ORT Logo in Sidebar
+
+```css
+.ort-logo {
+  height: 26px;
+  width: auto;
+  object-fit: contain;
+
+  opacity: 0.92;
+}
+```
+
+---
+
+## SparkLead Logo in Sidebar
+
+```css
+.sparklead-logo {
+  height: 18px;
+  width: auto;
+  object-fit: contain;
+
+  opacity: 0.96;
+}
+```
+
+---
+
+# 3. Login Page Branding Fix
+
+Current login branding is too dominant.
+
+Reduce overall branding size and spacing.
+
+## Login branding wrapper:
+
+```css
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  margin-bottom: 22px;
+}
+```
+
+---
+
+## Login ORT logo
+
+```css
+.login-ort-logo {
+  height: 52px;
+  width: auto;
+
+  object-fit: contain;
+
+  opacity: 0.94;
+}
+```
+
+---
+
+## Login SparkLead logo
+
+```css
+.login-sparklead-logo {
+  height: 24px;
+  width: auto;
+
+  object-fit: contain;
+}
+```
+
+---
+
+# 4. Theme-Specific Behavior
+
+## Dark Theme
+
+Use:
+- white ORT logo
+- cyan underline
+- blue SparkLead text
+
+```css
+.dark .ort-logo {
+  opacity: 0.96;
+}
+```
+
+---
+
+## Light Theme
+
+Use:
+- black ORT logo
+- cyan underline
+- blue SparkLead text
+
+```css
+.light .ort-logo {
+  opacity: 0.88;
+}
+```
+
+---
+
+# 5. Remove Heavy Styling
+
+REMOVE all of the following from branding:
+
+```css
+font-weight: 800;
+font-weight: 900;
+transform: scale(...);
+zoom: ...;
+letter-spacing: 2px;
+filter: contrast(...);
+```
+
+Do NOT use any aggressive scaling.
+
+---
+
+# 6. Sidebar Width
+
+Sidebar currently feels visually too wide because of branding.
+
+Use:
+
+```css
+.sidebar {
+  width: 260px;
+}
+```
+
+---
+
+# 7. Login Page Layout Refinement
+
+Reduce spacing between:
+- logos
+- subtitle
+- login card
+
+Use:
+
+```css
+.login-wrapper {
+  gap: 18px;
+}
+```
+
+---
+
+# 8. Final Visual Goal
+
+The final result should feel:
+
+✅ clean  
+✅ elegant  
+✅ premium  
+✅ modern SaaS  
+✅ visually balanced  
+✅ subtle branding  
+
+NOT:
+
+❌ oversized  
+❌ bulky  
+❌ over-bold  
+❌ stretched  
+❌ dominating UI  
+
+---
+
+# 9. Important
+
+Use proper image scaling only.
+
+Do NOT:
+- enlarge raster logos aggressively
+- stretch images
+- use transform scale
+- use ultra-bold typography
+
+The branding should support the interface — not overpower it.
+````
