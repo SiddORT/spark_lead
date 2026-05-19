@@ -456,6 +456,19 @@ a:hover { opacity: 0.85; }
   overflow: hidden;
 }
 
+/* ── Brand logo opacity tuning ── */
+img[src*="ort-dark"],
+img[src*="ort-light"] {
+  opacity: 0.92;
+  filter: brightness(1.02);
+}
+img[src*="sparklead-dark"],
+img[src*="sparklead-light"] {
+  opacity: 0.96;
+}
+.light img[src*="ort-light"] { opacity: 0.88; }
+.dark  img[src*="ort-dark"]  { opacity: 0.96; }
+
 .sidebar-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 0 var(--space-2) var(--space-4); }
 
 .sidebar-section-label {

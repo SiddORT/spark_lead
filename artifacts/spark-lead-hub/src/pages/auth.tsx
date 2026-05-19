@@ -136,7 +136,7 @@ export function AuthPage() {
 
         {/* Brand block */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 22, gap: 8, overflow: "visible" }}>
-          <BrandBlock layout="vertical" ortHeight={58} nameHeight={26} gap={6} />
+          <BrandBlock layout="vertical" ortHeight={52} nameHeight={24} gap={6} />
           <p style={{
             margin: "2px 0 0",
             fontSize: 14,
