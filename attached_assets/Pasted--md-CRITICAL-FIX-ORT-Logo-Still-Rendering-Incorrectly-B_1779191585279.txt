@@ -1,0 +1,235 @@
+````md
+# CRITICAL FIX — ORT Logo Still Rendering Incorrectly Between Themes
+
+The issue is STILL NOT FIXED.
+
+Current problems:
+
+- DARK MODE logo is still rendering extremely oversized
+- LIGHT MODE logo is still rendering too small
+- The actual visible logo height is inconsistent
+- Sidebar branding is still not balanced
+- Login page logo scaling is still incorrect
+- The issue is NOT CSS alone
+- The issue is caused by DIFFERENT IMAGE DIMENSIONS / CANVAS BOUNDS between the light and dark assets
+
+The fix must now be done PROPERLY.
+
+---
+
+# ROOT CAUSE (IMPORTANT)
+
+The two logo image files have DIFFERENT INTERNAL DIMENSIONS.
+
+Even if CSS uses:
+```css
+max-height: 32px;
+```
+
+the browser still renders them visually differently because:
+- one image has more transparent padding
+- one image has tighter cropping
+- one image has larger canvas bounds
+
+This is why:
+- dark mode logo looks massive
+- light mode logo looks tiny
+
+This CANNOT be fixed by CSS scaling alone.
+
+---
+
+# REQUIRED FIX (MANDATORY)
+
+## STEP 1 — NORMALIZE BOTH LOGO ASSETS
+
+Before rendering:
+
+- crop BOTH logo images tightly
+- remove ALL transparent padding
+- ensure BOTH assets have:
+  - identical canvas height
+  - identical canvas width ratio
+  - identical visible logo area
+
+This is the MOST IMPORTANT FIX.
+
+The dark logo currently has excessive whitespace / oversized canvas dimensions.
+
+---
+
+# REQUIRED IMAGE SPECIFICATIONS
+
+Create both logo files using EXACT SAME dimensions:
+
+## Sidebar Logos
+
+```txt
+Width: 420px
+Height: 80px
+Background: transparent
+```
+
+---
+
+## Login Logos
+
+```txt
+Width: 700px
+Height: 180px
+Background: transparent
+```
+
+Both light and dark versions MUST use identical export dimensions.
+
+---
+
+# STEP 2 — REMOVE ALL THEME-SPECIFIC SIZE OVERRIDES
+
+Search entire codebase for:
+
+```css
+scale(
+transform:
+zoom:
+max-height:
+height:
+width:
+```
+
+Remove ALL dark-theme-specific logo sizing hacks.
+
+There must ONLY be ONE shared sizing system.
+
+---
+
+# STEP 3 — IMPLEMENT FIXED RENDERING SYSTEM
+
+## Sidebar Logo
+
+```tsx
+<div className="sidebar-brand">
+  <img
+    src={isDark ? darkLogo : lightLogo}
+    alt="ORT SparkLead"
+    className="sidebar-logo"
+  />
+</div>
+```
+
+---
+
+## Sidebar CSS
+
+```css
+.sidebar-brand {
+  width: 220px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+
+  overflow: hidden;
+}
+
+.sidebar-logo {
+  height: 32px;
+  width: auto;
+
+  object-fit: contain;
+  display: block;
+}
+```
+
+---
+
+# LOGIN PAGE IMPLEMENTATION
+
+## Login Wrapper
+
+```tsx
+<div className="login-brand">
+  <img
+    src={isDark ? darkLogo : lightLogo}
+    alt="ORT SparkLead"
+    className="login-logo"
+  />
+</div>
+```
+
+---
+
+## Login CSS
+
+```css
+.login-brand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  margin-bottom: 24px;
+}
+
+.login-logo {
+  height: 88px;
+  width: auto;
+
+  object-fit: contain;
+  display: block;
+}
+```
+
+---
+
+# IMPORTANT
+
+DO NOT:
+
+❌ use `transform: scale()`  
+❌ use `zoom`  
+❌ use negative margins  
+❌ use separate CSS heights for dark/light themes  
+❌ manually shrink only dark mode logo  
+❌ manually enlarge only light mode logo  
+
+The IMAGE FILES themselves must first be normalized.
+
+---
+
+# REQUIRED DEBUGGING STEP
+
+Temporarily add:
+
+```css
+.sidebar-logo,
+.login-logo {
+  outline: 1px solid red;
+}
+```
+
+This will reveal the TRUE image bounds.
+
+You will immediately see:
+- dark logo has oversized bounds
+- light logo has smaller bounds
+
+Once confirmed:
+- fix the exported image assets
+- then remove the outline
+
+---
+
+# FINAL EXPECTED RESULT
+
+After the fix:
+
+✅ Light mode ORT logo matches dark mode size exactly  
+✅ Sidebar branding is balanced  
+✅ Login page branding is centered and proportional  
+✅ SparkLead text remains visible  
+✅ No clipping  
+✅ No oversized dark logo  
+✅ No tiny light logo  
+✅ Branding looks premium and polished  
+✅ Both themes feel visually identical in scale  
+````
