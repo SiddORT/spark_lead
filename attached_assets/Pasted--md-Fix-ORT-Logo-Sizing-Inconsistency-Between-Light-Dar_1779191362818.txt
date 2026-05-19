@@ -1,0 +1,190 @@
+````md
+# Fix ORT Logo Sizing Inconsistency Between Light & Dark Themes
+
+The ORT logo sizing is currently inconsistent across themes:
+
+- In LIGHT MODE the logo appears too small
+- In DARK MODE the logo appears extremely oversized
+- Branding alignment is inconsistent between login page and sidebar
+- Logo scaling is not controlled centrally
+- The visual hierarchy between `ort_` and `SparkLead` becomes unbalanced
+
+This needs to be corrected with a unified responsive branding system.
+
+---
+
+# REQUIRED FIX
+
+Create a centralized logo sizing system and ensure BOTH light and dark theme logos render at the EXACT SAME visual size.
+
+The logo container dimensions must remain fixed regardless of:
+- theme
+- image asset
+- resolution
+- aspect ratio
+
+---
+
+# ROOT CAUSE
+
+Currently:
+- the dark logo asset has larger internal whitespace / dimensions
+- the light logo asset has tighter bounds
+- the image is rendering based on intrinsic image dimensions
+- there is no normalized container sizing
+
+This causes:
+- huge logo in dark mode
+- tiny logo in light mode
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+## Create Fixed Logo Wrapper
+
+ALL logos must render inside a controlled wrapper.
+
+Example:
+
+```tsx
+<div className="brand-logo-wrapper">
+  <img
+    src={logoSrc}
+    alt="ORT SparkLead"
+    className="brand-logo"
+  />
+</div>
+```
+
+---
+
+# REQUIRED SIDEBAR LOGO STYLING
+
+## Sidebar Logo Wrapper
+
+```css
+.brand-logo-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: 42px;
+  width: 220px;
+  overflow: hidden;
+}
+```
+
+---
+
+## Sidebar Logo Image
+
+```css
+.brand-logo {
+  max-height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+```
+
+IMPORTANT:
+- NEVER use `height: 100%`
+- NEVER use `transform: scale()`
+- NEVER use theme-specific scaling
+- NEVER allow intrinsic image dimensions to control UI size
+
+---
+
+# REQUIRED LOGIN PAGE LOGO STYLING
+
+## Login Logo Wrapper
+
+```css
+.login-brand-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+```
+
+---
+
+## Login ORT Logo
+
+```css
+.login-brand-logo {
+  max-height: 88px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+```
+
+---
+
+# REQUIRED NORMALIZATION
+
+The dark logo image currently has excessive visual scaling.
+
+Before rendering:
+- normalize both assets
+- trim transparent padding if present
+- ensure both logos have visually equal dimensions
+
+The rendered visible logo area should match across:
+- light theme
+- dark theme
+
+---
+
+# REQUIRED RESPONSIVE BEHAVIOR
+
+Ensure:
+- logo never clips
+- SparkLead text remains visible
+- sidebar logo does not overflow
+- mobile sidebar renders correctly
+- login branding remains centered
+
+---
+
+# IMPORTANT
+
+DO NOT:
+- apply arbitrary zoom fixes
+- use separate CSS sizes for light/dark mode
+- use negative margins
+- use transform hacks
+- resize only one theme
+
+The sizing system must be unified and consistent.
+
+---
+
+# REQUIRED QUALITY CHECKS
+
+Verify:
+
+✅ Light logo size matches dark logo size  
+✅ Sidebar branding alignment is consistent  
+✅ Login branding looks balanced  
+✅ SparkLead text remains visible  
+✅ No oversized ORT logo in dark mode  
+✅ No tiny ORT logo in light mode  
+✅ No clipping or overflow  
+✅ Branding looks premium and enterprise-grade  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+- the ORT logo should appear visually identical in scale across both themes
+- the sidebar branding should look clean and balanced
+- the login page branding should feel premium and centered
+- SparkLead text should remain properly visible beside the ORT logo
+- the branding system should feel polished and production-ready
+````
