@@ -1,0 +1,281 @@
+````md
+# ✅ FINAL UI REFINEMENT REQUIRED — LOGO SIZE & FONT WEIGHT FIX
+
+The branding direction is now correct.
+
+The remaining issue is:
+- logo block is oversized
+- font weight feels too bold/heavy
+- sidebar branding occupies too much visual space
+- login page branding hierarchy is dominating the form
+
+The system now needs:
+- cleaner SaaS proportions
+- more elegant spacing
+- thinner typography feel
+- smaller logo presentation
+
+---
+
+# ✅ TARGET VISUAL STYLE
+
+You should aim for:
+
+- premium CRM
+- modern enterprise SaaS
+- clean and lightweight
+- subtle branding
+- NOT oversized gaming-style branding
+
+---
+
+# 1️⃣ SIDEBAR BRAND FIX
+
+## CURRENT ISSUE
+The sidebar branding is:
+- too tall
+- too bold
+- too dominant
+
+---
+
+# ✅ REQUIRED SIDEBAR SIZING
+
+## Replace current values with:
+
+```css
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 16px 18px;
+
+  min-height: 68px;
+}
+
+.ort-logo {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+
+.sparklead-logo {
+  height: 18px;
+  width: auto;
+  object-fit: contain;
+}
+````
+
+---
+
+# ✅ IMPORTANT
+
+REMOVE:
+
+```css
+font-weight: 900;
+transform: scale(...);
+zoom: ...;
+```
+
+on branding elements.
+
+---
+
+# 2️⃣ SIDEBAR WIDTH REFINEMENT
+
+Current sidebar is visually too wide after branding enlargement.
+
+---
+
+# ✅ USE
+
+```css
+.sidebar {
+  width: 260px;
+}
+```
+
+NOT:
+
+```css
+280px+
+```
+
+---
+
+# 3️⃣ LOGIN PAGE BRANDING FIX
+
+## CURRENT ISSUE
+
+The login page branding:
+
+* occupies too much height
+* looks visually aggressive
+* logo hierarchy is oversized
+
+---
+
+# ✅ REQUIRED LOGIN BRAND SIZING
+
+```css
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  margin-bottom: 22px;
+}
+
+.login-ort-logo {
+  height: 58px;
+  width: auto;
+
+  object-fit: contain;
+
+  margin-bottom: 6px;
+}
+
+.login-sparklead-logo {
+  height: 26px;
+  width: auto;
+
+  object-fit: contain;
+
+  margin-bottom: 8px;
+}
+```
+
+---
+
+# 4️⃣ TAGLINE FIX
+
+Current tagline spacing is too loose.
+
+---
+
+# ✅ USE
+
+```css
+.login-tagline {
+  font-size: 14px;
+
+  color: #7f8da3;
+
+  letter-spacing: 0.2px;
+
+  font-weight: 500;
+}
+```
+
+---
+
+# 5️⃣ LOGIN CARD POSITIONING
+
+The logo and card are slightly too separated vertically.
+
+---
+
+# ✅ REQUIRED
+
+```css
+.login-wrapper {
+  gap: 18px;
+}
+```
+
+OR
+
+reduce:
+
+```css
+margin-bottom
+```
+
+between branding and form.
+
+---
+
+# 6️⃣ OVERALL VISUAL TARGET
+
+After fixes:
+
+## Sidebar
+
+* elegant
+* compact
+* premium
+* branding visible but not dominating
+
+## Login Page
+
+* balanced hierarchy
+* form remains primary focus
+* branding supports interface
+* no oversized typography
+
+---
+
+# 7️⃣ FINAL EXPECTED SCALE
+
+## SIDEBAR
+
+### ort_
+
+```text
+small-medium
+```
+
+### SparkLead
+
+```text
+compact and elegant
+```
+
+---
+
+## LOGIN PAGE
+
+### ort_
+
+```text
+prominent but not huge
+```
+
+### SparkLead
+
+```text
+secondary branding
+```
+
+---
+
+# 8️⃣ DO NOT
+
+❌ giant logos
+❌ ultra-bold text
+❌ stretched scaling
+❌ transform: scale()
+❌ oversized header blocks
+❌ excessive spacing
+
+---
+
+# ✅ RESULT AFTER FIX
+
+The UI should resemble:
+
+* Linear
+* HubSpot
+* Notion
+* Vercel dashboard styling
+
+rather than:
+
+* gaming launcher
+* esports UI
+* oversized admin template
+
+```
+```

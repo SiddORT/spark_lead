@@ -135,13 +135,14 @@ export function AuthPage() {
       <div style={{ width: "100%", maxWidth: 460, position: "relative", zIndex: 1, animation: "sl-fadein 0.45s cubic-bezier(0.16,1,0.3,1) both" }}>
 
         {/* Brand block */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 28, gap: 10, overflow: "visible" }}>
-          <BrandBlock layout="vertical" ortHeight={74} nameHeight={42} gap={10} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: 22, gap: 8, overflow: "visible" }}>
+          <BrandBlock layout="vertical" ortHeight={58} nameHeight={26} gap={6} />
           <p style={{
-            margin: 0,
+            margin: "2px 0 0",
             fontSize: 14,
-            color: isLight ? "rgba(0,0,0,0.42)" : "rgba(255,255,255,0.35)",
-            letterSpacing: "0.3px",
+            fontWeight: 500,
+            color: "#7f8da3",
+            letterSpacing: "0.2px",
             fontFamily: "var(--font-body)",
           }}>
             SparkLead — Team Access Only

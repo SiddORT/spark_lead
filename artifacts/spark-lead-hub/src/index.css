@@ -361,8 +361,8 @@ a:hover { opacity: 0.85; }
    SIDEBAR
    ============================================ */
 .sidebar {
-  width: 280px;
-  min-width: 280px;
+  width: 260px;
+  min-width: 260px;
   height: 100vh;
   background: var(--bg-elevated);
   border-right: 1px solid var(--border-subtle);
