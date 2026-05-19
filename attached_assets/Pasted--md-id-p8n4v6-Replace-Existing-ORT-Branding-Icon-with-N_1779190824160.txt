@@ -1,0 +1,160 @@
+````md id="p8n4v6"
+# Replace Existing ORT Branding Icon with Newly Uploaded Asset
+
+Replace the currently used ORT logo/icon across the entire SparkLead system with the newly uploaded branding asset provided by design.
+
+The current ORT implementation should be fully removed and replaced with the attached file.
+
+---
+
+# IMPORTANT
+
+Use the uploaded asset EXACTLY as provided.
+
+DO NOT:
+- recreate the logo using text
+- redraw the icon
+- modify typography
+- change proportions
+- apply CSS-generated shapes
+- alter the blue accent section
+- crop the logo incorrectly
+
+The uploaded branding asset is now the official ORT identity.
+
+---
+
+# REQUIRED REPLACEMENT AREAS
+
+Replace the old ORT logo everywhere including:
+
+✅ Sidebar branding  
+✅ Login page branding  
+✅ Header branding  
+✅ Favicon source asset  
+✅ Loading screens  
+✅ Mobile navigation  
+✅ Browser metadata/logo references  
+✅ PWA/app icons (if applicable)  
+✅ Any reusable branding component  
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+Place the uploaded file inside:
+
+```text
+/public/assets/branding/
+```
+
+Example:
+
+```text
+/public/assets/branding/ort-logo.png
+```
+
+---
+
+# REQUIRED COMPONENT UPDATE
+
+Update all branding/logo components to use the uploaded asset directly.
+
+Example:
+
+```tsx
+<img
+  src="/assets/branding/ort-logo.png"
+  alt="ORT"
+  className="ort-logo"
+/>
+```
+
+---
+
+# REQUIRED SIDEBAR LOGO STYLING
+
+The sidebar logo should:
+- remain compact
+- preserve aspect ratio
+- align properly with SparkLead branding
+- not appear stretched or oversized
+
+Recommended:
+
+```css
+.sidebar-logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+}
+```
+
+---
+
+# REQUIRED LOGIN PAGE LOGO STYLING
+
+Login page logo can be larger:
+
+```css
+.login-logo {
+  height: 72px;
+  width: auto;
+  object-fit: contain;
+}
+```
+
+---
+
+# IMPORTANT VISUAL REQUIREMENTS
+
+Ensure:
+- logo remains sharp
+- no stretching
+- no compression
+- no blurry scaling
+- no cropping
+- correct padding around logo
+- proper retina rendering
+
+---
+
+# REQUIRED DARK/LIGHT MODE SUPPORT
+
+The uploaded asset must render correctly in:
+- light mode
+- dark mode
+
+DO NOT:
+- invert colors
+- apply CSS filters
+- dynamically recolor the asset
+
+Use the original uploaded file directly.
+
+---
+
+# REQUIRED CLEANUP
+
+Remove:
+- all previous ORT text-based implementations
+- fake CSS logo recreations
+- unused old branding assets
+- duplicate logo logic
+
+There should be ONE centralized branding asset source.
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ New uploaded ORT asset used everywhere  
+✅ Branding matches design exactly  
+✅ Premium and consistent appearance  
+✅ Proper scaling across the system  
+✅ Clean sidebar/logo alignment  
+✅ Correct rendering in light and dark themes  
+✅ Enterprise-grade branding consistency  
+````

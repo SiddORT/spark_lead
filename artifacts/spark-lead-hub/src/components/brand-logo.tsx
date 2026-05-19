@@ -1,4 +1,3 @@
-import { useTheme } from "./theme-provider";
 import { BRAND } from "@/lib/brand";
 
 interface BrandBlockProps {
@@ -17,8 +16,6 @@ export function BrandBlock({
   nameHeight,
   gap = 12,
 }: BrandBlockProps) {
-  const { theme } = useTheme();
-  const logos = BRAND.logos[theme as "dark" | "light"] ?? BRAND.logos.dark;
   const isVertical = layout === "vertical";
   const fontSize = nameSize ?? nameHeight ?? 18;
 
@@ -32,7 +29,7 @@ export function BrandBlock({
       }}
     >
       <img
-        src={logos.ort}
+        src={BRAND.logos.ort}
         alt="ort_"
         style={{
           height: ortHeight,
