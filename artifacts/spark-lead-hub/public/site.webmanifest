@@ -1,0 +1,13 @@
+{
+  "name": "SparkLead",
+  "short_name": "SparkLead",
+  "description": "SparkLead — Team CRM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#040816",
+  "theme_color": "#00AEEC",
+  "icons": [
+    { "src": "/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

@@ -1,0 +1,118 @@
+````md id="v9k2m1"
+# Add ORT Logo as System Favicon Across Entire SparkLead Platform
+
+Use the uploaded `ort_` logo as the official favicon for the entire SparkLead system.
+
+The favicon must be implemented properly across:
+- login page
+- dashboard
+- admin pages
+- all routes/pages
+- browser tabs
+- PWA/app metadata (if applicable)
+
+---
+
+# IMPORTANT
+
+The favicon must:
+- render sharply
+- remain visible in both light and dark browser themes
+- preserve the clean ORT branding
+- not appear blurry or stretched
+- work across all major browsers
+
+---
+
+# REQUIRED FAVICON SETUP
+
+Generate and configure:
+
+```text
+favicon.ico
+favicon-16x16.png
+favicon-32x32.png
+apple-touch-icon.png
+android-chrome-192x192.png
+android-chrome-512x512.png
+site.webmanifest
+```
+
+---
+
+# REQUIRED DESIGN TREATMENT
+
+The uploaded ORT logo is very wide.
+
+For favicon usage:
+- use ONLY the `ort_` portion
+- center it properly
+- maintain padding around edges
+- preserve the blue underscore accent
+- ensure high contrast visibility
+
+---
+
+# REQUIRED DARK/LIGHT COMPATIBILITY
+
+The favicon must remain visible in:
+- dark browser tabs
+- light browser tabs
+- mobile browser tabs
+- pinned tabs
+
+If needed:
+- slightly brighten the white logo
+- enhance contrast subtly
+- preserve brand accuracy
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+Update the root HTML/head section:
+
+```html
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
+```
+
+---
+
+# FOR REACT / VITE / NEXT.JS
+
+Ensure favicon files are added inside:
+- `/public`
+OR
+- appropriate static assets directory
+
+Verify favicon loads correctly after build/deployment.
+
+---
+
+# REQUIRED QUALITY CHECKS
+
+Verify:
+- favicon visible on all pages
+- favicon updates after refresh
+- browser cache issue handled
+- no blurry scaling
+- correct spacing
+- no cropping of underscore
+- favicon visible in dark browser tabs
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ ORT logo visible as browser favicon  
+✅ Premium branded browser tab appearance  
+✅ Clean sharp favicon rendering  
+✅ Proper visibility in light and dark themes  
+✅ Consistent branding across entire system  
+✅ Professional SaaS product identity  
+````
