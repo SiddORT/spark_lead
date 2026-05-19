@@ -1,0 +1,188 @@
+````md id="m4k8z2"
+# Fix ORT Logo Rendering to Match Original Branding Exactly
+
+The ORT logo currently implemented inside the system does NOT match the original logo provided.
+
+The current implementation has:
+- incorrect proportions
+- incorrect typography weight
+- incorrect spacing
+- incorrect scaling
+- incorrect underscore styling
+- altered visual appearance
+
+The implemented version looks visually different from the original uploaded ORT branding asset.
+
+This must be corrected immediately.
+
+---
+
+# CRITICAL REQUIREMENT
+
+Use the EXACT original ORT logo asset provided by design.
+
+DO NOT:
+- recreate the logo using text
+- simulate it with CSS
+- approximate typography
+- rebuild it manually
+- substitute fonts
+- redraw the underscore
+- use different font weights
+- stretch or compress the logo
+
+The logo must remain pixel-accurate to the original uploaded design.
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+Use the ORIGINAL uploaded logo image/vector directly.
+
+Preferred:
+- SVG version
+OR
+- high-resolution transparent PNG
+
+DO NOT use:
+```tsx
+<span>ort_</span>
+```
+
+OR:
+```css
+font-family tricks
+```
+
+The branding must use the actual asset file.
+
+---
+
+# REQUIRED LOGO BEHAVIOR
+
+The ORT logo must:
+- preserve original typography
+- preserve original proportions
+- preserve exact underscore styling
+- preserve original spacing
+- preserve original blue color
+- render sharply on all screens
+
+---
+
+# REQUIRED LOGO SIZING
+
+## Sidebar Logo
+
+The sidebar version should:
+- remain compact
+- preserve aspect ratio
+- not appear stretched
+- vertically align with SparkLead text
+
+Recommended:
+
+```css
+height: 34px;
+width: auto;
+object-fit: contain;
+```
+
+---
+
+## Login Page Logo
+
+The login version can be larger but must still preserve proportions.
+
+Recommended:
+
+```css
+height: 72px;
+width: auto;
+object-fit: contain;
+```
+
+---
+
+# IMPORTANT
+
+DO NOT:
+- increase font boldness
+- alter logo thickness
+- apply filters
+- add shadows
+- distort aspect ratio
+- crop the underscore
+- apply CSS transforms
+
+---
+
+# REQUIRED FILE HANDLING
+
+Place the original ORT logo asset inside:
+```text
+/public/assets/branding/
+```
+
+Example:
+```text
+/public/assets/branding/ort-logo.svg
+```
+
+---
+
+# REQUIRED COMPONENT UPDATE
+
+Replace all recreated ORT text implementations with the actual image asset.
+
+Example:
+
+```tsx
+<img
+  src="/assets/branding/ort-logo.svg"
+  alt="ORT"
+  className="ort-logo"
+/>
+```
+
+---
+
+# REQUIRED DARK/LIGHT MODE SUPPORT
+
+The logo must remain visually identical in:
+- dark mode
+- light mode
+
+Do NOT dynamically recolor the logo using CSS filters.
+
+Instead:
+- use transparent SVG/PNG asset
+- preserve original colors
+
+---
+
+# REQUIRED QUALITY CHECK
+
+Verify:
+- exact visual match with original uploaded logo
+- no stretching
+- no font mismatch
+- correct underscore thickness
+- correct letter spacing
+- sharp rendering on retina displays
+- responsive scaling
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ ORT logo matches original branding EXACTLY  
+✅ Typography identical to uploaded design  
+✅ Correct proportions and spacing  
+✅ Proper professional branding consistency  
+✅ No recreated/fake text version  
+✅ Sharp premium rendering across the entire system  
+✅ Sidebar and login branding look polished and authentic  
+````
