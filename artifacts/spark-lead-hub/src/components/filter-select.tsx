@@ -4,6 +4,7 @@ import { ChevronDown, Search, X, Check } from "lucide-react";
 interface FilterSelectOption {
   value: string;
   label: string;
+  prefix?: React.ReactNode;
 }
 
 interface FilterSelectProps {
@@ -240,6 +241,7 @@ export function FilterSelect({
                 <CheckboxItem
                   key={opt.value}
                   label={opt.label}
+                  prefix={opt.prefix}
                   checked={value.includes(opt.value)}
                   onClick={() => toggle(opt.value)}
                 />
@@ -252,7 +254,7 @@ export function FilterSelect({
   );
 }
 
-function CheckboxItem({ label, checked, onClick }: { label: string; checked: boolean; onClick: () => void }) {
+function CheckboxItem({ label, prefix, checked, onClick }: { label: string; prefix?: React.ReactNode; checked: boolean; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
@@ -282,6 +284,11 @@ function CheckboxItem({ label, checked, onClick }: { label: string; checked: boo
       }}>
         {checked && <Check size={9} strokeWidth={3} style={{ color: "#0a1628" }} />}
       </span>
+      {prefix && (
+        <span style={{ display: "flex", alignItems: "center", flexShrink: 0, opacity: 0.85 }}>
+          {prefix}
+        </span>
+      )}
       <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {label}
       </span>

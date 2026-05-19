@@ -14,7 +14,7 @@ import {
   ChevronsUpDown, ChevronUp, ChevronDown, X,
 } from "lucide-react";
 import { LeadTypeBadge } from "@/components/lead-type-badge";
-import { LEAD_TYPE_FILTER_OPTIONS } from "@/lib/lead-type-config";
+import { leadTypeSelectOptions } from "@/lib/lead-type-config";
 
 // ─── Constants ────────────────────────────────────────
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -407,7 +407,7 @@ export function FollowUp() {
 
         <FilterSelect value={serviceFilter} onChange={setServiceFilter} options={serviceOptions} placeholder="All Services" width={165} />
         <FilterSelect value={companyFilter} onChange={setCompanyFilter} options={companyOptions} placeholder="All Companies" width={165} />
-        <FilterSelect value={typeFilter}    onChange={setTypeFilter}    options={LEAD_TYPE_FILTER_OPTIONS} placeholder="All Types" width={145} />
+        <FilterSelect value={typeFilter}    onChange={setTypeFilter}    options={leadTypeSelectOptions(14)} placeholder="All Types" width={145} />
         <FilterSelect value={stageFilter}   onChange={setStageFilter}   options={stageOptions} placeholder="All Stages" width={175} />
 
         {hasAnyFilter && (

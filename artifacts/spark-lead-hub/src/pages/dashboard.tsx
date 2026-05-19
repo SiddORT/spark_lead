@@ -23,7 +23,7 @@ import {
   ChevronUp, ChevronDown, ChevronsUpDown, Layers, ShieldOff,
 } from "lucide-react";
 import { LeadTypeBadge } from "@/components/lead-type-badge";
-import { LEAD_TYPE_FILTER_OPTIONS } from "@/lib/lead-type-config";
+import { leadTypeSelectOptions } from "@/lib/lead-type-config";
 import { PermissionCheck, useAuth } from "@/components/auth-provider";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -889,7 +889,7 @@ export function Dashboard() {
         <FilterSelect
           value={typeFilter}
           onChange={setTypeFilter}
-          options={LEAD_TYPE_FILTER_OPTIONS}
+          options={leadTypeSelectOptions(14)}
           placeholder="All Types"
           width={145}
         />

@@ -1,0 +1,181 @@
+````md
+# Fix Missing Lead Type Icons in Filter Dropdowns Across Entire System
+
+The new lead type icons have been implemented in some areas of the system, but they are still NOT visible inside the filter dropdowns.
+
+Currently the dropdown options are showing:
+- only text labels
+- empty spacing
+- missing icon rendering
+
+This creates:
+- inconsistent UI behavior
+- incomplete implementation
+- broken visual hierarchy
+- poor UX consistency
+
+The issue must be fixed globally across ALL dropdown/filter components.
+
+---
+
+# CURRENT ISSUE
+
+Inside the `All Types` filter dropdown:
+- Hot icon is missing
+- Warm icon is missing
+- Cold icon is missing
+- Ghosted icon is missing
+
+Only the labels are visible.
+
+The same issue may also exist in:
+- advanced filters
+- mobile filters
+- Kanban filters
+- reusable dropdown components
+- modal filters
+- sidebar filters
+- multi-select dropdowns
+
+This needs a FULL SYSTEM-WIDE FIX.
+
+---
+
+# ROOT CAUSE TO CHECK
+
+Most likely causes:
+- icon component not passed into dropdown renderer
+- option label only rendering text
+- icon color blending into background
+- flex alignment issue
+- icon import issue
+- custom renderOption not implemented
+- dropdown virtualization removing icons
+- missing icon wrapper styles
+
+Investigate and fix properly.
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+Every lead type option inside dropdowns must render:
+
+- icon
+- label
+- proper spacing
+- vertical alignment
+- hover state consistency
+
+Example structure:
+
+```tsx
+<div className="lead-type-option">
+  <TrendingUp className="lead-type-icon hot" />
+  <span>Hot</span>
+</div>
+```
+
+---
+
+# REQUIRED DROPDOWN ICON STYLING
+
+Use:
+
+```css
+.lead-type-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lead-type-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2px;
+  flex-shrink: 0;
+}
+```
+
+---
+
+# REQUIRED ICON COLORS
+
+## Hot
+```css
+color: #F97316;
+```
+
+## Warm
+```css
+color: #EAB308;
+```
+
+## Cold
+```css
+color: #3B82F6;
+```
+
+## Ghosted
+```css
+color: #94A3B8;
+```
+
+---
+
+# REQUIRED DROPDOWN BEHAVIOR
+
+Icons must appear correctly in:
+- normal state
+- hover state
+- selected state
+- focused state
+- multi-select chips
+- search results
+- keyboard navigation
+
+---
+
+# IMPORTANT
+
+DO NOT use:
+- emojis
+- image icons
+- inconsistent icon sizing
+- filled cartoon icons
+
+ONLY use:
+- Lucide React
+- Heroicons
+- clean SVG outline icons
+
+---
+
+# REQUIRED GLOBAL CHECK
+
+Verify icons are rendering in:
+
+✅ Lead type filter dropdown  
+✅ Advanced filters  
+✅ Kanban filters  
+✅ Mobile filters  
+✅ Table filters  
+✅ Search chips  
+✅ Multi-select values  
+✅ Applied filter tags  
+✅ Any reusable Select component  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ Lead type icons visible everywhere  
+✅ Dropdowns fully aligned with system design  
+✅ Premium SaaS appearance maintained  
+✅ Consistent icon rendering across all components  
+✅ Proper spacing and alignment  
+✅ No empty/icon-less dropdown rows  
+✅ Complete enterprise-quality implementation  
+````
