@@ -1,0 +1,326 @@
+````md id="team-user-delete-500-fix"
+# Fix HTTP 500 Error When Deleting User From Team Management
+
+There is a critical issue in the Team Management module.
+
+When attempting to delete a user from the system, the application throws:
+
+```txt
+HTTP 500 Internal Server Error: Internal server error
+```
+
+This is happening from the Team Management page when clicking the delete/trash icon under Actions.
+
+The delete operation must work reliably and should NEVER expose raw server errors to the user.
+
+---
+
+# CURRENT ISSUE
+
+## Observed Behavior
+
+- User clicks delete icon
+- Request is triggered
+- Backend returns HTTP 500
+- UI displays generic error toast
+- User is not deleted
+- No graceful handling exists
+
+---
+
+# REQUIRED INVESTIGATION
+
+Perform FULL end-to-end debugging for the delete user workflow.
+
+Investigate:
+
+- frontend API call
+- backend controller
+- route handler
+- database operation
+- authentication middleware
+- role permissions
+- foreign key constraints
+- soft delete vs hard delete logic
+- session/token cleanup
+- audit log dependencies
+- assigned entity references
+
+---
+
+# REQUIRED ROOT CAUSE ANALYSIS
+
+Check backend logs and identify EXACT failure point.
+
+Possible causes include:
+
+## 1. Foreign Key Constraint Failure
+
+User may still be linked to:
+- leads
+- follow-ups
+- audit logs
+- created_by fields
+- assigned tasks
+- ownership records
+
+If so:
+- prevent deletion gracefully
+OR
+- reassign dependencies automatically
+
+---
+
+## 2. Missing Backend Error Handling
+
+Current API likely throws unhandled exception.
+
+Implement proper try/catch handling.
+
+---
+
+## 3. Invalid Delete Query
+
+Possible issue:
+```ts
+await db.user.delete({
+  where: { id }
+})
+```
+
+when dependent records still exist.
+
+---
+
+## 4. Role/Permission Validation Failure
+
+Ensure:
+- admins can delete allowed users
+- super admin restrictions are enforced properly
+
+---
+
+## 5. Soft Delete Logic Broken
+
+If using soft delete:
+```ts
+isDeleted = true
+```
+
+ensure queries support it correctly.
+
+---
+
+# REQUIRED FIX
+
+## Backend Delete Handler
+
+Implement safe deletion logic.
+
+Example:
+
+```ts
+try {
+  // validate user exists
+
+  // validate permissions
+
+  // check dependencies
+
+  // remove/reassign related records
+
+  // delete or soft delete user
+
+  return success response;
+
+} catch (error) {
+  console.error("Delete user failed:", error);
+
+  return res.status(500).json({
+    success: false,
+    message: "Failed to delete user"
+  });
+}
+```
+
+---
+
+# REQUIRED DATABASE SAFETY CHECKS
+
+Before deleting user:
+
+Check if user is linked to:
+
+- leads
+- follow-ups
+- pipelines
+- activity logs
+- companies
+- notifications
+- sessions
+- audit logs
+- permissions
+- assignments
+
+---
+
+# REQUIRED UX IMPROVEMENTS
+
+## Add Confirmation Modal
+
+Before delete:
+
+```txt
+Are you sure you want to delete this user?
+
+This action cannot be undone.
+```
+
+---
+
+# REQUIRED LOADING STATES
+
+While deleting:
+
+- disable delete button
+- show loading spinner
+- prevent duplicate requests
+
+---
+
+# REQUIRED SUCCESS HANDLING
+
+After successful deletion:
+
+✅ Remove user row instantly  
+✅ Refresh table data  
+✅ Show success toast:
+
+```txt
+User deleted successfully
+```
+
+---
+
+# REQUIRED ERROR HANDLING
+
+NEVER expose raw:
+
+```txt
+HTTP 500 Internal Server Error
+```
+
+Instead show user-friendly errors:
+
+Examples:
+
+```txt
+Unable to delete user
+```
+
+OR
+
+```txt
+This user cannot be deleted because records are assigned to them
+```
+
+---
+
+# REQUIRED LOGGING
+
+Add structured logging:
+
+```ts
+console.error({
+  module: "team-management",
+  action: "delete-user",
+  userId,
+  error
+});
+```
+
+---
+
+# REQUIRED SECURITY VALIDATIONS
+
+Ensure system prevents:
+
+❌ deleting self accidentally  
+❌ deleting protected super admins  
+❌ deleting last admin in system  
+❌ deleting users without permission  
+
+---
+
+# REQUIRED TESTING
+
+Test all cases:
+
+## Valid Cases
+
+✅ Delete normal member  
+✅ Delete inactive member  
+✅ Delete pending request user  
+
+---
+
+## Edge Cases
+
+✅ User with assigned leads  
+✅ User with audit logs  
+✅ User with notifications  
+✅ User with active sessions  
+✅ User with pending tasks  
+✅ Protected admin deletion attempt  
+
+---
+
+# REQUIRED API RESPONSE FORMAT
+
+## Success
+
+```json
+{
+  "success": true,
+  "message": "User deleted successfully"
+}
+```
+
+---
+
+## Failure
+
+```json
+{
+  "success": false,
+  "message": "Unable to delete user"
+}
+```
+
+---
+
+# IMPORTANT
+
+DO NOT:
+
+❌ silently fail deletion  
+❌ expose raw backend stack traces  
+❌ leave orphaned database records  
+❌ partially delete users  
+❌ refresh page unnecessarily  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ User deletion works correctly  
+✅ No HTTP 500 errors  
+✅ Proper validation exists  
+✅ Database integrity is maintained  
+✅ UI updates instantly  
+✅ Error handling is graceful  
+✅ Permissions are enforced correctly  
+✅ Enterprise-grade reliability is achieved  
+````

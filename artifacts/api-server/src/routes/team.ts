@@ -8,6 +8,12 @@ import {
   userRolesTable,
   passwordResetTokensTable,
   leadNotesTable,
+  leadActivitiesTable,
+  leadDocumentsTable,
+  leadValueHistoryTable,
+  leadsTable,
+  companiesTable,
+  servicesTable,
   accessRequestsTable,
   auditLogTable,
 } from "@workspace/db";
@@ -132,27 +138,66 @@ router.delete("/members/:id", requireAuth, requireAdmin, async (req: AuthRequest
       return;
     }
 
-    // Full cascade delete
-    await db.delete(whitelistedUsersTable).where(eq(whitelistedUsersTable.email, user[0].email));
-    await db.delete(accessRequestsTable).where(eq(accessRequestsTable.email, user[0].email));
-    await db.delete(userRolesTable).where(eq(userRolesTable.userId, req.params.id));
-    await db.delete(leadNotesTable).where(eq(leadNotesTable.userId, req.params.id));
-    await db.delete(passwordResetTokensTable).where(eq(passwordResetTokensTable.userId, req.params.id));
-    await db.delete(usersTable).where(eq(usersTable.id, req.params.id));
+    const userId = req.params.id;
+    const userEmail = user[0].email;
 
-    await db.insert(auditLogTable).values({
-      id: uuidv4(),
-      userId: req.user!.userId,
-      action: "user_deleted",
-      resource: "team",
-      resourceId: req.params.id,
-      details: { email: user[0].email, displayName: user[0].displayName },
+    // Run all cleanup in a transaction so partial deletes can't orphan data
+    await db.transaction(async (tx) => {
+      // 1) Hard-delete records tightly coupled to the user (no historical value)
+      await tx.delete(whitelistedUsersTable).where(eq(whitelistedUsersTable.email, userEmail));
+      await tx.delete(userRolesTable).where(eq(userRolesTable.userId, userId));
+      await tx.delete(passwordResetTokensTable).where(eq(passwordResetTokensTable.userId, userId));
+      await tx.delete(leadNotesTable).where(eq(leadNotesTable.userId, userId));
+      // lead_activities.user_id is NOT NULL — must delete rows
+      await tx.delete(leadActivitiesTable).where(eq(leadActivitiesTable.userId, userId));
+
+      // 2) NULL-out historical/ownership references so we preserve business data
+      await tx.update(accessRequestsTable)
+        .set({ reviewedBy: null })
+        .where(eq(accessRequestsTable.reviewedBy, userId));
+      await tx.update(whitelistedUsersTable)
+        .set({ invitedBy: null })
+        .where(eq(whitelistedUsersTable.invitedBy, userId));
+      await tx.update(companiesTable)
+        .set({ createdBy: null })
+        .where(eq(companiesTable.createdBy, userId));
+      await tx.update(servicesTable)
+        .set({ createdBy: null })
+        .where(eq(servicesTable.createdBy, userId));
+      await tx.update(leadsTable)
+        .set({ createdBy: null })
+        .where(eq(leadsTable.createdBy, userId));
+      await tx.update(leadDocumentsTable)
+        .set({ uploadedBy: null })
+        .where(eq(leadDocumentsTable.uploadedBy, userId));
+      await tx.update(leadValueHistoryTable)
+        .set({ changedBy: null })
+        .where(eq(leadValueHistoryTable.changedBy, userId));
+      await tx.update(auditLogTable)
+        .set({ userId: null })
+        .where(eq(auditLogTable.userId, userId));
+
+      // 3) Also clear any pending access requests for this email
+      await tx.delete(accessRequestsTable).where(eq(accessRequestsTable.email, userEmail));
+
+      // 4) Finally remove the user
+      await tx.delete(usersTable).where(eq(usersTable.id, userId));
+
+      // 5) Audit trail (logged by the actor, not the deleted user)
+      await tx.insert(auditLogTable).values({
+        id: uuidv4(),
+        userId: req.user!.userId,
+        action: "user_deleted",
+        resource: "team",
+        resourceId: userId,
+        details: { email: userEmail, displayName: user[0].displayName },
+      });
     });
 
     res.json({ success: true, message: "Member deleted" });
   } catch (err) {
-    req.log.error({ err }, "Delete member error");
-    res.status(500).json({ message: "Internal server error" });
+    req.log.error({ err, userId: req.params.id, actor: req.user?.userId }, "Delete member error");
+    res.status(500).json({ success: false, message: "Unable to delete member" });
   }
 });
 
