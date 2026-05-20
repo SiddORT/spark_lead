@@ -1,0 +1,315 @@
+````md id="x1v7kc"
+# Fix Remaining Responsive & Modal Layout Issues Across the System
+
+There are STILL multiple UI responsiveness and layout consistency issues remaining in the system.
+
+The attached screenshot shows that several modals/components are not properly optimized for responsive layouts and visual consistency.
+
+This needs a FINAL responsive polish pass across the entire application.
+
+---
+
+# CURRENT ISSUE OBSERVED
+
+## Share Set-Password Link Modal Problems
+
+### Issues Visible
+
+- Modal width feels oversized for current content
+- Internal spacing is inconsistent
+- Long URL field is not properly responsive
+- Text wrapping is poor
+- Button alignment feels cramped
+- Content hierarchy is weak
+- Dark overlay + modal contrast feels off
+- Footer actions are not properly balanced
+- Modal padding differs from other system modals
+- Typography sizing is inconsistent
+- Some sections appear visually compressed
+
+---
+
+# REQUIRED FIXES
+
+# MODAL SYSTEM STANDARDIZATION
+
+Create ONE unified modal design system across the application.
+
+All modals must follow the SAME:
+
+- spacing
+- border radius
+- typography
+- shadow
+- header layout
+- footer layout
+- responsive behavior
+- button sizing
+- input styling
+
+---
+
+# REQUIRED MODAL WIDTH RULES
+
+## Desktop
+
+Use controlled modal widths:
+
+```css
+max-width: 520px;
+width: 92%;
+```
+
+DO NOT allow oversized empty modal areas.
+
+---
+
+## Tablet
+
+```css
+max-width: 92vw;
+```
+
+---
+
+## Mobile
+
+```css
+width: calc(100vw - 32px);
+max-width: 100%;
+border-radius: 20px;
+```
+
+Modal should NEVER touch screen edges.
+
+---
+
+# RESPONSIVE CONTENT FIXES
+
+## Long URL / Token Handling
+
+Current URL field is poorly handled.
+
+### REQUIRED
+
+Use:
+
+```css
+word-break: break-word;
+overflow-wrap: anywhere;
+```
+
+OR render URL inside:
+
+- copy box
+- monospace container
+- responsive scroll area
+
+---
+
+# FOOTER BUTTON FIXES
+
+Current footer alignment feels uneven.
+
+## REQUIRED
+
+### Desktop
+
+```txt
+[ Close ] [ Copy Link & Close ]
+```
+
+Proper spacing and balanced widths.
+
+---
+
+### Mobile
+
+Stack buttons vertically if space is insufficient:
+
+```txt
+[ Copy Link & Close ]
+[ Close ]
+```
+
+---
+
+# MODAL SPACING FIXES
+
+## REQUIRED INTERNAL SPACING
+
+### Header
+
+```css
+padding: 24px 24px 16px;
+```
+
+### Body
+
+```css
+padding: 20px 24px;
+```
+
+### Footer
+
+```css
+padding: 16px 24px 24px;
+```
+
+---
+
+# TYPOGRAPHY CONSISTENCY
+
+## REQUIRED
+
+Match typography with rest of system:
+
+### Title
+
+```css
+font-size: 24px;
+font-weight: 700;
+```
+
+### Description
+
+```css
+font-size: 14px;
+opacity: 0.7;
+```
+
+### Body Text
+
+```css
+font-size: 14px–15px;
+```
+
+---
+
+# ALERT/WARNING BOX FIXES
+
+Current warning box feels visually heavy.
+
+## REQUIRED
+
+Reduce:
+
+- excessive darkness
+- padding imbalance
+- border heaviness
+
+Use cleaner enterprise alert styling.
+
+---
+
+# INPUT / COPY FIELD FIXES
+
+The generated link section should:
+
+- align properly
+- not overflow
+- maintain spacing
+- support long URLs
+
+---
+
+# RESPONSIVE OVERLAY FIX
+
+The modal backdrop currently feels visually harsh.
+
+## REQUIRED
+
+Use softer overlay:
+
+```css
+background: rgba(0,0,0,0.45);
+backdrop-filter: blur(6px);
+```
+
+---
+
+# GLOBAL RESPONSIVE AUDIT REQUIRED
+
+This issue indicates there are STILL remaining responsive inconsistencies throughout the app.
+
+Perform a COMPLETE responsive audit on:
+
+- modals
+- drawers
+- popovers
+- alerts
+- forms
+- tables
+- pagination
+- sidebars
+- floating buttons
+- filters
+- dropdowns
+- empty states
+
+---
+
+# REQUIRED QA TESTING
+
+Test ALL modals on:
+
+## Desktop
+
+- 1920px
+- 1440px
+- 1366px
+
+---
+
+## Tablet
+
+- iPad
+- iPad Pro
+
+---
+
+## Mobile
+
+- iPhone SE
+- iPhone 14
+- Samsung Galaxy devices
+
+---
+
+# VERIFY
+
+✅ No overflow  
+✅ No clipped content  
+✅ No cramped buttons  
+✅ Proper wrapping  
+✅ Proper modal widths  
+✅ Consistent spacing  
+✅ Uniform typography  
+✅ Proper dark/light mode rendering  
+✅ Proper mobile responsiveness  
+✅ Professional enterprise-grade layout  
+
+---
+
+# IMPORTANT
+
+Do NOT patch only this modal.
+
+This should become the STANDARD modal architecture used across the entire system.
+
+Create reusable responsive modal components instead of individual fixes.
+
+---
+
+# EXPECTED FINAL RESULT
+
+After implementation:
+
+✅ Fully polished modal system  
+✅ Consistent responsive behavior everywhere  
+✅ No layout inconsistencies  
+✅ Professional enterprise UI quality  
+✅ Proper spacing and hierarchy  
+✅ Mobile-friendly modals  
+✅ Stable responsive experience across all devices  
+````

@@ -1043,41 +1043,8 @@ a:hover { opacity: 0.85; }
 }
 
 /* ============================================
-   MODAL / DIALOG
+   MODAL / DIALOG — legacy block removed; unified system lives below
    ============================================ */
-.modal-backdrop {
-  position: fixed; inset: 0;
-  background: hsl(222 22% 3% / 0.7);
-  backdrop-filter: blur(6px);
-  z-index: 200;
-  display: flex; align-items: center; justify-content: center;
-  padding: var(--space-4);
-  animation: fade-in 150ms ease both;
-}
-.modal {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  width: 100%;
-  max-width: 500px;
-  padding: var(--space-6);
-  animation: page-enter 200ms ease both;
-}
-.modal-title {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: var(--space-1);
-}
-.modal-desc { font-size: var(--text-sm); color: var(--text-muted); margin-bottom: var(--space-5); }
-.modal-footer {
-  display: flex; justify-content: flex-end; gap: var(--space-3);
-  margin-top: var(--space-5);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--border-subtle);
-}
 
 /* ============================================
    FORM COMPONENTS — UNIFORM ACROSS ALL PAGES
@@ -1551,11 +1518,12 @@ a:hover { opacity: 0.85; }
 /* ============================================
    MODAL REDESIGN (structured header/body/foot)
    ============================================ */
+/* ── Unified Modal System ── softer overlay, 520px default, spec padding/typography */
 .modal-backdrop {
   position: fixed; inset: 0;
-  background: hsl(222 22% 3% / 0.65);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 200;
   display: flex; align-items: center; justify-content: center;
   padding: var(--sp-4);
@@ -1564,18 +1532,23 @@ a:hover { opacity: 0.85; }
 .modal {
   background: var(--bg-elevated);
   border: 1px solid var(--border-default);
-  border-radius: var(--r-xl);
+  border-radius: 16px;
   box-shadow: var(--shadow-lg);
-  width: 100%;
-  max-width: 500px;
+  width: 92%;
+  max-width: 520px;
   overflow: hidden;
   animation: slide-in 200ms ease both;
 }
+/* Wider variants opt-in via class */
+.modal.modal-lg { max-width: 720px; }
+.modal.modal-xl { max-width: 960px; }
+
 .modal-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: var(--sp-5) var(--sp-6);
+  gap: var(--sp-3);
+  padding: 24px 24px 16px;
   border-bottom: 1px solid var(--border-faint);
   background: var(--bg-overlay);
 }
@@ -1583,7 +1556,10 @@ a:hover { opacity: 0.85; }
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  min-width: 0;
+  flex: 1;
 }
+.modal-head-left > div:last-child { min-width: 0; flex: 1; }
 .modal-head-icon {
   width: 34px; height: 34px;
   border-radius: var(--r-md);
@@ -1594,10 +1570,25 @@ a:hover { opacity: 0.85; }
 .modal-head-icon.purple  { background: var(--purple-dim);  color: var(--purple); }
 .modal-head-icon.success { background: var(--success-dim); color: var(--success); }
 .modal-head-icon.warning { background: var(--warning-dim); color: var(--warning); }
-.modal-title { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; color: var(--text-primary); line-height: 1.1; margin: 0; }
-.modal-subtitle { font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px; }
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  margin: 0;
+  word-break: break-word;
+}
+.modal-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  opacity: 0.7;
+  margin-top: 4px;
+  line-height: 1.45;
+  word-break: break-word;
+}
 .modal-close {
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   border-radius: var(--r-md);
   background: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
@@ -1608,15 +1599,38 @@ a:hover { opacity: 0.85; }
   flex-shrink: 0;
 }
 .modal-close:hover { background: var(--bg-muted); color: var(--text-primary); }
-.modal-body { padding: var(--sp-5) var(--sp-6); }
+.modal-body { padding: 20px 24px; font-size: 14px; line-height: 1.6; color: var(--text-secondary); }
 .modal-foot {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-6);
+  padding: 16px 24px 24px;
   border-top: 1px solid var(--border-faint);
   background: var(--bg-overlay);
+}
+.modal-foot .btn { min-width: 96px; justify-content: center; }
+
+/* Reusable alert/callout inside modals */
+.modal-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.modal-alert.warning {
+  background: hsla(36, 88%, 52%, 0.08);
+  border: 1px solid hsla(36, 88%, 52%, 0.22);
+  color: var(--warning);
+}
+.modal-alert.info {
+  background: hsla(196, 100%, 46%, 0.08);
+  border: 1px solid hsla(196, 100%, 46%, 0.22);
+  color: var(--teal);
 }
 /* Legacy: keep .modal-footer pointing to same styles */
 .modal-footer {
@@ -1633,27 +1647,34 @@ a:hover { opacity: 0.85; }
    ============================================ */
 .invite-link-box {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--sp-2);
   background: var(--bg-overlay);
   border: 1px solid var(--border-default);
   border-radius: var(--r-md);
-  padding: var(--sp-3) var(--sp-4);
+  padding: 10px 12px;
   margin: var(--sp-3) 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 .invite-link-url {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   font-family: 'JetBrains Mono', 'Courier New', monospace;
   font-size: 12px;
   color: var(--teal);
-  word-break: break-all;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   line-height: 1.5;
   background: none;
   border: none;
   outline: none;
   user-select: all;
   cursor: text;
+  padding: 4px 0;
 }
+.invite-link-box .btn { flex-shrink: 0; }
 
 /* ============================================
    DROPDOWN SYSTEM (fix blue highlights)
@@ -2859,25 +2880,30 @@ a:hover { opacity: 0.85; }
   .kanban-grid::-webkit-scrollbar { display: none; }
   .kanban-column { min-width: 280px; flex-shrink: 0; }
 
-  /* [10] MODALS — bottom sheet on mobile */
+  /* [10] MODALS — centered with 16px gutter, footer stacks */
   .modal-backdrop {
-    align-items: flex-end;
-    padding: 0;
+    align-items: center;
+    padding: 16px;
   }
   .modal {
-    border-radius: var(--r-xl) var(--r-xl) 0 0;
+    width: calc(100vw - 32px);
     max-width: 100%;
-    max-height: 92svh;
+    max-height: calc(100svh - 32px);
+    border-radius: 20px;
     overflow-y: auto;
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .modal-body {
-    padding: var(--sp-4);
-    max-height: 65svh;
-    overflow-y: auto;
+  .modal-head { padding: 20px 20px 12px; }
+  .modal-body { padding: 16px 20px; max-height: 60svh; overflow-y: auto; }
+  .modal-foot {
+    padding: 12px 20px 20px;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
   }
-  .modal-head { padding: var(--sp-4); }
-  .modal-foot { padding: var(--sp-4); }
+  .modal-foot .btn { width: 100%; min-height: 44px; }
+  .modal-title { font-size: 18px; }
+  .modal-subtitle { font-size: 13px; }
 
   /* [11] FORMS — stack single col */
   .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
@@ -2984,8 +3010,7 @@ a:hover { opacity: 0.85; }
   .stat-card-value { font-size: 22px; }
   .data-table { min-width: 560px; }
   .data-table th, .data-table td { padding: var(--space-2) var(--space-3); font-size: var(--text-xs); }
-  .modal-title { font-size: var(--text-base); }
-  .modal-subtitle { font-size: var(--text-xs); }
+  /* keep modal typography readable at small sizes — handled by 768px block */
   .field-input, .field-textarea, .input { font-size: 16px; }  /* prevent iOS zoom */
 }
 

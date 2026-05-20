@@ -122,12 +122,12 @@ export const TabsContent = ({ value, className, children }: React.HTMLAttributes
   return <div className={cn("mt-4 animate-slide-in", className)}>{children}</div>;
 };
 
-export const Dialog = ({ open, onOpenChange, children }: { open: boolean, onOpenChange: (open: boolean) => void, children: React.ReactNode }) => {
+export const Dialog = ({ open, onOpenChange, children, size }: { open: boolean, onOpenChange: (open: boolean) => void, children: React.ReactNode, size?: "default" | "lg" | "xl" }) => {
   if (!open) return null;
+  const sizeClass = size === "lg" ? " modal-lg" : size === "xl" ? " modal-xl" : "";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => onOpenChange(false)} />
-      <div className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl glass-strong shadow-2xl animate-slide-in max-h-[90vh] overflow-y-auto">
+    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onOpenChange(false); }}>
+      <div className={`modal${sizeClass}`} onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>

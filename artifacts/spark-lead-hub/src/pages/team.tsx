@@ -499,17 +499,12 @@ export function Team() {
         </div>
         <div className="modal-body">
           {!pendingLink?.emailSent && (
-            <div style={{
-              background: "var(--warning-dim)", border: "1px solid hsla(36, 88%, 52%, 0.3)",
-              borderRadius: "var(--r-md)", padding: "var(--sp-3) var(--sp-4)", marginBottom: "var(--sp-4)",
-            }}>
-              <p style={{ fontSize: "var(--text-sm)", color: "var(--warning)", margin: 0, lineHeight: 1.5 }}>
-                Email delivery failed — share this link directly via Slack, WhatsApp, or any channel.
-              </p>
+            <div className="modal-alert warning">
+              Email delivery failed — share this link directly via Slack, WhatsApp, or any channel.
             </div>
           )}
-          <p style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)", marginBottom: "var(--sp-3)", lineHeight: 1.65 }}>
-            You can also share the setup link directly if the email doesn't arrive:
+          <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 8, lineHeight: 1.6 }}>
+            You can also share the setup link directly if the email doesn&apos;t arrive:
           </p>
           <div className="invite-link-box">
             <code className="invite-link-url">{pendingLink?.url || ""}</code>
