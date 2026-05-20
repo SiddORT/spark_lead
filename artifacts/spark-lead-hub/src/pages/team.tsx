@@ -248,6 +248,7 @@ export function Team() {
             )}
           </div>
 
+          <div className="table-scroll-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -364,6 +365,7 @@ export function Team() {
               )}
             </tbody>
           </table>
+          </div>
 
           <TablePagination
             page={page}
@@ -378,6 +380,7 @@ export function Team() {
       {/* Access requests */}
       {activeTab === "requests" && isAdmin && (
         <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+          <div className="table-scroll-wrapper">
           <table className="data-table">
             <thead>
               <tr>
@@ -427,6 +430,7 @@ export function Team() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 

@@ -1,0 +1,429 @@
+````md id="zc9m2r"
+# Fix Mobile Responsive Design Issues Across the Entire System
+
+The mobile responsiveness of the system is currently broken in multiple sections.
+
+The UI is overflowing, elements are getting cut off, tables are not adapting properly, spacing is inconsistent, and the layout is not optimized for smaller screens.
+
+Screenshots attached for reference.
+
+This needs a COMPLETE responsive overhaul for mobile and tablet devices.
+
+---
+
+# CRITICAL ISSUES OBSERVED
+
+## Services Page Issues
+
+### Problems
+
+- Table overflows horizontally
+- Search area has excessive empty space
+- Table columns are compressed and unreadable
+- Company/service tags overflow badly
+- Pagination alignment is broken
+- Floating action button overlaps content
+- Layout hierarchy is poor on mobile
+- Card spacing is inconsistent
+
+---
+
+## Companies Page Issues
+
+### Problems
+
+- Table width exceeds viewport
+- Linked services badges overflow
+- Columns become unreadable
+- Empty white spaces in filter/search area
+- Table structure is not mobile optimized
+- Pagination/footer alignment issues
+- Content density is too high for small screens
+
+---
+
+# REQUIRED FIXES
+
+# GLOBAL MOBILE RESPONSIVE STANDARDS
+
+Apply responsive fixes ACROSS THE ENTIRE SYSTEM and NOT only these 2 pages.
+
+This includes:
+
+- Dashboard
+- Leads
+- Follow Up
+- Companies
+- Services
+- Team
+- Analytics
+- Permissions
+- Forms
+- Modals
+- Tables
+- Filters
+- Search bars
+- Cards
+- Charts
+- Navigation
+- Floating buttons
+
+---
+
+# REQUIRED BREAKPOINTS
+
+Implement proper responsive breakpoints:
+
+```css
+sm: 640px
+md: 768px
+lg: 1024px
+xl: 1280px
+```
+
+---
+
+# TABLE RESPONSIVENESS FIX
+
+## REQUIRED
+
+Desktop-style wide tables SHOULD NOT render directly on mobile.
+
+Instead:
+
+### Mobile Behaviour
+
+Convert tables into:
+
+- stacked cards
+OR
+- responsive scroll containers
+
+depending on the data type.
+
+---
+
+# OPTION 1 (Preferred)
+
+## Convert rows into mobile cards
+
+Example:
+
+```txt
+Service Name
+CRM Implementation
+
+Category
+Software
+
+Linked Companies
+TechNova Solutions
+FinEdge Partners
+```
+
+This is MUCH cleaner on mobile.
+
+---
+
+# OPTION 2
+
+If keeping tables:
+
+```css
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+```
+
+BUT:
+
+- maintain proper padding
+- prevent text clipping
+- prevent badge overlap
+- ensure readable spacing
+
+---
+
+# SEARCH + FILTER SECTION FIX
+
+Current layout wastes vertical space.
+
+## REQUIRED
+
+On mobile:
+
+- stack filters vertically
+- full width inputs
+- proper spacing between controls
+- remove unnecessary empty containers
+
+Example:
+
+```txt
+[ Search ]
+
+[ Filter 1 ]
+
+[ Filter 2 ]
+```
+
+NOT:
+
+```txt
+tiny compressed horizontal layout
+```
+
+---
+
+# BADGE/TAG FIXES
+
+## Linked Services / Companies badges
+
+Currently:
+
+- overflowing
+- wrapping badly
+- unreadable
+
+## REQUIRED
+
+Use:
+
+```css
+flex-wrap: wrap;
+gap: 6px;
+max-width: 100%;
+```
+
+Badges should:
+
+- wrap cleanly
+- maintain spacing
+- never overflow outside container
+
+---
+
+# FLOATING ACTION BUTTON FIX
+
+Current FAB overlaps content.
+
+## REQUIRED
+
+On mobile:
+
+```css
+bottom: 16px;
+right: 16px;
+z-index: proper;
+```
+
+Also:
+
+- ensure pagination/content is not hidden behind FAB
+- add bottom padding to scroll area
+
+---
+
+# PAGINATION FIX
+
+Current pagination alignment is broken.
+
+## REQUIRED
+
+On mobile:
+
+- stack pagination properly
+- reduce spacing
+- center align controls
+- avoid overflow
+
+Example:
+
+```txt
+Showing 1–5 of 5
+
+< 1 >
+```
+
+---
+
+# SIDEBAR / NAVIGATION FIX
+
+## REQUIRED
+
+Mobile sidebar must:
+
+- collapse correctly
+- animate smoothly
+- not push layout width
+- overlay properly
+- lock background scroll when open
+
+---
+
+# TYPOGRAPHY FIX
+
+## REQUIRED
+
+Adjust typography scaling for mobile:
+
+### Headers
+
+Reduce oversized titles.
+
+### Table Text
+
+Maintain readability:
+
+```css
+font-size: 13px–14px;
+line-height: proper;
+```
+
+### Badges
+
+Prevent compressed text.
+
+---
+
+# SPACING FIXES
+
+## REQUIRED
+
+Audit ALL spacing across mobile:
+
+- margins
+- paddings
+- gaps
+- card spacing
+- container widths
+
+Nothing should feel cramped OR excessively empty.
+
+---
+
+# RESPONSIVE GRID FIXES
+
+Desktop multi-column layouts must stack properly.
+
+Example:
+
+## Desktop
+
+```txt
+[ Card ][ Card ][ Card ]
+```
+
+## Mobile
+
+```txt
+[ Card ]
+[ Card ]
+[ Card ]
+```
+
+---
+
+# DARK MODE RESPONSIVENESS
+
+Ensure ALL responsive fixes work in:
+
+- Light Mode
+- Dark Mode
+
+No color mismatches or broken layouts.
+
+---
+
+# REQUIRED TECHNICAL IMPLEMENTATION
+
+## Use Proper Responsive Utilities
+
+Example:
+
+```tsx
+className="
+w-full
+px-4
+sm:px-6
+lg:px-8
+grid
+grid-cols-1
+md:grid-cols-2
+xl:grid-cols-4
+gap-4
+"
+```
+
+---
+
+# REQUIRED QA TESTING
+
+Test ALL pages on:
+
+## Mobile Devices
+
+- iPhone SE
+- iPhone 14
+- Samsung Galaxy
+- Pixel devices
+
+---
+
+## Tablet Devices
+
+- iPad
+- iPad Pro
+
+---
+
+# REQUIRED TEST SCENARIOS
+
+Verify:
+
+✅ No horizontal overflow  
+✅ No clipped content  
+✅ No overlapping buttons  
+✅ No unreadable text  
+✅ No broken tables  
+✅ No compressed filters  
+✅ No overflowing badges  
+✅ Proper touch spacing  
+✅ Proper scroll behaviour  
+✅ Responsive modals  
+✅ Proper sidebar behaviour  
+✅ Proper pagination layout  
+✅ Consistent spacing everywhere  
+
+---
+
+# IMPORTANT
+
+This is NOT a page-specific fix.
+
+This requires a COMPLETE mobile responsiveness audit and cleanup across the entire application.
+
+The system should feel:
+
+- modern
+- enterprise-grade
+- polished
+- touch-friendly
+- production-ready
+
+on ALL screen sizes.
+
+---
+
+# EXPECTED FINAL RESULT
+
+After implementation:
+
+✅ Fully responsive system  
+✅ Clean mobile layouts  
+✅ No overflow issues  
+✅ Tables optimized for mobile  
+✅ Proper spacing everywhere  
+✅ Modern mobile UX  
+✅ Consistent design system  
+✅ Professional enterprise-quality responsiveness  
+````

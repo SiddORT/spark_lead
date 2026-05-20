@@ -35,7 +35,7 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
   };
 
   return (
-    <div style={{
+    <div className="table-pagination" style={{
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
@@ -45,7 +45,7 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
       flexWrap: "wrap",
       gap: "var(--space-3)",
     }}>
-      <span style={{
+      <span className="table-pagination-info" style={{
         fontSize: "var(--text-xs)",
         color: "var(--text-muted)",
         fontVariantNumeric: "tabular-nums",
@@ -58,7 +58,7 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
         {" "}results
       </span>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+      <div className="table-pagination-controls" style={{ display: "flex", alignItems: "center", gap: 2 }}>
         <NavButton
           onClick={() => onChange(safePage - 1)}
           disabled={safePage === 1}

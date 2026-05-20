@@ -108,6 +108,7 @@ export function Companies() {
           )}
         </div>
 
+        <div className="table-scroll-wrapper">
         <table className="data-table">
           <thead>
             <tr>
@@ -166,6 +167,7 @@ export function Companies() {
             )}
           </tbody>
         </table>
+        </div>
 
         <TablePagination
           page={page}
@@ -321,6 +323,7 @@ export function Services() {
           )}
         </div>
 
+        <div className="table-scroll-wrapper">
         <table className="data-table">
           <thead>
             <tr>
@@ -378,6 +381,7 @@ export function Services() {
             )}
           </tbody>
         </table>
+        </div>
 
         <TablePagination
           page={page}

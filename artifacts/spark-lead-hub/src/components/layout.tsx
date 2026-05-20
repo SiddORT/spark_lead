@@ -33,6 +33,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // Close mobile sidebar on route change
   useEffect(() => { setMobileOpen(false); }, [location]);
 
+  // Lock body scroll while mobile sidebar is open
+  useEffect(() => {
+    if (mobileOpen) document.body.classList.add("sidebar-open");
+    else document.body.classList.remove("sidebar-open");
+    return () => document.body.classList.remove("sidebar-open");
+  }, [mobileOpen]);
+
   // ── Sidebar count badges ──────────────────────────────
   const enabled = !!token;
   const { data: allLeads = [] }     = useGetLeads({ query: { enabled, staleTime: 60_000 } });

@@ -2939,13 +2939,54 @@ a:hover { opacity: 0.85; }
   }
 }
 
+/* ── Additional mobile responsive polish (≤768px) ── */
+@media (max-width: 768px) {
+
+  /* Page header: actions go full width below title */
+  .page-header > .page-actions,
+  .page-header > div:last-child:not(:first-child) {
+    width: 100%;
+  }
+  .page-actions { width: 100%; }
+  .page-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+  /* Table cards: defensive overflow on parent in case wrapper missing */
+  .card:has(> .data-table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Badges in table cells: constrain so they wrap cleanly */
+  .data-table td > div[style*="flex-wrap"] { max-width: 220px; }
+  .badge { white-space: nowrap; }
+
+  /* Pagination: stack on mobile, controls centered */
+  .table-pagination {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--space-3) !important;
+    padding: var(--space-3) var(--space-3) !important;
+    text-align: center;
+  }
+  .table-pagination-info { order: 2; }
+  .table-pagination-controls { order: 1; flex-wrap: wrap; justify-content: center; }
+
+  /* FAB safe space — ensure last content isn't hidden under floating button */
+  .page { padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom, 0px) + 80px); }
+
+  /* Sidebar overlay: lock body scroll when open via class on body */
+  body.sidebar-open { overflow: hidden; }
+}
+
 /* ── Extra-small mobile (≤480px) ── */
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-2); }
-  .page { padding: var(--space-3); }
+  .page { padding: var(--space-3); padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom, 0px) + 80px); }
   .page-title { font-size: clamp(16px, 4.5vw, 22px); }
   .stat-card-value { font-size: 22px; }
   .data-table { min-width: 560px; }
+  .data-table th, .data-table td { padding: var(--space-2) var(--space-3); font-size: var(--text-xs); }
+  .modal-title { font-size: var(--text-base); }
+  .modal-subtitle { font-size: var(--text-xs); }
+  .field-input, .field-textarea, .input { font-size: 16px; }  /* prevent iOS zoom */
 }
 
 /* ── Very small (≤360px) ── */

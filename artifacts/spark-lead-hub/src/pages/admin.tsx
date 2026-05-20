@@ -267,6 +267,7 @@ export function AuditLog() {
         </div>
       </div>
       <div className="table-wrapper">
+        <div className="table-scroll-wrapper">
         <table className="data-table">
           <thead>
             <tr>
@@ -304,6 +305,7 @@ export function AuditLog() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
