@@ -1,95 +1,16 @@
 import { useState } from "react";
 import { Zap, CheckCircle } from "lucide-react";
-
-const inputBase: React.CSSProperties = {
-  width: "100%",
-  height: 44,
-  padding: "0 14px",
-  background: "hsl(222 22% 10% / 0.8)",
-  border: "1px solid hsl(222 16% 22%)",
-  borderRadius: "var(--radius-md)",
-  color: "var(--text-primary)",
-  fontSize: "var(--text-sm)",
-  outline: "none",
-  transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
-  boxSizing: "border-box",
-};
-
-const textareaBase: React.CSSProperties = {
-  ...inputBase,
-  height: "auto",
-  padding: "12px 14px",
-  resize: "none",
-};
-
-function AuthInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <input
-      {...props}
-      style={{
-        ...inputBase,
-        ...(focused ? {
-          borderColor: "var(--teal)",
-          boxShadow: "0 0 0 3px hsl(196 100% 46% / 0.14), 0 0 10px hsl(196 100% 46% / 0.12)",
-          background: "hsl(222 22% 12% / 0.9)",
-        } : {}),
-      }}
-      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
-      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
-    />
-  );
-}
-
-function AuthTextarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <textarea
-      {...props}
-      style={{
-        ...textareaBase,
-        ...(focused ? {
-          borderColor: "var(--teal)",
-          boxShadow: "0 0 0 3px hsl(196 100% 46% / 0.14), 0 0 10px hsl(196 100% 46% / 0.12)",
-          background: "hsl(222 22% 12% / 0.9)",
-        } : {}),
-      }}
-      onFocus={e => { setFocused(true); props.onFocus?.(e); }}
-      onBlur={e => { setFocused(false); props.onBlur?.(e); }}
-    />
-  );
-}
-
-const FieldLabel = ({ children }: { children: React.ReactNode }) => (
-  <label style={{
-    display: "block",
-    fontFamily: "var(--font-sans)",
-    fontSize: "var(--text-xs)",
-    fontWeight: 600,
-    letterSpacing: "0.08em",
-    textTransform: "uppercase",
-    color: "var(--text-secondary)",
-    marginBottom: 6,
-  }}>
-    {children}
-  </label>
-);
-
-const glassCard: React.CSSProperties = {
-  background: "rgba(15, 23, 42, 0.65)",
-  backdropFilter: "blur(20px)",
-  WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255, 255, 255, 0.1)",
-  borderRadius: "var(--radius-lg)",
-  padding: 40,
-  boxShadow: "0 32px 64px hsl(222 30% 2% / 0.7), 0 0 0 1px hsl(196 100% 46% / 0.06)",
-};
+import { useTheme } from "@/components/theme-provider";
 
 export function RequestAccess() {
+  const { theme } = useTheme();
+  const isLight = theme === "light";
+
   const [form, setForm] = useState({ name: "", email: "", department: "", reason: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [btnHover, setBtnHover] = useState(false);
   const [btnActive, setBtnActive] = useState(false);
 
@@ -120,10 +41,121 @@ export function RequestAccess() {
     }
   };
 
+  const fieldFocus = (name: string) => () => setFocusedField(name);
+  const fieldBlur = () => setFocusedField(null);
+
+  const inputStyle = (name: string): React.CSSProperties => {
+    const focused = focusedField === name;
+    if (isLight) {
+      return {
+        width: "100%",
+        height: 52,
+        padding: "0 16px",
+        background: focused ? "#ffffff" : "#f8fbff",
+        border: `1.5px solid ${focused ? "#0ea5e9" : "#cfe0f2"}`,
+        borderRadius: 14,
+        color: "#0f172a",
+        fontSize: 15,
+        fontWeight: 500,
+        outline: "none",
+        transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
+        boxSizing: "border-box",
+        boxShadow: focused ? "0 0 0 4px rgba(14, 165, 233, 0.12)" : "none",
+        fontFamily: "var(--font-sans)",
+      };
+    }
+    return {
+      width: "100%",
+      height: 52,
+      padding: "0 16px",
+      background: focused ? "hsl(222 22% 12% / 0.9)" : "hsl(222 22% 10% / 0.8)",
+      border: `1.5px solid ${focused ? "var(--teal)" : "hsl(222 16% 22%)"}`,
+      borderRadius: 14,
+      color: "var(--text-primary)",
+      fontSize: 15,
+      fontWeight: 500,
+      outline: "none",
+      transition: "border-color 150ms ease, box-shadow 150ms ease, background 150ms ease",
+      boxSizing: "border-box",
+      boxShadow: focused ? "0 0 0 3px hsl(196 100% 46% / 0.14), 0 0 10px hsl(196 100% 46% / 0.12)" : "none",
+      fontFamily: "var(--font-sans)",
+    };
+  };
+
+  const textareaStyle = (name: string): React.CSSProperties => ({
+    ...inputStyle(name),
+    height: "auto",
+    minHeight: 140,
+    padding: 16,
+    borderRadius: 16,
+    resize: "none" as const,
+    lineHeight: 1.65,
+  });
+
+  const cardStyle: React.CSSProperties = isLight ? {
+    background: "#ffffff",
+    border: "1px solid #dbe7f3",
+    borderRadius: 24,
+    padding: 32,
+    boxShadow: "0 8px 24px rgba(15, 23, 42, 0.06)",
+  } : {
+    background: "rgba(15, 23, 42, 0.65)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    border: "1px solid rgba(255, 255, 255, 0.1)",
+    borderRadius: 24,
+    padding: 32,
+    boxShadow: "0 32px 64px hsl(222 30% 2% / 0.7), 0 0 0 1px hsl(196 100% 46% / 0.06)",
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontFamily: "var(--font-sans)",
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase",
+    color: isLight ? "#64748b" : "var(--text-secondary)",
+    marginBottom: 7,
+  };
+
+  const btnStyle: React.CSSProperties = {
+    width: "100%",
+    height: 52,
+    marginTop: 4,
+    background: isLight
+      ? (loading ? "rgba(14,165,233,0.6)" : btnActive ? "linear-gradient(135deg, #0284c7, #0173ae)" : "linear-gradient(135deg, #0ea5e9, #0284c7)")
+      : "var(--teal)",
+    color: isLight ? "#ffffff" : "hsl(222 22% 6%)",
+    border: "none",
+    borderRadius: 14,
+    fontSize: 15,
+    fontWeight: 600,
+    fontFamily: "var(--font-sans)",
+    cursor: loading ? "not-allowed" : "pointer",
+    opacity: loading ? 0.7 : 1,
+    transform: btnActive ? "scale(0.98)" : "scale(1)",
+    boxShadow: isLight
+      ? (btnHover && !loading ? "0 6px 20px rgba(14, 165, 233, 0.40)" : "0 2px 10px rgba(14, 165, 233, 0.22)")
+      : (btnHover && !loading ? "0 0 20px hsl(196 100% 46% / 0.35)" : "none"),
+    transition: "transform 120ms ease, box-shadow 180ms ease, opacity 150ms ease, background 150ms ease",
+  };
+
+  const dividerStyle: React.CSSProperties = {
+    marginTop: 24,
+    paddingTop: 20,
+    borderTop: `1px solid ${isLight ? "#dbe7f3" : "rgba(255,255,255,0.07)"}`,
+    textAlign: "center",
+    fontSize: 14,
+    color: isLight ? "#64748b" : "var(--text-muted)",
+  };
+
   return (
     <div style={{
       minHeight: "100vh",
-      background: "var(--bg-base)",
+      background: isLight
+        ? "linear-gradient(135deg, #eef5fb 0%, #f4f7fb 50%, #eaf2fb 100%)"
+        : "var(--bg-base)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -137,31 +169,31 @@ export function RequestAccess() {
           position: "absolute", top: "50%", left: "50%",
           transform: "translate(-50%, -60%)",
           width: 600, height: 600,
-          background: "radial-gradient(ellipse at center, hsl(196 100% 46% / 0.10) 0%, transparent 70%)",
+          background: `radial-gradient(ellipse at center, hsl(196 100% 46% / ${isLight ? "0.06" : "0.10"}) 0%, transparent 70%)`,
         }} />
         <div style={{
           position: "absolute", top: "-80px", left: "-80px",
           width: 360, height: 360,
-          background: "radial-gradient(ellipse at center, hsl(196 100% 46% / 0.09) 0%, transparent 70%)",
+          background: `radial-gradient(ellipse at center, hsl(196 100% 46% / ${isLight ? "0.05" : "0.09"}) 0%, transparent 70%)`,
         }} />
         <div style={{
           position: "absolute", bottom: "-80px", right: "-80px",
           width: 360, height: 360,
-          background: "radial-gradient(ellipse at center, hsl(258 89% 66% / 0.09) 0%, transparent 70%)",
+          background: `radial-gradient(ellipse at center, hsl(258 89% 66% / ${isLight ? "0.05" : "0.09"}) 0%, transparent 70%)`,
         }} />
       </div>
 
-      <div style={{ width: "100%", maxWidth: 460, position: "relative", zIndex: 1, animation: "authFadeIn 0.4s ease both" }}>
+      <div style={{ width: "100%", maxWidth: 480, position: "relative", zIndex: 1, animation: "authFadeIn 0.4s ease both" }}>
         {/* Brand header */}
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             width: 52, height: 52,
-            background: "hsl(196 100% 46% / 0.12)",
-            border: "1px solid hsl(196 100% 46% / 0.3)",
+            background: isLight ? "rgba(14, 165, 233, 0.10)" : "hsl(196 100% 46% / 0.12)",
+            border: `1px solid ${isLight ? "rgba(14, 165, 233, 0.25)" : "hsl(196 100% 46% / 0.3)"}`,
             borderRadius: "var(--radius-lg)",
             marginBottom: 14,
-            boxShadow: "0 0 20px hsl(196 100% 46% / 0.18)",
+            boxShadow: isLight ? "0 4px 16px rgba(14, 165, 233, 0.12)" : "0 0 20px hsl(196 100% 46% / 0.18)",
           }}>
             <Zap size={22} style={{ color: "var(--teal)" }} />
           </div>
@@ -169,27 +201,26 @@ export function RequestAccess() {
             fontFamily: "var(--font-display)",
             fontSize: 28,
             fontWeight: 800,
-            color: "var(--text-primary)",
+            color: isLight ? "#0f172a" : "var(--text-primary)",
             letterSpacing: "-0.02em",
             marginBottom: 6,
           }}>
             Request Access
           </div>
-          <div style={{ fontSize: "var(--text-sm)", color: "var(--text-secondary)" }}>
+          <div style={{ fontSize: 14, color: isLight ? "#64748b" : "var(--text-secondary)" }}>
             Submit your details for team whitelisting.
           </div>
         </div>
 
         {submitted ? (
-          // Success state
-          <div style={{ ...glassCard, textAlign: "center", animation: "authFadeIn 0.3s ease both" }}>
+          <div style={{ ...cardStyle, textAlign: "center", animation: "authFadeIn 0.3s ease both" }}>
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "center",
               width: 72, height: 72,
-              background: "hsl(196 100% 46% / 0.1)",
+              background: isLight ? "rgba(14, 165, 233, 0.08)" : "hsl(196 100% 46% / 0.1)",
               borderRadius: "50%",
               margin: "0 auto 20px",
-              boxShadow: "0 0 32px hsl(196 100% 46% / 0.3)",
+              boxShadow: isLight ? "0 4px 20px rgba(14, 165, 233, 0.15)" : "0 0 32px hsl(196 100% 46% / 0.3)",
             }}>
               <CheckCircle size={36} style={{ color: "var(--teal)" }} />
             </div>
@@ -197,16 +228,15 @@ export function RequestAccess() {
               fontFamily: "var(--font-display)",
               fontSize: "var(--text-xl)",
               fontWeight: 700,
-              color: "var(--text-primary)",
+              color: isLight ? "#0f172a" : "var(--text-primary)",
               marginBottom: 12,
             }}>
               Request Received
             </div>
             <div style={{
-              fontSize: "var(--text-sm)",
-              color: "var(--text-secondary)",
+              fontSize: 14,
+              color: isLight ? "#64748b" : "var(--text-secondary)",
               lineHeight: 1.6,
-              marginBottom: 28,
               maxWidth: 340,
               margin: "0 auto 28px",
             }}>
@@ -216,37 +246,39 @@ export function RequestAccess() {
               href="/auth"
               style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
-                height: 44, padding: "0 28px",
-                background: "var(--teal)",
-                color: "hsl(222 22% 6%)",
-                borderRadius: "var(--radius-md)",
-                fontSize: "var(--text-sm)",
+                height: 48, padding: "0 28px",
+                background: isLight ? "linear-gradient(135deg, #0ea5e9, #0284c7)" : "var(--teal)",
+                color: isLight ? "#ffffff" : "hsl(222 22% 6%)",
+                borderRadius: 14,
+                fontSize: 14,
                 fontWeight: 700,
                 textDecoration: "none",
+                boxShadow: isLight ? "0 2px 10px rgba(14,165,233,0.25)" : "none",
                 transition: "filter 150ms ease, box-shadow 150ms ease",
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.filter = "brightness(1.12)";
-                e.currentTarget.style.boxShadow = "0 0 20px hsl(196 100% 46% / 0.3)";
+                e.currentTarget.style.filter = "brightness(1.08)";
+                e.currentTarget.style.boxShadow = isLight
+                  ? "0 6px 20px rgba(14,165,233,0.40)"
+                  : "0 0 20px hsl(196 100% 46% / 0.3)";
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.filter = "none";
-                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.boxShadow = isLight ? "0 2px 10px rgba(14,165,233,0.25)" : "none";
               }}
             >
               Back to Login
             </a>
           </div>
         ) : (
-          // Form
-          <div style={glassCard}>
+          <div style={cardStyle}>
             {error && (
               <div style={{
                 marginBottom: 20, padding: "10px 14px",
-                borderRadius: "var(--radius-md)",
-                background: "hsl(0 75% 50% / 0.1)",
-                border: "1px solid hsl(0 75% 50% / 0.3)",
-                color: "var(--danger)", fontSize: "var(--text-sm)",
+                borderRadius: 12,
+                background: isLight ? "rgba(239, 68, 68, 0.06)" : "hsl(0 75% 50% / 0.1)",
+                border: `1px solid ${isLight ? "rgba(239, 68, 68, 0.20)" : "hsl(0 75% 50% / 0.3)"}`,
+                color: "var(--danger)", fontSize: 14,
               }}>
                 {error}
               </div>
@@ -255,42 +287,54 @@ export function RequestAccess() {
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                 <div>
-                  <FieldLabel>Full Name *</FieldLabel>
-                  <AuthInput
+                  <label style={labelStyle}>Full Name *</label>
+                  <input
                     required
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="John Doe"
+                    style={inputStyle("name")}
+                    onFocus={fieldFocus("name")}
+                    onBlur={fieldBlur}
                   />
                 </div>
                 <div>
-                  <FieldLabel>Work Email *</FieldLabel>
-                  <AuthInput
+                  <label style={labelStyle}>Work Email *</label>
+                  <input
                     type="email"
                     required
                     value={form.email}
                     onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                     placeholder="you@company.com"
+                    style={inputStyle("email")}
+                    onFocus={fieldFocus("email")}
+                    onBlur={fieldBlur}
                   />
                 </div>
               </div>
 
               <div>
-                <FieldLabel>Department</FieldLabel>
-                <AuthInput
+                <label style={labelStyle}>Department</label>
+                <input
                   value={form.department}
                   onChange={e => setForm(f => ({ ...f, department: e.target.value }))}
                   placeholder="Sales, Marketing, etc."
+                  style={inputStyle("department")}
+                  onFocus={fieldFocus("department")}
+                  onBlur={fieldBlur}
                 />
               </div>
 
               <div>
-                <FieldLabel>Reason for Access</FieldLabel>
-                <AuthTextarea
+                <label style={labelStyle}>Reason for Access</label>
+                <textarea
                   value={form.reason}
                   onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
                   placeholder="Briefly describe why you need access to Spark Lead Hub…"
                   rows={4}
+                  style={textareaStyle("reason")}
+                  onFocus={fieldFocus("reason")}
+                  onBlur={fieldBlur}
                 />
               </div>
 
@@ -301,42 +345,19 @@ export function RequestAccess() {
                 onMouseLeave={() => { setBtnHover(false); setBtnActive(false); }}
                 onMouseDown={() => setBtnActive(true)}
                 onMouseUp={() => setBtnActive(false)}
-                style={{
-                  width: "100%",
-                  height: 44,
-                  marginTop: 4,
-                  background: "var(--teal)",
-                  color: "hsl(222 22% 6%)",
-                  border: "none",
-                  borderRadius: "var(--radius-md)",
-                  fontSize: "var(--text-sm)",
-                  fontWeight: 700,
-                  fontFamily: "var(--font-sans)",
-                  cursor: loading ? "not-allowed" : "pointer",
-                  opacity: loading ? 0.6 : 1,
-                  transform: btnActive ? "scale(0.97)" : "scale(1)",
-                  filter: btnHover && !loading ? "brightness(1.12)" : "none",
-                  boxShadow: btnHover && !loading ? "0 0 20px hsl(196 100% 46% / 0.35)" : "none",
-                  transition: "transform 120ms ease, filter 150ms ease, box-shadow 150ms ease",
-                }}
+                style={btnStyle}
               >
                 {loading ? "Submitting…" : "Submit Access Request"}
               </button>
             </form>
 
-            <div style={{
-              marginTop: 24,
-              paddingTop: 20,
-              borderTop: "1px solid rgba(255,255,255,0.07)",
-              textAlign: "center",
-              fontSize: "var(--text-sm)",
-            }}>
+            <div style={dividerStyle}>
               Already have access?{" "}
               <a
                 href="/auth"
-                style={{ color: "var(--text-muted)", textDecoration: "none", fontWeight: 500, transition: "color 150ms ease" }}
-                onMouseEnter={e => (e.currentTarget.style.color = "var(--teal)")}
-                onMouseLeave={e => (e.currentTarget.style.color = "var(--text-muted)")}
+                style={{ color: "var(--teal)", textDecoration: "none", fontWeight: 600, transition: "opacity 150ms ease" }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = "0.8")}
+                onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
               >
                 Sign In
               </a>

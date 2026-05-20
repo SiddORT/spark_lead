@@ -63,21 +63,22 @@ export function AuthPage() {
 
   const inputStyle = (focused: boolean): React.CSSProperties => ({
     width: "100%",
-    height: 50,
+    height: 52,
     padding: "0 16px",
     background: isLight
-      ? focused ? "#ffffff" : "rgba(0,0,0,0.03)"
-      : focused ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.04)",
+      ? (focused ? "#ffffff" : "#f8fbff")
+      : (focused ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.04)"),
     border: `1.5px solid ${focused
-      ? "#00AEEC"
-      : isLight ? "rgba(0,0,0,0.14)" : "rgba(255,255,255,0.10)"}`,
-    borderRadius: 12,
-    color: isLight ? "#0d0d0d" : "#f0f4f8",
+      ? (isLight ? "#0ea5e9" : "#00AEEC")
+      : isLight ? "#cfe0f2" : "rgba(255,255,255,0.10)"}`,
+    borderRadius: 14,
+    color: isLight ? "#0f172a" : "#f0f4f8",
     fontSize: 15,
+    fontWeight: 500,
     outline: "none",
     transition: "border-color 180ms ease, box-shadow 180ms ease, background 180ms ease",
     boxSizing: "border-box",
-    boxShadow: focused ? "0 0 0 4px rgba(0,174,236,0.12)" : "none",
+    boxShadow: focused ? `0 0 0 4px rgba(${isLight ? "14,165,233" : "0,174,236"},0.12)` : "none",
     fontFamily: "var(--font-body)",
   });
 

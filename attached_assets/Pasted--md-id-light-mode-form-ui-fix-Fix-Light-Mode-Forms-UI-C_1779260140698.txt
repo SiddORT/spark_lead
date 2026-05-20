@@ -1,0 +1,368 @@
+````md id="light-mode-form-ui-fix"
+# Fix Light Mode Forms UI Consistency Across The System
+
+Several forms and modal components in LIGHT MODE are visually inconsistent and do not match the polished design language used throughout the rest of the system.
+
+The current light-mode forms look:
+- dull
+- washed out
+- visually disconnected
+- improperly contrasted
+- inconsistent with cards/tables/navigation styling
+- unpolished compared to dark mode
+
+This needs a COMPLETE UI consistency pass.
+
+---
+
+# CURRENT ISSUES OBSERVED
+
+## Problems Seen In Attached Screenshots
+
+### Invite User Modal
+
+Issues:
+- dark grey form section inside light modal looks incorrect
+- mixed theme styling inside same modal
+- inputs appear disconnected
+- modal body/background contrast is poor
+- typography hierarchy is weak
+- fields look outdated
+
+---
+
+### Request Access Form
+
+Issues:
+- form container looks overly dark and muddy
+- input fields look excessively black
+- light mode appearance is inconsistent
+- shadows/glow are too heavy
+- visual hierarchy is broken
+- spacing/padding is not aligned with rest of system
+
+---
+
+# REQUIRED DESIGN DIRECTION
+
+LIGHT MODE should feel:
+
+✅ clean  
+✅ modern  
+✅ soft  
+✅ premium  
+✅ enterprise-grade  
+✅ airy  
+✅ visually balanced  
+
+NOT:
+❌ muddy  
+❌ dark-heavy  
+❌ mixed-theme  
+❌ over-shadowed  
+❌ low-contrast  
+
+---
+
+# REQUIRED GLOBAL LIGHT MODE FORM SYSTEM
+
+Create a SINGLE reusable light-mode form design system.
+
+This must apply consistently to:
+
+- modals
+- forms
+- request access
+- invite user
+- auth pages
+- dropdowns
+- inputs
+- textareas
+- selects
+- dialogs
+
+---
+
+# REQUIRED LIGHT MODE COLORS
+
+## Page Background
+
+```css
+background: #f4f7fb;
+```
+
+---
+
+## Form Card Background
+
+```css
+background: #ffffff;
+border: 1px solid #dbe7f3;
+```
+
+---
+
+## Input Background
+
+```css
+background: #f8fbff;
+border: 1px solid #cfe0f2;
+```
+
+---
+
+## Input Focus
+
+```css
+border-color: #0ea5e9;
+box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+```
+
+---
+
+## Primary Text
+
+```css
+color: #0f172a;
+```
+
+---
+
+## Secondary Text
+
+```css
+color: #64748b;
+```
+
+---
+
+# REQUIRED FORM CARD DESIGN
+
+## Correct Styling
+
+```css
+border-radius: 24px;
+padding: 32px;
+background: #ffffff;
+
+border: 1px solid #dbe7f3;
+
+box-shadow:
+  0 8px 24px rgba(15, 23, 42, 0.06);
+```
+
+---
+
+# REMOVE THESE ISSUES
+
+## REMOVE
+
+❌ dark grey form bodies in light mode  
+❌ black input backgrounds  
+❌ harsh shadows  
+❌ mixed dark/light sections  
+❌ muddy overlays  
+❌ inconsistent spacing  
+❌ old-style modal appearance  
+
+---
+
+# REQUIRED INPUT DESIGN
+
+## Inputs Must Use
+
+```css
+height: 52px;
+border-radius: 14px;
+padding: 0 16px;
+
+font-size: 15px;
+font-weight: 500;
+```
+
+---
+
+# REQUIRED TEXTAREA DESIGN
+
+```css
+min-height: 140px;
+padding: 16px;
+border-radius: 16px;
+```
+
+---
+
+# REQUIRED BUTTON DESIGN
+
+Primary buttons should match system CTA styling:
+
+```css
+background: linear-gradient(
+  135deg,
+  #0ea5e9,
+  #0284c7
+);
+
+color: white;
+font-weight: 600;
+
+border-radius: 14px;
+height: 52px;
+```
+
+---
+
+# REQUIRED MODAL FIXES
+
+## Modal Background
+
+```css
+background: rgba(15, 23, 42, 0.35);
+backdrop-filter: blur(8px);
+```
+
+---
+
+## Modal Container
+
+```css
+background: #ffffff;
+border-radius: 24px;
+
+border: 1px solid #dbe7f3;
+```
+
+---
+
+# REQUIRED TYPOGRAPHY CONSISTENCY
+
+Use SAME typography family as rest of system.
+
+Current issue:
+- some forms appear to use different font rendering/styling
+
+Ensure:
+- headings
+- labels
+- placeholders
+- helper text
+- buttons
+
+all use shared typography tokens.
+
+---
+
+# REQUIRED FORM LABEL STYLING
+
+```css
+font-size: 12px;
+font-weight: 700;
+letter-spacing: 0.08em;
+text-transform: uppercase;
+
+color: #64748b;
+```
+
+---
+
+# REQUIRED PLACEHOLDER STYLING
+
+```css
+color: #94a3b8;
+```
+
+---
+
+# REQUIRED RESPONSIVENESS
+
+Ensure:
+- modals scale properly
+- forms remain centered
+- no overflow
+- proper spacing on smaller screens
+
+---
+
+# REQUIRED COMPONENT STANDARDIZATION
+
+Create reusable components:
+
+- `FormCard`
+- `InputField`
+- `ModalContainer`
+- `PrimaryButton`
+- `FormSection`
+
+DO NOT style each form independently.
+
+---
+
+# REQUIRED LIGHT/DARK MODE SEPARATION
+
+Current issue suggests:
+- dark mode styles leaking into light mode
+
+Fix theme architecture properly.
+
+Ensure:
+- light theme styles are isolated
+- dark theme styles are isolated
+- no conflicting utility classes
+
+---
+
+# REQUIRED QA CHECKS
+
+Verify:
+
+## Invite User Modal
+
+✅ Entire modal uses proper light theme  
+✅ No dark grey body section  
+✅ Inputs look modern and premium  
+✅ Typography hierarchy improved  
+
+---
+
+## Request Access Form
+
+✅ Form card is clean white/light surface  
+✅ Inputs are soft blue-tinted  
+✅ Proper shadows used  
+✅ Button styling matches system  
+
+---
+
+## Entire System
+
+✅ All forms visually consistent  
+✅ Shared design language maintained  
+✅ Light mode feels polished  
+✅ Enterprise-grade UI quality achieved  
+
+---
+
+# IMPORTANT
+
+DO NOT:
+
+❌ mix dark backgrounds in light mode  
+❌ use pure black input fields  
+❌ overuse blur/glow  
+❌ use inconsistent border radii  
+❌ create page-specific form styles  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ Light mode forms look clean and modern  
+✅ Forms visually match rest of system  
+✅ Modal styling is premium and balanced  
+✅ Inputs feel polished and accessible  
+✅ Typography is consistent everywhere  
+✅ No dark-theme leakage exists  
+✅ Entire UI feels cohesive and production-ready  
+````

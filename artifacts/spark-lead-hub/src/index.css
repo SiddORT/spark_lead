@@ -3108,3 +3108,159 @@ body { overflow-x: hidden; }
   transition: transform var(--t-base), opacity var(--t-base);
 }
 
+/* ============================================
+   LIGHT MODE — FORM & MODAL DESIGN SYSTEM
+   Clean, modern, enterprise-grade
+   ============================================ */
+
+/* ── Glass override: Dialog uses .glass-strong which is hardcoded dark ── */
+[data-theme="light"] .glass-strong {
+  background: #ffffff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: #dbe7f3;
+}
+
+/* ── Modal container ── */
+[data-theme="light"] .modal {
+  background: #ffffff;
+  border: 1px solid #dbe7f3;
+  box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+[data-theme="light"] .modal-backdrop {
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+[data-theme="light"] .modal-head {
+  background: #f8fbff;
+  border-bottom-color: #dbe7f3;
+}
+[data-theme="light"] .modal-body {
+  background: #ffffff;
+}
+[data-theme="light"] .modal-foot {
+  background: #f8fbff;
+  border-top-color: #dbe7f3;
+}
+[data-theme="light"] .modal-close {
+  background: #f1f5f9;
+  border-color: #e2ecf6;
+  color: #64748b;
+}
+[data-theme="light"] .modal-close:hover {
+  background: #e5eef8;
+  color: #0f172a;
+}
+
+/* ── Form inputs — soft blue-tinted, airy ── */
+[data-theme="light"] .field-input,
+[data-theme="light"] .form-input,
+[data-theme="light"] .field-select,
+[data-theme="light"] .form-select {
+  background: #f8fbff;
+  border-color: #cfe0f2;
+  color: #0f172a;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 500;
+}
+[data-theme="light"] .field-textarea,
+[data-theme="light"] .form-textarea {
+  background: #f8fbff;
+  border-color: #cfe0f2;
+  color: #0f172a;
+  height: auto;
+  min-height: 140px;
+  padding: 16px;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 500;
+}
+[data-theme="light"] .field-input::placeholder,
+[data-theme="light"] .form-input::placeholder,
+[data-theme="light"] .field-textarea::placeholder,
+[data-theme="light"] .form-textarea::placeholder {
+  color: #94a3b8;
+}
+[data-theme="light"] .field-input:hover,
+[data-theme="light"] .form-input:hover,
+[data-theme="light"] .field-select:hover {
+  border-color: #a8cae8;
+}
+[data-theme="light"] .field-input:focus,
+[data-theme="light"] .form-input:focus,
+[data-theme="light"] .field-select:focus,
+[data-theme="light"] .field-textarea:focus,
+[data-theme="light"] .form-textarea:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+  background: #ffffff;
+}
+
+/* ── Form field labels ── */
+[data-theme="light"] .field-label,
+[data-theme="light"] .form-label {
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+[data-theme="light"] .field-helper {
+  color: #94a3b8;
+}
+
+/* ── Primary button — gradient sky blue ── */
+[data-theme="light"] .btn-primary {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border-color: transparent;
+  color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.25);
+  font-weight: 600;
+}
+[data-theme="light"] .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  box-shadow: 0 4px 18px rgba(14, 165, 233, 0.38);
+  transform: translateY(-1px);
+}
+[data-theme="light"] .btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.20);
+}
+
+/* ── Ghost button in light mode ── */
+[data-theme="light"] .btn-ghost {
+  color: #64748b;
+  border-color: transparent;
+}
+[data-theme="light"] .btn-ghost:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ── Invite link box ── */
+[data-theme="light"] .invite-link-box {
+  background: #f4f9ff;
+  border-color: #cfe0f2;
+}
+
+/* ── Cselect (custom select) in light mode ── */
+[data-theme="light"] .cselect-trigger {
+  background: #f8fbff;
+  border-color: #cfe0f2;
+  color: #0f172a;
+  height: 52px;
+  border-radius: 14px;
+  font-size: 15px;
+}
+[data-theme="light"] .cselect-trigger:hover {
+  border-color: #a8cae8;
+}
+[data-theme="light"] .cselect-trigger.open {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
+  background: #ffffff;
+}
+
