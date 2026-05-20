@@ -32,13 +32,46 @@ export async function requireAuth(req: AuthRequest, res: Response, next: NextFun
     return;
   }
   const token = header.slice(7);
+  let payload: JwtPayload;
   try {
-    const payload = verifyToken(token);
-    req.user = payload;
-    next();
+    payload = verifyToken(token);
   } catch {
     res.status(401).json({ message: "Invalid token" });
+    return;
   }
+
+  // Enforce account-active state on EVERY authenticated request so that
+  // disabling a user (or removing them from the whitelist) takes effect
+  // immediately — not at JWT expiry. Returns 401 so the frontend's global
+  // unauthorized handler signs the user out cleanly.
+  try {
+    const [user] = await db
+      .select({ id: usersTable.id, email: usersTable.email })
+      .from(usersTable)
+      .where(eq(usersTable.id, payload.userId))
+      .limit(1);
+    if (!user) {
+      res.status(401).json({ message: "Account no longer exists", code: "account_deleted" });
+      return;
+    }
+    const [wl] = await db
+      .select({ status: whitelistedUsersTable.status })
+      .from(whitelistedUsersTable)
+      .where(eq(whitelistedUsersTable.email, user.email))
+      .limit(1);
+    if (!wl || wl.status !== "active") {
+      res.status(401).json({ message: "Account is not active", code: "account_disabled" });
+      return;
+    }
+  } catch (err) {
+    // If the lookup itself fails (DB blip), do NOT lock the user out — let
+    // the request proceed with the JWT-verified identity. The next request
+    // will re-check. This avoids a DB outage cascading into mass logout.
+    req.log?.warn({ err, userId: payload.userId }, "requireAuth: account-status lookup failed, allowing request");
+  }
+
+  req.user = payload;
+  next();
 }
 
 export async function requireAdmin(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {

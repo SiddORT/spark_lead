@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, ProtectedRoute, useAuth } from "@/components/auth-provider";
 import { Layout } from "@/components/layout";
@@ -75,6 +75,25 @@ function AccessDeniedView() {
   );
 }
 
+// Friendly labels for permission-revoked toasts. Falls back to title-casing the
+// resource key if no explicit label is registered.
+const RESOURCE_LABELS: Record<string, string> = {
+  reports: "Analytics",
+  leads: "Leads",
+  team: "Team Management",
+  companies: "Companies",
+  services: "Services",
+  pipeline: "Pipeline",
+  audit: "Audit Log",
+  admin: "Admin Settings",
+};
+
+function labelFor(resource: string | undefined, adminOnly: boolean): string {
+  if (adminOnly) return "Admin Settings";
+  if (!resource) return "this section";
+  return RESOURCE_LABELS[resource] ?? resource.charAt(0).toUpperCase() + resource.slice(1);
+}
+
 function PermissionRoute({
   resource,
   action,
@@ -88,6 +107,7 @@ function PermissionRoute({
 }) {
   const { hasPermission, user, loading } = useAuth();
   const [, setLocation] = useLocation();
+  const wasAllowedRef = useRef<boolean | null>(null);
 
   const allowed =
     adminOnly
@@ -96,13 +116,25 @@ function PermissionRoute({
       ? hasPermission(resource, action)
       : true;
 
-  // Live redirect: when permission is revoked while the user is already on this
-  // page, redirect immediately instead of leaving a broken view in place.
+  // Live transition: when permission is revoked WHILE the user is actively
+  // viewing this page, show a toast explaining what happened and send them to
+  // the dashboard — NOT to /access-denied (which is the whitelist-rejection
+  // page and would falsely suggest the account itself was disabled).
+  //
+  // For deep-links to a page the user never had access to, we fall through to
+  // the inline <AccessDeniedView /> below — they stay inside the app shell,
+  // still logged in, and the sidebar/nav remain intact.
   useEffect(() => {
-    if (!loading && user && !allowed) {
-      setLocation("/access-denied");
+    if (loading || !user) return;
+    const prevAllowed = wasAllowedRef.current;
+    if (prevAllowed === true && !allowed) {
+      toast.error(
+        `Your access to ${labelFor(resource, adminOnly)} has been revoked by the administrator.`
+      );
+      setLocation("/");
     }
-  }, [allowed, loading, user, setLocation]);
+    wasAllowedRef.current = allowed;
+  }, [allowed, loading, user, setLocation, adminOnly, resource]);
 
   if (!allowed) return <AccessDeniedView />;
   return <>{children}</>;

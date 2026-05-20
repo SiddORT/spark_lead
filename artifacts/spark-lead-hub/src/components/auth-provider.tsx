@@ -146,9 +146,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, [signOut]);
 
-  // Close modal and redirect if auth error occurs (e.g. token rejected by /me)
+  // Only sign the user out on REAL auth failures from /me — not on transient
+  // network/5xx errors, and NOT just because permissions were toggled.
+  //   • 401 is already handled globally by setUnauthorizedHandler → signOut.
+  //   • 404 means the user row no longer exists (account deleted) — sign out.
+  // Everything else (500, network blips, etc.) is left alone so the user keeps
+  // their session and the next 3-second poll can recover.
   useEffect(() => {
-    if (error) {
+    const status = (error as any)?.response?.status;
+    if (status === 404) {
       signOut();
     }
   }, [error, signOut]);
@@ -384,16 +390,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { token, loading, isWhitelisted } = useAuth();
+  const { token, loading, isWhitelisted, signOut } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!loading && !token) {
       setLocation('/auth');
     } else if (!loading && token && isWhitelisted === false) {
-      setLocation('/access-denied');
+      // Whitelist was revoked mid-session (or the account was disabled).
+      // This IS an authentication failure: clear the session, then land
+      // on the access-denied page so the user sees the proper reason.
+      signOut();
+      setLocation('/access-denied?reason=deactivated');
     }
-  }, [loading, token, isWhitelisted, setLocation]);
+  }, [loading, token, isWhitelisted, setLocation, signOut]);
 
   if (loading || !token || isWhitelisted === false) {
     return (
