@@ -717,14 +717,22 @@ export function FollowUp() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
               <span style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
-                {sortedLeads.length === 0
-                  ? "No results"
-                  : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, sortedLeads.length)} of ${sortedLeads.length}`}
+                {(() => {
+                  const total = sortedLeads.length;
+                  const p  = Number.isFinite(page) && page > 0 ? page : 1;
+                  const ps = Number.isFinite(pageSize) && pageSize > 0 ? pageSize : 10;
+                  if (total === 0) return "No results";
+                  const s = (p - 1) * ps + 1;
+                  const e = Math.min(p * ps, total);
+                  return `${s}–${e} of ${total}`;
+                })()}
               </span>
               <TablePagination
                 page={page}
                 totalPages={totalPages}
-                onPageChange={setPage}
+                total={sortedLeads.length}
+                pageSize={pageSize}
+                onChange={setPage}
               />
             </div>
           </div>

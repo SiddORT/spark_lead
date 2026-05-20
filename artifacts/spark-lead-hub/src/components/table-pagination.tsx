@@ -10,18 +10,28 @@ interface TablePaginationProps {
 }
 
 export function TablePagination({ page, totalPages, total, pageSize, onChange }: TablePaginationProps) {
-  if (total === 0) return null;
+  // Defensive coercion — never trust upstream values can be undefined/null/NaN
+  const safeTotal      = Number.isFinite(Number(total))      ? Math.max(0, Number(total))      : 0;
+  const safePageSize   = Number.isFinite(Number(pageSize))   && Number(pageSize)   > 0 ? Number(pageSize)   : 10;
+  const safeTotalPages = Number.isFinite(Number(totalPages)) && Number(totalPages) > 0
+    ? Number(totalPages)
+    : Math.max(1, Math.ceil(safeTotal / safePageSize));
+  const safePage = Number.isFinite(Number(page)) && Number(page) > 0
+    ? Math.min(Number(page), safeTotalPages)
+    : 1;
 
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total);
+  if (safeTotal === 0) return null;
+
+  const start = (safePage - 1) * safePageSize + 1;
+  const end   = Math.min(safePage * safePageSize, safeTotal);
 
   const getPageNumbers = (): (number | "...")[] => {
-    if (totalPages <= 7) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (safeTotalPages <= 7) {
+      return Array.from({ length: safeTotalPages }, (_, i) => i + 1);
     }
-    if (page <= 4) return [1, 2, 3, 4, 5, "...", totalPages];
-    if (page >= totalPages - 3) return [1, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    return [1, "...", page - 1, page, page + 1, "...", totalPages];
+    if (safePage <= 4) return [1, 2, 3, 4, 5, "...", safeTotalPages];
+    if (safePage >= safeTotalPages - 3) return [1, "...", safeTotalPages - 4, safeTotalPages - 3, safeTotalPages - 2, safeTotalPages - 1, safeTotalPages];
+    return [1, "...", safePage - 1, safePage, safePage + 1, "...", safeTotalPages];
   };
 
   return (
@@ -50,8 +60,8 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
 
       <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
         <NavButton
-          onClick={() => onChange(page - 1)}
-          disabled={page === 1}
+          onClick={() => onChange(safePage - 1)}
+          disabled={safePage === 1}
           title="Previous page"
         >
           <ChevronLeft size={14} />
@@ -70,13 +80,13 @@ export function TablePagination({ page, totalPages, total, pageSize, onChange }:
               …
             </span>
           ) : (
-            <PageButton key={p} num={p as number} active={page === p} onClick={() => onChange(p as number)} />
+            <PageButton key={p} num={p as number} active={safePage === p} onClick={() => onChange(p as number)} />
           )
         )}
 
         <NavButton
-          onClick={() => onChange(page + 1)}
-          disabled={page === totalPages}
+          onClick={() => onChange(safePage + 1)}
+          disabled={safePage >= safeTotalPages}
           title="Next page"
         >
           <ChevronRight size={14} />

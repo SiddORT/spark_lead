@@ -1,0 +1,237 @@
+````md
+# Fix "Showing NaN–NaN of results" Pagination Bug on Follow Up Page
+
+There is a pagination/data calculation issue on the Follow Up page.
+
+Currently the table footer is displaying:
+
+```txt
+Showing NaN–NaN of results
+```
+
+This is incorrect and indicates that pagination values or total result calculations are becoming `NaN`.
+
+The issue needs to be fixed properly at the data/state logic level — NOT hidden with fallback text.
+
+---
+
+# CURRENT ISSUE
+
+## Observed Problem
+
+In the Follow Up table footer:
+
+```txt
+Showing NaN–NaN of results
+```
+
+is being rendered instead of proper values.
+
+Example expected output:
+
+```txt
+Showing 1–10 of 19 results
+```
+
+---
+
+# ROOT CAUSE TO CHECK
+
+This is most likely happening because one or more of these values are:
+
+- undefined
+- null
+- NaN
+- string instead of number
+- missing during initial render
+- incorrectly parsed
+
+Likely affected variables:
+
+```ts
+currentPage
+pageSize
+totalResults
+startIndex
+endIndex
+filteredResults.length
+```
+
+---
+
+# REQUIRED FIX
+
+## Ensure ALL pagination values are always valid numbers
+
+Before rendering:
+
+```ts
+const safeCurrentPage = Number(currentPage) || 1;
+const safePageSize = Number(pageSize) || 10;
+const safeTotal = Number(totalResults) || 0;
+```
+
+---
+
+# REQUIRED PAGINATION CALCULATION
+
+## Correct Start Index
+
+```ts
+const startIndex =
+  safeTotal === 0
+    ? 0
+    : (safeCurrentPage - 1) * safePageSize + 1;
+```
+
+---
+
+## Correct End Index
+
+```ts
+const endIndex = Math.min(
+  safeCurrentPage * safePageSize,
+  safeTotal
+);
+```
+
+---
+
+# REQUIRED DISPLAY LOGIC
+
+## Footer Text
+
+```ts
+safeTotal > 0
+  ? `Showing ${startIndex}–${endIndex} of ${safeTotal} results`
+  : `Showing 0 results`
+```
+
+---
+
+# IMPORTANT
+
+DO NOT:
+
+❌ render raw calculations directly in JSX  
+❌ trust API response types blindly  
+❌ assume values are always numbers  
+❌ allow undefined pagination state  
+
+---
+
+# REQUIRED API VALIDATION
+
+Validate backend response structure.
+
+Ensure API always returns:
+
+```json
+{
+  "total": 19,
+  "page": 1,
+  "pageSize": 10
+}
+```
+
+and NOT:
+
+```json
+{
+  "total": null
+}
+```
+
+or
+
+```json
+{
+  "total": "19"
+}
+```
+
+---
+
+# REQUIRED FRONTEND SAFETY
+
+Add strict guards:
+
+```ts
+Number.isFinite(value)
+```
+
+before calculations.
+
+---
+
+# REQUIRED QA TESTING
+
+Verify all scenarios:
+
+## Normal Pagination
+
+✅ Showing 1–10 of 19 results
+
+---
+
+## Last Page
+
+✅ Showing 11–19 of 19 results
+
+---
+
+## Empty Results
+
+✅ Showing 0 results
+
+---
+
+## Filtered Results
+
+✅ Values update correctly after filtering
+
+---
+
+## Search Results
+
+✅ No NaN after search/filter combinations
+
+---
+
+## Page Size Change
+
+✅ No NaN after changing rows per page
+
+---
+
+## Initial Page Load
+
+✅ No flicker showing NaN before data loads
+
+---
+
+# IMPORTANT
+
+This fix must apply to:
+
+- Follow Up page
+- Leads table
+- Analytics tables
+- Team tables
+- ALL paginated tables across the system
+
+Create a reusable pagination utility/helper instead of fixing only one page.
+
+---
+
+# EXPECTED FINAL RESULT
+
+After the fix:
+
+✅ No NaN values anywhere in pagination  
+✅ Accurate result count always displayed  
+✅ Pagination calculations are stable  
+✅ Footer updates correctly after filtering/search  
+✅ Reusable pagination logic implemented globally  
+✅ Enterprise-grade table behaviour achieved  
+````
