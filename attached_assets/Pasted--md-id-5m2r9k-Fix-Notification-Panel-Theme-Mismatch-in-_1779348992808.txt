@@ -1,0 +1,309 @@
+````md id="5m2r9k"
+# Fix Notification Panel Theme Mismatch in Light Mode
+
+The notification panel is currently NOT respecting the selected application theme.
+
+When the system is in LIGHT MODE:
+- the dashboard
+- cards
+- layout
+- background
+- components
+
+all correctly switch to light theme,
+
+BUT:
+
+the notification panel still opens in DARK MODE.
+
+This creates:
+- inconsistent UI
+- broken theme synchronization
+- visually disconnected experience
+- poor enterprise SaaS polish
+
+Screenshots have been reviewed for reference and understanding.
+
+---
+
+# CURRENT ISSUE
+
+# LIGHT MODE
+
+Main application:
+✅ Light theme
+
+Notification panel:
+❌ Dark theme
+
+---
+
+# DARK MODE
+
+Main application:
+✅ Dark theme
+
+Notification panel:
+✅ Dark theme
+
+So the issue specifically affects:
+- light theme synchronization
+- notification popup styling
+- theme propagation
+
+---
+
+# EXPECTED BEHAVIOUR
+
+The notification panel MUST dynamically follow the currently selected theme.
+
+---
+
+# REQUIRED THEME BEHAVIOUR
+
+# LIGHT MODE
+
+Notification panel should use:
+
+## Background
+
+```txt
+White / light neutral background
+```
+
+NOT:
+```txt
+Black / dark blue background
+```
+
+---
+
+## Text
+
+Use:
+- dark readable text
+- muted secondary text
+- light borders
+
+---
+
+## Cards / Rows
+
+Use:
+- light hover states
+- soft borders
+- subtle shadows
+
+---
+
+## Badges
+
+Maintain:
+- proper contrast
+- theme consistency
+
+---
+
+## Buttons
+
+Use:
+- same light mode button styling as rest of app
+
+---
+
+# DARK MODE
+
+Keep existing dark notification panel design.
+
+---
+
+# ROOT CAUSE TO INVESTIGATE
+
+The notification panel is likely:
+- hardcoded to dark theme styles
+OR
+- not consuming global theme context/state
+OR
+- using fixed Tailwind classes
+
+Examples of likely problems:
+
+```tsx
+bg-black
+bg-[#0B1120]
+text-white
+```
+
+instead of:
+
+```tsx
+theme-aware classes
+```
+
+---
+
+# REQUIRED FIX
+
+# MAKE NOTIFICATION PANEL FULLY THEME-AWARE
+
+Notification system must dynamically respond to:
+- global theme state
+- theme provider
+- theme context
+- CSS variables
+- dark/light class toggles
+
+depending on current architecture.
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+# USE SHARED THEME TOKENS
+
+Notification panel must inherit:
+- background colors
+- border colors
+- text colors
+- hover colors
+- muted text colors
+- shadows
+
+from the same design system used throughout the application.
+
+---
+
+# REMOVE HARDCODED DARK COLORS
+
+Avoid:
+
+```tsx
+bg-black
+bg-slate-950
+text-white
+border-slate-800
+```
+
+unless wrapped in proper theme conditions.
+
+---
+
+# REQUIRED RESPONSIVE THEME SUPPORT
+
+Both:
+- desktop notification dropdown
+- mobile notification drawer/modal
+
+must support:
+- light mode
+- dark mode
+
+consistently.
+
+---
+
+# REQUIRED VISUAL CONSISTENCY
+
+Notification panel should visually match:
+- cards
+- modals
+- filters
+- dropdowns
+- analytics hover states
+- dashboard widgets
+
+already present in light mode.
+
+---
+
+# REQUIRED COMPONENTS TO FIX
+
+Ensure theme sync for:
+
+✅ Panel container  
+✅ Header  
+✅ Notification rows  
+✅ Hover states  
+✅ Scroll area  
+✅ Divider lines  
+✅ Badges  
+✅ Buttons  
+✅ Empty states  
+✅ Icons  
+✅ Timestamps  
+✅ Footer CTA button  
+✅ Overlay styling  
+
+---
+
+# REQUIRED LIGHT MODE STYLE DIRECTION
+
+# PANEL
+
+Use:
+- white/light surface
+- soft border
+- subtle shadow
+
+---
+
+# ROWS
+
+Use:
+- light hover backgrounds
+- readable spacing
+- muted metadata text
+
+---
+
+# FOOTER BUTTON
+
+Must follow:
+- primary action styling
+- light mode button design system
+
+---
+
+# MOBILE VIEW
+
+Ensure mobile notification sheet:
+- also switches themes correctly
+- does not remain permanently dark
+
+---
+
+# REQUIRED QA TESTING
+
+# TEST CASES
+
+## LIGHT MODE
+
+Verify:
+✅ Notification panel background is light  
+✅ Text is dark/readable  
+✅ Hover states visible  
+✅ Borders subtle and clean  
+✅ Buttons match light theme  
+✅ Mobile drawer uses light styling  
+
+---
+
+## DARK MODE
+
+Verify:
+✅ Existing dark styling preserved  
+✅ No regressions introduced  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ Notification panel fully respects current theme  
+✅ Light mode notification UI matches entire system  
+✅ Dark mode remains polished  
+✅ Mobile + desktop notification styles are synchronized  
+✅ No hardcoded dark-only notification styling remains  
+✅ System achieves consistent enterprise-grade theme behaviour  
+````

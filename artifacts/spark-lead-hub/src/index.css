@@ -3038,7 +3038,7 @@ a:hover { opacity: 0.85; }
   }
   .notes-hint { display: none; }
 
-  /* Follow-up bell — bottom sheet vars */
+  /* Follow-up bell — bottom sheet vars (legacy class kept for safety) */
   .bell-sheet-mobile {
     position: fixed;
     bottom: 0;
@@ -3063,6 +3063,113 @@ a:hover { opacity: 0.85; }
     animation: fade-in 180ms ease both;
   }
 }
+
+/* ============================================
+   FOLLOW-UP BELL — theme-aware (light + dark)
+   ============================================ */
+
+/* Trigger button */
+.bell-trigger {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.bell-trigger:hover { background: var(--bg-overlay); color: var(--text-primary); border-color: var(--border-default); }
+.bell-trigger--open { background: var(--bg-overlay); border-color: var(--border-default); color: var(--text-primary); }
+.bell-trigger--alert { color: hsl(0 78% 55%); }
+.bell-trigger--alert:hover { color: hsl(0 78% 50%); }
+
+/* Red count badge on the bell */
+.bell-count {
+  position: absolute;
+  top: -6px; right: -6px;
+  background: hsl(0 78% 55%);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--bg-base);
+}
+
+/* Desktop popover panel */
+.bell-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  box-shadow:
+    0 20px 60px rgba(0,0,0,0.35),
+    0 0 0 1px var(--border-subtle);
+  color: var(--text-primary);
+}
+[data-theme="light"] .bell-panel {
+  box-shadow:
+    0 12px 32px rgba(15, 23, 42, 0.10),
+    0 0 0 1px var(--border-subtle);
+}
+
+/* Divider line inside panel */
+.bell-divider { height: 1px; background: var(--border-subtle); margin: 0 12px; }
+
+/* Mobile handle bar */
+.bell-handle {
+  position: absolute;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 36px; height: 4px;
+  border-radius: 2px;
+  background: var(--text-muted);
+  opacity: 0.4;
+}
+
+/* Notification row button */
+.bell-row { background: transparent; color: var(--text-primary); }
+.bell-row:hover { background: var(--bg-overlay); }
+
+/* Small icon button (mobile close X) */
+.bell-icon-btn {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.bell-icon-btn:hover { background: var(--bg-subtle); color: var(--text-primary); }
+
+/* Footer CTA */
+.bell-cta {
+  background: var(--teal-dim);
+  border: 1px solid var(--border-default);
+  color: var(--teal);
+}
+.bell-cta:hover { background: color-mix(in srgb, var(--teal) 18%, transparent); }
+
+/* Status pills — readable on both light & dark surfaces */
+.bell-pill {
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.4;
+}
+.bell-pill--overdue  { background: hsl(0   78% 50% / 0.14); color: hsl(0   78% 50%); }
+.bell-pill--today    { background: hsl(142 70% 38% / 0.16); color: hsl(142 70% 32%); }
+.bell-pill--upcoming { background: hsl(38  92% 45% / 0.18); color: hsl(38  92% 35%); }
+[data-theme="light"] .bell-pill--overdue  { background: hsl(0   78% 50% / 0.10); color: hsl(0   72% 42%); }
+[data-theme="light"] .bell-pill--today    { background: hsl(142 70% 36% / 0.12); color: hsl(142 70% 26%); }
+[data-theme="light"] .bell-pill--upcoming { background: hsl(38  92% 45% / 0.14); color: hsl(28  90% 36%); }
+
+/* Mobile portal overlay backdrop tint — soft in light mode */
+.bell-sheet-overlay-portal { background: hsl(222 22% 3% / 0.55); }
+[data-theme="light"] .bell-sheet-overlay-portal { background: hsl(210 20% 20% / 0.32); }
 
 /* ── Additional mobile responsive polish (≤768px) ── */
 @media (max-width: 768px) {

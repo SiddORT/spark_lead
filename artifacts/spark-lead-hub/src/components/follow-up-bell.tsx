@@ -21,24 +21,15 @@ function getStatus(dateStr: string): Status {
   return "UPCOMING";
 }
 
-const STATUS_CFG: Record<Status, { bg: string; color: string; label: string }> = {
-  OVERDUE:  { bg: "rgba(239,68,68,0.15)",   color: "rgb(248,113,113)",  label: "Overdue"  },
-  TODAY:    { bg: "rgba(34,197,94,0.15)",    color: "rgb(74,222,128)",   label: "Today"    },
-  UPCOMING: { bg: "rgba(234,179,8,0.15)",    color: "rgb(250,204,21)",   label: "Upcoming" },
+const STATUS_CFG: Record<Status, { className: string; label: string }> = {
+  OVERDUE:  { className: "bell-pill bell-pill--overdue",  label: "Overdue"  },
+  TODAY:    { className: "bell-pill bell-pill--today",    label: "Today"    },
+  UPCOMING: { className: "bell-pill bell-pill--upcoming", label: "Upcoming" },
 };
 
 function StatusPill({ status }: { status: Status }) {
   const c = STATUS_CFG[status];
-  return (
-    <span style={{
-      background: c.bg, color: c.color,
-      borderRadius: 6, padding: "2px 8px",
-      fontSize: 10, fontWeight: 700,
-      whiteSpace: "nowrap", flexShrink: 0,
-    }}>
-      {c.label}
-    </span>
-  );
+  return <span className={c.className}>{c.label}</span>;
 }
 
 interface Props {
@@ -104,27 +95,24 @@ export function FollowUpBell({ onLeadClick }: Props) {
         padding: "14px 16px 10px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <span style={{ fontWeight: 700, fontSize: 14, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.01em" }}>
+        <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
           Follow-Ups
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {badgeCount > 0 && (
-            <span style={{
-              background: "rgba(239,68,68,0.15)", color: "rgb(248,113,113)",
-              borderRadius: 999, padding: "2px 10px", fontSize: 11, fontWeight: 600,
-            }}>
+            <span className="bell-pill bell-pill--overdue" style={{ borderRadius: 999, padding: "2px 10px", fontSize: 11 }}>
               {badgeCount} urgent
             </span>
           )}
           {isMobile && (
             <button
               onClick={() => setOpen(false)}
+              className="bell-icon-btn"
+              aria-label="Close"
               style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 8, width: 28, height: 28,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                cursor: "pointer", color: "rgba(255,255,255,0.65)",
+                cursor: "pointer",
               }}
             >
               <X size={14} />
@@ -134,15 +122,11 @@ export function FollowUpBell({ onLeadClick }: Props) {
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 12px" }} />
+      <div className="bell-divider" />
 
       {/* Mobile handle bar */}
       {isMobile && (
-        <div style={{
-          position: "absolute", top: 8, left: "50%", transform: "translateX(-50%)",
-          width: 36, height: 4, borderRadius: 2,
-          background: "rgba(255,255,255,0.2)",
-        }} />
+        <div className="bell-handle" />
       )}
 
       {/* Items list */}
@@ -150,7 +134,7 @@ export function FollowUpBell({ onLeadClick }: Props) {
         {displayItems.length === 0 ? (
           <div style={{
             padding: "28px 12px", textAlign: "center",
-            color: "rgba(255,255,255,0.35)", fontSize: 13,
+            color: "var(--text-muted)", fontSize: 13,
           }}>
             🎉 No follow-ups pending
           </div>
@@ -158,15 +142,14 @@ export function FollowUpBell({ onLeadClick }: Props) {
           <button
             key={item.id}
             onClick={() => { onLeadClick(item.id); setOpen(false); }}
+            className="bell-row"
             style={{
               width: "100%", textAlign: "left",
-              background: "transparent", border: "none",
+              border: "none",
               borderRadius: 12, padding: "10px 12px",
               cursor: "pointer", transition: "background 0.12s",
               minHeight: 44,
             }}
-            onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
-            onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
             {/* Row: name + badge */}
             <div style={{
@@ -175,7 +158,7 @@ export function FollowUpBell({ onLeadClick }: Props) {
             }}>
               <span style={{
                 fontWeight: 600, fontSize: 13,
-                color: "rgba(255,255,255,0.88)",
+                color: "var(--text-primary)",
                 overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                 minWidth: 0, flex: 1,
               }}>
@@ -185,11 +168,11 @@ export function FollowUpBell({ onLeadClick }: Props) {
             </div>
             {/* Row: date + handler */}
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.40)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 📅 {item.activeFollowUpDate ? formatShortDate(item.activeFollowUpDate) : "—"}
               </span>
               {item.dealHandler && (
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                   👤 {resolveName(item.dealHandler)}
                 </span>
               )}
@@ -199,24 +182,21 @@ export function FollowUpBell({ onLeadClick }: Props) {
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 12px" }} />
+      <div className="bell-divider" />
 
       {/* Footer */}
       <div style={{ padding: "10px 12px 12px" }}>
         <button
           onClick={() => { setLocation("/follow-up"); setOpen(false); }}
+          className="bell-cta"
           style={{
             width: "100%",
-            background: "rgba(45,212,191,0.07)",
-            border: "1px solid rgba(45,212,191,0.2)",
             borderRadius: 12,
-            color: "rgb(45,212,191)", fontWeight: 600, fontSize: 13,
+            fontWeight: 600, fontSize: 13,
             padding: "10px 0", cursor: "pointer",
             transition: "background 0.15s",
             minHeight: 44,
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = "rgba(45,212,191,0.14)")}
-          onMouseLeave={e => (e.currentTarget.style.background = "rgba(45,212,191,0.07)")}
         >
           View All Follow-Ups →
         </button>
@@ -231,41 +211,19 @@ export function FollowUpBell({ onLeadClick }: Props) {
       <button
         onClick={() => setOpen(v => !v)}
         title="Follow-up notifications"
+        className={`bell-trigger${open ? " bell-trigger--open" : ""}${badgeCount > 0 ? " bell-trigger--alert" : ""}`}
         style={{
           position: "relative",
-          background: open
-            ? "rgba(255,255,255,0.08)"
-            : "transparent",
-          border: "1px solid rgba(255,255,255,0.10)",
           borderRadius: 12,
           padding: "8px 10px",
           cursor: "pointer",
-          color: badgeCount > 0 ? "rgb(248,113,113)" : "rgba(255,255,255,0.65)",
           display: "flex", alignItems: "center",
-          transition: "background 0.15s, color 0.15s, border-color 0.15s",
           minWidth: 44, minHeight: 44, justifyContent: "center",
-        }}
-        onMouseEnter={e => {
-          if (!open) e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-          e.currentTarget.style.color = badgeCount > 0 ? "rgb(248,113,113)" : "rgba(255,255,255,0.9)";
-        }}
-        onMouseLeave={e => {
-          if (!open) e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = badgeCount > 0 ? "rgb(248,113,113)" : "rgba(255,255,255,0.65)";
         }}
       >
         <Bell size={20} strokeWidth={1.75} />
         {badgeCount > 0 && (
-          <span style={{
-            position: "absolute", top: -6, right: -6,
-            background: "rgb(239,68,68)", color: "#fff",
-            borderRadius: 999, padding: "0 5px",
-            fontSize: 10, fontWeight: 700,
-            minWidth: 18, height: 18,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            lineHeight: 1,
-            boxShadow: "0 0 0 2px hsl(222 25% 9%)",
-          }}>
+          <span className="bell-count">
             {badgeLabel}
           </span>
         )}
@@ -273,13 +231,10 @@ export function FollowUpBell({ onLeadClick }: Props) {
 
       {/* ── Desktop popover ── */}
       {open && !isMobile && (
-        <div style={{
+        <div className="bell-panel" style={{
           position: "absolute", top: "calc(100% + 10px)", right: 0, zIndex: 9999,
           width: 320,
-          background: "hsl(222, 25%, 8%)",
-          border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 18,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)",
           overflow: "hidden",
         }}>
           {panelContent}
@@ -293,10 +248,10 @@ export function FollowUpBell({ onLeadClick }: Props) {
           <div
             onClick={() => setOpen(false)}
             aria-hidden="true"
+            className="bell-sheet-overlay-portal"
             style={{
               position: "fixed",
               inset: 0,
-              background: "hsl(222 22% 3% / 0.65)",
               backdropFilter: "blur(4px)",
               WebkitBackdropFilter: "blur(4px)",
               zIndex: 100000,
@@ -314,11 +269,11 @@ export function FollowUpBell({ onLeadClick }: Props) {
               bottom: 0,
               width: "100%",
               maxHeight: "80svh",
-              background: "hsl(222, 25%, 8%)",
-              borderTop: "1px solid rgba(255,255,255,0.08)",
+              background: "var(--bg-elevated)",
+              borderTop: "1px solid var(--border-subtle)",
               borderTopLeftRadius: 18,
               borderTopRightRadius: 18,
-              boxShadow: "0 -8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
+              boxShadow: "0 -8px 40px rgba(0,0,0,0.35), 0 0 0 1px var(--border-subtle)",
               overflowY: "auto",
               paddingBottom: "env(safe-area-inset-bottom, 16px)",
               zIndex: 100001,
