@@ -1,0 +1,344 @@
+````md id="7nq4xp"
+# Fix Excessive Empty Spacing in Mobile View & Improve Profile Page Mobile Responsiveness
+
+Several pages in the system still have major mobile responsiveness and spacing issues.
+
+Screenshots have been reviewed for reference and understanding.
+
+The current mobile layout contains:
+- excessive unused whitespace
+- large vertical gaps
+- poorly optimized table positioning
+- broken content hierarchy
+- profile page layout issues
+
+This makes the mobile experience feel unfinished and inconsistent with a professional SaaS application.
+
+---
+
+# CURRENT ISSUES
+
+# 1. Huge Empty Gap Between Search Bar & Data Table
+
+On multiple pages in mobile view:
+- there is a very large empty area between:
+  - search/filter controls
+  - and the actual table/list data
+
+This issue is visible in:
+- Team Management
+- Services
+- Companies
+- other table-based pages
+
+---
+
+# CURRENT BEHAVIOUR
+
+Current layout structure appears like:
+
+```txt
+Search Bar
+
+[ HUGE EMPTY SPACE ]
+
+Data Table
+```
+
+This creates:
+- broken visual flow
+- wasted screen space
+- poor mobile UX
+- unnecessary scrolling
+
+---
+
+# EXPECTED BEHAVIOUR
+
+The data table/list should appear immediately below:
+- search bar
+- filters
+- tabs
+- controls
+
+with only proper spacing.
+
+Expected spacing:
+
+```txt
+12px–20px maximum
+```
+
+NOT massive blank areas.
+
+---
+
+# REQUIRED FIX
+
+Investigate:
+- fixed heights
+- min-height usage
+- flex-grow issues
+- empty placeholder containers
+- incorrect responsive spacing
+- mobile breakpoint CSS
+- hidden desktop elements still reserving height
+
+---
+
+# IMPORTANT
+
+This issue appears to happen because:
+- desktop spacing/layout logic is still being applied on mobile
+OR
+- containers are reserving unnecessary height
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+# REMOVE ALL UNNECESSARY EMPTY MOBILE SPACE
+
+Audit:
+- wrappers
+- cards
+- table containers
+- flex layouts
+- grid layouts
+- content placeholders
+- loading skeleton containers
+
+---
+
+# CHECK FOR ISSUES LIKE
+
+```css
+min-height: 400px;
+height: 100%;
+flex: 1;
+```
+
+that are incorrectly applied to mobile layouts.
+
+---
+
+# REQUIRED MOBILE TABLE LAYOUT
+
+Mobile table/list sections should follow:
+
+```txt
+Header
+↓
+Search/Filters
+↓
+Table/List Immediately Below
+```
+
+without large gaps.
+
+---
+
+# REQUIRED RESPONSIVE TABLE IMPROVEMENTS
+
+On mobile:
+- reduce excessive container padding
+- remove desktop-only spacing
+- optimize filter stacking
+- improve table/list positioning
+
+---
+
+# PROFILE PAGE MOBILE ISSUES
+
+The Profile page is also NOT properly optimized for mobile.
+
+---
+
+# CURRENT PROFILE PAGE PROBLEMS
+
+## Layout feels compressed
+
+- profile photo section misaligned
+- buttons crowded
+- spacing inconsistent
+- typography too dense
+- card width not optimized
+
+---
+
+## Action Buttons Need Better Mobile Layout
+
+Current:
+- buttons feel cramped
+- poor spacing
+- awkward alignment
+
+Required:
+- properly stacked or responsive button alignment
+
+Example:
+
+```txt
+[ Discard ]
+
+[ Save Changes ]
+```
+
+OR:
+
+```txt
+[ Discard ] [ Save Changes ]
+```
+
+depending on available width.
+
+---
+
+## Profile Photo Section Needs Responsive Structure
+
+Current:
+- upload/remove controls cramped
+- image alignment inconsistent
+
+Required:
+- vertical stacking on smaller screens
+- better spacing
+- responsive alignment
+
+---
+
+# REQUIRED PROFILE PAGE IMPROVEMENTS
+
+# MOBILE RESPONSIVE PROFILE CARD
+
+The profile card should:
+- use proper mobile width
+- maintain clean spacing
+- avoid overcrowding
+- preserve readability
+
+---
+
+# REQUIRED SPACING RULES
+
+Mobile spacing should feel:
+- balanced
+- compact
+- premium
+- touch-friendly
+
+---
+
+# REQUIRED MOBILE TYPOGRAPHY
+
+Ensure:
+- headings remain readable
+- labels do not wrap awkwardly
+- helper text remains visible
+- buttons maintain touch size
+
+---
+
+# REQUIRED RESPONSIVE BEHAVIOUR
+
+# DESKTOP
+
+Keep existing layout.
+
+---
+
+# TABLET
+
+Use adaptive spacing/grid.
+
+---
+
+# MOBILE
+
+Convert:
+- multi-column sections → stacked layout
+- horizontal controls → vertical where necessary
+
+---
+
+# REQUIRED RESPONSIVE FIXES
+
+## Use proper breakpoints
+
+Example:
+
+```tsx
+flex-col md:flex-row
+grid-cols-1 md:grid-cols-2
+```
+
+---
+
+# REMOVE DESKTOP-ONLY HEIGHTS ON MOBILE
+
+Avoid:
+
+```css
+height: 100%;
+min-height: 500px;
+```
+
+on mobile layouts.
+
+Use:
+- auto height
+- content-based sizing
+
+---
+
+# REQUIRED QA TESTING
+
+Test all affected pages on:
+
+## Mobile
+- iPhone SE
+- iPhone 14
+- Samsung Galaxy
+- Pixel devices
+
+---
+
+## Tablet
+- iPad
+- Android tablets
+
+---
+
+# VERIFY
+
+## Tables
+
+✅ No excessive whitespace  
+✅ Table appears directly below filters  
+✅ No broken layout gaps  
+✅ Proper scrolling behavior  
+
+---
+
+## Profile Page
+
+✅ Proper responsive spacing  
+✅ Buttons aligned correctly  
+✅ Photo section responsive  
+✅ No cramped controls  
+✅ Mobile-friendly UX  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ No unnecessary empty gaps on mobile  
+✅ Tables align properly below search/filter sections  
+✅ Mobile layouts feel compact and professional  
+✅ Profile page becomes fully responsive  
+✅ Better spacing consistency across the system  
+✅ Improved mobile usability throughout application  
+✅ Enterprise-grade responsive mobile experience  
+````

@@ -1,0 +1,296 @@
+````md
+# Fix Chart / Graph Tooltip Theme Synchronization Across Light & Dark Mode
+
+Currently, several chart tooltips / hover popups are NOT following the selected application theme correctly.
+
+In Light Mode:
+- some chart tooltips are still appearing with dark backgrounds
+- hover popups look visually inconsistent
+- tooltip styling feels disconnected from the active theme
+
+However, in the Analytics page:
+- the tooltip styling is correctly adapting to Light Mode
+
+This means theme synchronization is partially implemented and not standardized globally.
+
+Screenshots have been reviewed for reference.
+
+---
+
+# CURRENT ISSUE
+
+## Dashboard Page
+
+When hovering over:
+- pipeline graphs
+- lead volume charts
+- stage distribution graphs
+- stacked bar charts
+- analytics widgets
+
+the tooltip popup still appears in:
+
+```txt
+dark theme styling
+```
+
+even though:
+
+```txt
+Light Mode is active
+```
+
+This creates:
+- inconsistent UI behavior
+- broken design language
+- poor theme synchronization
+- unprofessional UX
+
+---
+
+# EXPECTED BEHAVIOUR
+
+# LIGHT MODE
+
+When Light Mode is selected:
+
+Tooltips MUST use:
+- light background
+- dark text
+- subtle borders
+- light shadow
+- light theme spacing/colors
+
+Example:
+
+```txt
+Background: white / light gray
+Text: dark gray / black
+Border: subtle neutral border
+Shadow: soft light shadow
+```
+
+---
+
+# DARK MODE
+
+When Dark Mode is selected:
+
+Tooltips MUST use:
+- dark background
+- light text
+- dark borders
+- appropriate dark shadow
+
+Example:
+
+```txt
+Background: #0f172a / #111827
+Text: white / gray-100
+Border: dark muted border
+```
+
+---
+
+# REQUIRED FIX
+
+# STANDARDIZE TOOLTIP THEMING GLOBALLY
+
+Currently different charts appear to use:
+- different tooltip configurations
+- hardcoded colors
+- inconsistent theme handling
+
+This must be centralized.
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+## DO NOT hardcode tooltip colors
+
+REMOVE patterns like:
+
+```ts
+background: "#111"
+color: "#fff"
+```
+
+OR:
+
+```ts
+theme === "dark" ? dark : fixedDark
+```
+
+inside individual charts.
+
+---
+
+# CREATE SHARED THEME-AWARE TOOLTIP STYLING
+
+Use:
+- global theme variables
+- CSS variables
+- Tailwind theme classes
+- centralized chart theme config
+
+---
+
+# RECOMMENDED APPROACH
+
+## Example
+
+```ts
+const tooltipStyles = isDarkMode
+  ? {
+      backgroundColor: "#111827",
+      borderColor: "#1f2937",
+      color: "#f9fafb",
+    }
+  : {
+      backgroundColor: "#ffffff",
+      borderColor: "#e5e7eb",
+      color: "#111827",
+    };
+```
+
+---
+
+# REQUIRED
+
+ALL charts across the system MUST use the SAME tooltip styling logic.
+
+---
+
+# AREAS TO CHECK
+
+## Dashboard
+
+- Lead Volume chart
+- Pipeline by Stage
+- Funnel charts
+- Conversion graphs
+- Revenue graphs
+- Status breakdowns
+
+---
+
+## Analytics Page
+
+- Weekly conversion charts
+- Trend charts
+- Pie charts
+- Bar graphs
+- Line graphs
+
+---
+
+## Any other chart library usage
+
+Check:
+- Recharts
+- Chart.js
+- ApexCharts
+- Nivo
+- ECharts
+- custom graph wrappers
+
+---
+
+# IMPORTANT
+
+The Analytics page tooltip styling currently appears CORRECT.
+
+Use that implementation as the reference standard.
+
+Apply the SAME architecture and theme handling everywhere else.
+
+---
+
+# REQUIRED UI CONSISTENCY
+
+Tooltip styling must remain consistent for:
+
+- padding
+- typography
+- border radius
+- shadow
+- animation
+- spacing
+- theme colors
+
+---
+
+# REQUIRED DESIGN QUALITY
+
+The final tooltip design should feel:
+
+✅ premium  
+✅ polished  
+✅ enterprise-grade  
+✅ visually consistent  
+✅ synchronized with theme  
+✅ modern SaaS style  
+
+---
+
+# REQUIRED RESPONSIVENESS
+
+Tooltips must render correctly on:
+
+- desktop
+- tablet
+- mobile
+- touch devices
+
+without:
+- overflow
+- clipping
+- incorrect z-index
+- cutoff content
+
+---
+
+# REQUIRED QA TESTING
+
+# LIGHT MODE TESTS
+
+Verify:
+- all tooltips are light themed
+- no dark tooltip remains
+- text readability is correct
+- shadows are subtle and clean
+
+---
+
+# DARK MODE TESTS
+
+Verify:
+- all tooltips are dark themed
+- no light tooltip remains
+- contrast/accessibility maintained
+
+---
+
+# HOVER TESTS
+
+Verify:
+- hover transitions are smooth
+- no flickering
+- no delayed theme updates
+- no stale tooltip theme state
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ All chart tooltips follow active theme  
+✅ Light mode shows light tooltips everywhere  
+✅ Dark mode shows dark tooltips everywhere  
+✅ No hardcoded tooltip colors remain  
+✅ All charts use centralized tooltip styling  
+✅ Dashboard and Analytics pages behave consistently  
+✅ Professional UI consistency across entire system  
+````
