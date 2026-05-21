@@ -2932,6 +2932,49 @@ a:hover { opacity: 0.85; }
   .kanban-grid::-webkit-scrollbar { display: none; }
   .kanban-column { min-width: 280px; flex-shrink: 0; }
 
+  /* New kanban (kanban.tsx) — swipe-snap on mobile, one column per view */
+  .kanban-board-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    scroll-snap-type: x mandatory;
+    padding-bottom: var(--space-4);
+    margin: 0 calc(-1 * var(--space-3));
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+  .kanban-board-scroll::-webkit-scrollbar { display: none; }
+  .kanban-board-grid {
+    display: flex !important;
+    flex-direction: row;
+    gap: var(--space-3);
+    grid-template-columns: unset !important;
+    min-width: 0 !important;
+    align-items: stretch;
+  }
+  .kanban-board-col {
+    flex: 0 0 auto;
+    min-width: min(86vw, 320px);
+    max-width: 340px;
+    scroll-snap-align: start;
+  }
+  /* Card text safety on narrow widths */
+  .kanban-board-col .avatar { flex-shrink: 0; }
+}
+
+/* Kanban defaults (all viewports) — desktop keeps inline grid behavior */
+.kanban-board-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-4);
+}
+.kanban-board-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+@media (max-width: 768px) {
+
   /* [10] MODALS — centered with 16px gutter, footer stacks */
   .modal-backdrop {
     align-items: center;

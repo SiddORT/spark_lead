@@ -2,7 +2,8 @@ import { useState } from "react";
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   useDroppable,
@@ -207,6 +208,7 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
+      className="kanban-board-col"
       style={{
         background: isOver ? "hsl(222 16% 14%)" : "var(--bg-elevated)",
         border: `1px solid ${isOver ? stage.color : "var(--border-subtle)"}`,
@@ -297,9 +299,12 @@ export function KanbanBoard() {
   const isLoading = leadsLoading || stagesLoading;
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    })
+    // Mouse: drag starts after a tiny 6px move (desktop).
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    // Touch: long-press 250ms with 8px tolerance. A horizontal swipe will move
+    // past the tolerance before the delay fires and cancel the drag, so the
+    // page's snap-scroll wins on quick swipes. Long-press starts a drag.
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
   );
 
   const activeStages = (stages as any[]).filter((s) => s.isActive).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
@@ -367,9 +372,10 @@ export function KanbanBoard() {
             Kanban Pipeline
           </h1>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-4)" }}>
+        <div className="kanban-board-scroll">
+          <div className="kanban-board-grid" style={{ "--kanban-cols": 4 } as React.CSSProperties}>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} style={{
+            <div key={i} className="kanban-board-col" style={{
               background: "var(--bg-elevated)", border: "1px solid var(--border-subtle)",
               borderRadius: "var(--radius-lg)", padding: "var(--space-4)", minHeight: 480,
             }}>
@@ -379,6 +385,7 @@ export function KanbanBoard() {
               ))}
             </div>
           ))}
+          </div>
         </div>
       </div>
     );
@@ -402,13 +409,14 @@ export function KanbanBoard() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div style={{ overflowX: "auto", paddingBottom: "var(--space-4)" }}>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${activeStages.length}, minmax(250px, 1fr))`,
-            gap: "var(--space-4)",
-            minWidth: activeStages.length * 250,
-          }}>
+        <div className="kanban-board-scroll">
+          <div
+            className="kanban-board-grid"
+            style={{
+              gridTemplateColumns: `repeat(${activeStages.length}, minmax(260px, 1fr))`,
+              minWidth: activeStages.length * 260,
+            }}
+          >
             {activeStages.map((stage: any) => {
               const columnLeads = (leads as any[]).filter((l: any) => l.pipelineStageId === stage.id);
               return (

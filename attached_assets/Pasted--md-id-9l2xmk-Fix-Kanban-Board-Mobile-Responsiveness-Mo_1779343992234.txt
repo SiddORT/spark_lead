@@ -1,0 +1,322 @@
+````md id="9l2xmk"
+# Fix Kanban Board Mobile Responsiveness & Mobile UX Issues
+
+The Kanban Board is still heavily broken on mobile devices and does not provide a usable or professional mobile experience.
+
+Screenshots have been reviewed for reference and understanding.
+
+Currently, the Kanban board behaves like a compressed desktop layout instead of a properly responsive mobile Kanban experience.
+
+This causes:
+- cards being cut off
+- columns overflowing horizontally
+- unreadable content
+- cramped spacing
+- poor drag-and-drop usability
+- broken visual hierarchy
+
+---
+
+# CURRENT ISSUES
+
+# 1. Kanban Columns Are Too Narrow
+
+On mobile:
+- pipeline columns become extremely thin
+- stage headers wrap incorrectly
+- card content gets cut off
+- users cannot properly view lead details
+
+Example:
+- “Qualification & Analysis” column gets truncated
+- values and company tags overflow
+
+---
+
+# 2. Kanban Cards Are Cramped
+
+Current cards:
+- have insufficient width
+- compress text aggressively
+- hide important details
+- create overlapping UI elements
+
+Affected content:
+- lead names
+- company tags
+- stage badges
+- assigned users
+- values
+- labels
+
+---
+
+# 3. Horizontal Scrolling UX Is Poor
+
+Current horizontal scroll behavior:
+- feels broken
+- difficult to navigate
+- columns partially visible
+- floating action button overlaps content
+
+---
+
+# 4. Mobile Layout Is Using Desktop Logic
+
+The system currently appears to:
+- shrink desktop Kanban columns
+
+instead of:
+- restructuring for mobile usability
+
+This is NOT acceptable for an enterprise SaaS Kanban experience.
+
+---
+
+# REQUIRED FIX
+
+# IMPLEMENT A TRUE MOBILE KANBAN EXPERIENCE
+
+The mobile Kanban must be redesigned responsively.
+
+Do NOT simply scale down desktop columns.
+
+---
+
+# REQUIRED MOBILE BEHAVIOUR
+
+# OPTION 1 (PREFERRED)
+
+## Horizontal Swipe-Based Kanban
+
+Implement:
+- one properly sized column visible at a time
+- horizontal swipe navigation
+- snap scrolling between stages
+
+Example:
+
+```txt
+← Lead Initiation →
+
+← Qualification & Analysis →
+
+← Proposal & Negotiation →
+```
+
+This is the preferred enterprise mobile Kanban UX.
+
+---
+
+# OPTION 2 (ACCEPTABLE)
+
+## Responsive Scrollable Columns
+
+If using multiple columns:
+- columns must maintain minimum readable width
+- smooth horizontal scrolling required
+- cards must not compress excessively
+
+---
+
+# REQUIRED COLUMN RULES
+
+Each Kanban column on mobile must:
+- maintain readable width
+- preserve padding
+- avoid content clipping
+- allow proper touch interaction
+
+Recommended:
+
+```css
+min-width: 280px;
+max-width: 340px;
+```
+
+---
+
+# REQUIRED CARD IMPROVEMENTS
+
+Kanban cards must:
+- maintain proper spacing
+- avoid text overlap
+- support wrapping properly
+- preserve visual hierarchy
+
+---
+
+# REQUIRED CARD CONTENT LAYOUT
+
+Ensure visibility of:
+- lead name
+- service
+- company tags
+- lead value
+- assigned users
+- stage indicators
+
+without clipping.
+
+---
+
+# REQUIRED MOBILE DRAG & DROP UX
+
+Ensure:
+- drag-and-drop remains usable on touch devices
+- cards are easy to grab
+- scrolling and dragging do not conflict
+- accidental drags are minimized
+
+---
+
+# REQUIRED RESPONSIVE CONTAINER FIXES
+
+Audit:
+- overflow handling
+- flex shrink behavior
+- min-width logic
+- grid layouts
+- container sizing
+
+---
+
+# REMOVE BAD RESPONSIVE PATTERNS
+
+Avoid:
+
+```css
+width: 100%;
+flex: 1;
+overflow hidden;
+```
+
+when applied incorrectly to Kanban columns.
+
+---
+
+# REQUIRED MOBILE SPACING FIXES
+
+Improve:
+- column spacing
+- card padding
+- tag spacing
+- section margins
+
+Current mobile spacing feels:
+- overcrowded
+- compressed
+- visually broken
+
+---
+
+# REQUIRED FLOATING ACTION BUTTON FIX
+
+Currently FAB overlaps Kanban content.
+
+Ensure:
+- FAB does not block cards
+- proper bottom/right safe spacing exists
+- mobile gestures remain accessible
+
+---
+
+# REQUIRED TAG / BADGE FIXES
+
+Company badges and service tags must:
+- wrap properly
+- avoid overflow
+- maintain readable sizing
+- support multiple tags cleanly
+
+---
+
+# REQUIRED HEADER FIXES
+
+Stage headers should:
+- remain readable
+- avoid truncation
+- preserve lead counts
+- maintain alignment
+
+---
+
+# REQUIRED RESPONSIVE BREAKPOINTS
+
+Implement proper mobile/tablet logic:
+
+```tsx
+mobile
+tablet
+desktop
+```
+
+NOT:
+```txt
+desktop scaled down
+```
+
+---
+
+# REQUIRED QA TESTING
+
+Test on:
+
+## Mobile Devices
+- iPhone SE
+- iPhone 14
+- Samsung Galaxy
+- Pixel devices
+
+---
+
+## Tablet
+- iPad
+- Android tablet
+
+---
+
+# VERIFY
+
+## Kanban Columns
+
+✅ Proper readable width  
+✅ No clipped headers  
+✅ Smooth horizontal scrolling  
+✅ Touch-friendly layout  
+
+---
+
+## Kanban Cards
+
+✅ No overlapping content  
+✅ Proper spacing  
+✅ Readable text  
+✅ Tags visible  
+✅ Values visible  
+✅ User avatars aligned correctly  
+
+---
+
+## Mobile UX
+
+✅ Smooth scrolling  
+✅ Proper drag/drop behavior  
+✅ No overflow issues  
+✅ FAB not overlapping content  
+✅ Responsive interactions work correctly  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ Kanban board becomes fully usable on mobile  
+✅ Columns maintain readable widths  
+✅ Cards display all important data properly  
+✅ Touch interactions feel smooth and modern  
+✅ No compressed or broken layouts remain  
+✅ Enterprise-grade mobile Kanban UX achieved  
+✅ Responsive behaviour consistent across all devices  
+````
