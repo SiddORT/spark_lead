@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Bell, X } from "lucide-react";
 import { useGetLeads } from "@workspace/api-client-react";
 import { useUserMap } from "@/hooks/use-user-map";
@@ -71,12 +72,28 @@ export function FollowUpBell({ onLeadClick }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    // On mobile the sheet is portaled to body, so an outside-click handler
+    // bound to `ref` would close it immediately. The overlay click already
+    // handles dismissal on mobile; only run outside-click logic on desktop.
+    if (isMobile) return;
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+  }, [open, isMobile]);
+
+  // ESC closes; lock body scroll while open on mobile
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("keydown", onKey);
+    if (isMobile) document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (isMobile) document.body.style.overflow = "";
+    };
+  }, [open, isMobile]);
 
   const badgeLabel = badgeCount > 9 ? "9+" : String(badgeCount);
 
@@ -269,25 +286,49 @@ export function FollowUpBell({ onLeadClick }: Props) {
         </div>
       )}
 
-      {/* ── Mobile bottom sheet ── */}
-      {open && isMobile && (
+      {/* ── Mobile bottom sheet (portaled to body to escape any ancestor
+              stacking-context / transform / overflow:hidden) ── */}
+      {open && isMobile && typeof document !== "undefined" && createPortal(
         <>
           <div
-            className="bell-sheet-overlay"
             onClick={() => setOpen(false)}
-          />
-          <div
-            className="bell-sheet-mobile"
+            aria-hidden="true"
             style={{
               position: "fixed",
+              inset: 0,
+              background: "hsl(222 22% 3% / 0.65)",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+              zIndex: 100000,
+              animation: "fade-in 180ms ease both",
+            }}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Follow-up notifications"
+            style={{
+              position: "fixed",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: "100%",
+              maxHeight: "80svh",
               background: "hsl(222, 25%, 8%)",
+              borderTop: "1px solid rgba(255,255,255,0.08)",
+              borderTopLeftRadius: 18,
+              borderTopRightRadius: 18,
               boxShadow: "0 -8px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
-              overflow: "hidden",
+              overflowY: "auto",
+              paddingBottom: "env(safe-area-inset-bottom, 16px)",
+              zIndex: 100001,
+              animation: "sheet-up 220ms ease both",
             }}
           >
             {panelContent}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );

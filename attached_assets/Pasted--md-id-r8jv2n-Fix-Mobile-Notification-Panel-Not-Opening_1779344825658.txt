@@ -1,0 +1,292 @@
+````md id="r8jv2n"
+# Fix Mobile Notification Panel Not Opening on Dashboard
+
+The notification system is currently broken in mobile view.
+
+When clicking the notification icon on the Dashboard page in mobile mode:
+- the screen becomes blurred/dimmed
+- but the actual notification panel/modal does NOT appear
+
+This creates a broken and unusable mobile notification experience.
+
+Screenshots have been reviewed for reference and understanding.
+
+---
+
+# CURRENT ISSUE
+
+# MOBILE VIEW BEHAVIOUR
+
+When user taps:
+
+```txt
+Notification Bell Icon
+```
+
+Current result:
+- background overlay appears
+- screen blurs/darkens
+- interaction gets blocked
+
+BUT:
+- notification drawer/modal is not visible
+- popup may be rendering off-screen
+- z-index/layout is broken
+
+---
+
+# EXPECTED BEHAVIOUR
+
+When user taps notification icon in mobile view:
+
+The system should properly display:
+- notification drawer
+OR
+- notification modal
+OR
+- slide-over panel
+
+that is:
+- fully visible
+- accessible
+- touch-friendly
+- responsive
+
+---
+
+# POSSIBLE ROOT CAUSES
+
+Investigate:
+
+## 1. Z-Index Issues
+
+The overlay may have:
+- higher z-index than notification panel
+
+Result:
+- panel exists but hidden behind overlay
+
+---
+
+## 2. Off-Screen Positioning
+
+The notification container may:
+- still use desktop positioning
+
+Example:
+- `right: 20px`
+- fixed width
+- absolute positioning outside viewport
+
+---
+
+## 3. Overflow Hidden Issue
+
+A parent container may be clipping:
+- the notification drawer/modal
+
+Check:
+- `overflow: hidden`
+- transform contexts
+- stacking contexts
+
+---
+
+## 4. Responsive Breakpoint Logic Missing
+
+Desktop dropdown logic may not be adapted for mobile.
+
+---
+
+# REQUIRED FIX
+
+# IMPLEMENT PROPER MOBILE NOTIFICATION PANEL
+
+Mobile notification UX must behave differently from desktop if required.
+
+---
+
+# REQUIRED MOBILE BEHAVIOUR
+
+# OPTION 1 (RECOMMENDED)
+
+## Slide-In Notification Drawer
+
+On mobile:
+- notification panel should slide from:
+  - top
+  - right
+  - or bottom sheet
+
+Preferred modern SaaS behavior.
+
+Example:
+
+```txt
+Mobile Notification Drawer
+```
+
+with:
+- full visibility
+- proper scrolling
+- close button
+- touch-friendly spacing
+
+---
+
+# OPTION 2
+
+## Centered Responsive Modal
+
+If using modal approach:
+- modal must fit mobile viewport
+- avoid overflow
+- maintain readable sizing
+
+---
+
+# REQUIRED RESPONSIVE RULES
+
+# MOBILE
+
+Notification panel should:
+- fit within viewport width
+- not overflow horizontally
+- remain above overlay
+- support scrolling
+
+---
+
+# DESKTOP
+
+Keep existing desktop dropdown behavior.
+
+---
+
+# REQUIRED TECHNICAL FIXES
+
+# VERIFY Z-INDEX STACKING
+
+Ensure:
+
+```txt
+Notification Panel z-index > Overlay z-index
+```
+
+---
+
+# CHECK FOR OFFSCREEN POSITIONING
+
+Avoid desktop-only positioning like:
+
+```css
+right: -300px;
+width: 400px;
+position: absolute;
+```
+
+on mobile.
+
+---
+
+# USE RESPONSIVE POSITIONING
+
+Example:
+
+```css
+mobile:
+left: 12px;
+right: 12px;
+top: 70px;
+width: auto;
+```
+
+---
+
+# REQUIRED OVERFLOW FIXES
+
+Audit parent containers for:
+
+```css
+overflow: hidden;
+```
+
+that may clip the panel.
+
+---
+
+# REQUIRED TOUCH UX
+
+Notification panel must:
+- support scrolling
+- allow tap interactions
+- support close gestures/buttons
+- prevent background interaction while open
+
+---
+
+# REQUIRED ACCESSIBILITY
+
+Ensure:
+- focus trapping works
+- ESC closes panel
+- tapping overlay closes panel
+- touch gestures behave correctly
+
+---
+
+# REQUIRED RESPONSIVE STYLING
+
+Notification panel should:
+- adapt to theme
+- maintain proper padding
+- use readable typography
+- avoid cramped layouts
+
+---
+
+# REQUIRED MOBILE SAFE AREA SUPPORT
+
+Ensure compatibility with:
+- iPhone safe areas
+- bottom navigation
+- mobile browser UI
+
+---
+
+# REQUIRED QA TESTING
+
+Test notification behavior on:
+
+## Mobile Devices
+- iPhone SE
+- iPhone 14
+- Samsung Galaxy
+- Pixel devices
+
+---
+
+# VERIFY
+
+✅ Notification panel becomes visible  
+✅ Overlay no longer blocks invisible content  
+✅ Panel fits mobile viewport  
+✅ Scrolling works correctly  
+✅ Touch interactions work properly  
+✅ No clipping or overflow issues  
+✅ Proper z-index layering  
+✅ Responsive mobile notification UX achieved  
+
+---
+
+# FINAL EXPECTED RESULT
+
+After implementation:
+
+✅ Notification panel opens correctly on mobile  
+✅ Overlay and modal behave properly  
+✅ Notifications become fully usable on touch devices  
+✅ Mobile UX matches enterprise SaaS standards  
+✅ No invisible modal/popup issues remain  
+✅ Responsive notification system works consistently across devices  
+````
