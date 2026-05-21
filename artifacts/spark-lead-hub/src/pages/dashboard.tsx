@@ -48,14 +48,14 @@ const OUTCOME_OPTIONS = [
 ];
 
 const tooltipStyle = {
-  background: "hsl(222, 18%, 12%)",
-  border: "1px solid hsl(222, 15%, 26%)",
+  background: "var(--bg-overlay)",
+  border: "1px solid var(--border-default)",
   borderRadius: 10,
   padding: "8px 12px",
   fontSize: 13,
   fontFamily: "DM Sans, sans-serif",
-  color: "hsl(210, 30%, 95%)",
-  boxShadow: "0 8px 32px hsla(222, 22%, 2%, 0.6)",
+  color: "var(--text-primary)",
+  boxShadow: "var(--shadow-lg, 0 8px 32px hsl(0 0% 0% / 0.18))",
 };
 
 const STAGE_LABELS: Record<string, string> = {
@@ -73,29 +73,29 @@ function StackedPipelineTooltip({ active, payload, label }: any) {
   const entries = Object.entries(meta).filter(([, v]) => v.count > 0);
   const total = entries.reduce((s, [, v]) => s + v.count, 0);
   return (
-    <div style={{
-      background: "hsl(222, 20%, 11%)",
-      border: "1px solid hsl(222, 15%, 26%)",
+    <div className="chart-tooltip" style={{
+      background: "var(--bg-overlay)",
+      border: "1px solid var(--border-default)",
       borderRadius: 10,
       padding: "10px 14px",
-      boxShadow: "0 8px 32px hsla(222, 22%, 2%, 0.65)",
+      boxShadow: "var(--shadow-lg, 0 8px 32px hsl(0 0% 0% / 0.18))",
       fontFamily: "DM Sans, sans-serif",
       minWidth: 180,
       maxWidth: 260,
     }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: "hsl(210, 30%, 92%)", marginBottom: 2 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 2 }}>
         {label}
       </div>
-      <div style={{ fontSize: 11, color: "hsl(210, 14%, 50%)", marginBottom: 8 }}>
+      <div style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
         {total} {total === 1 ? "lead" : "leads"} total
       </div>
       {entries.map(([key, v]) => (
         <div key={key} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
           <span style={{ width: 8, height: 8, borderRadius: 2, background: v.color, flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: "hsl(210, 18%, 65%)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{ fontSize: 12, color: "var(--text-secondary)", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {v.displayName}
           </span>
-          <span style={{ fontSize: 12, fontWeight: 600, color: "hsl(210, 30%, 88%)", flexShrink: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-primary)", flexShrink: 0 }}>
             {v.count}
           </span>
           {v.value > 0 && (
@@ -106,7 +106,7 @@ function StackedPipelineTooltip({ active, payload, label }: any) {
         </div>
       ))}
       {entries.length === 0 && (
-        <div style={{ fontSize: 12, color: "hsl(210, 14%, 45%)" }}>No leads</div>
+        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>No leads</div>
       )}
     </div>
   );
@@ -116,16 +116,16 @@ function StackedPipelineTooltip({ active, payload, label }: any) {
 function AreaTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{
-      background: "hsl(222, 20%, 11%)",
-      border: "1px solid hsl(222, 15%, 26%)",
+    <div className="chart-tooltip" style={{
+      background: "var(--bg-overlay)",
+      border: "1px solid var(--border-default)",
       borderRadius: 10,
       padding: "8px 14px",
-      boxShadow: "0 8px 32px hsla(222, 22%, 2%, 0.65)",
+      boxShadow: "var(--shadow-lg, 0 8px 32px hsl(0 0% 0% / 0.18))",
       fontFamily: "DM Sans, sans-serif",
     }}>
-      <div style={{ fontSize: 12, color: "hsl(210, 14%, 50%)", marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "hsl(172, 72%, 50%)" }}>
+      <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--teal)" }}>
         {payload[0]?.value} Leads
       </div>
     </div>
@@ -666,11 +666,11 @@ export function Dashboard() {
                   width: 220,
                   maxHeight: 280,
                   overflowY: "auto",
-                  background: "hsl(222, 20%, 11%)",
-                  border: "1px solid hsl(222, 15%, 26%)",
+                  background: "var(--bg-overlay)",
+                  border: "1px solid var(--border-default)",
                   borderRadius: 10,
                   padding: "10px 12px",
-                  boxShadow: "0 8px 32px hsl(222 22% 3% / 0.65)",
+                  boxShadow: "var(--shadow-lg, 0 8px 32px hsl(0 0% 0% / 0.18))",
                   zIndex: 200,
                 }}>
                   <div style={{
@@ -678,14 +678,14 @@ export function Dashboard() {
                     fontWeight: 700,
                     letterSpacing: "0.1em",
                     textTransform: "uppercase",
-                    color: "hsl(210, 14%, 45%)",
+                    color: "var(--text-muted)",
                     marginBottom: 8,
                     fontFamily: "var(--font-sans)",
                   }}>
                     Status Index
                   </div>
                   {stackedStatusKeys.length === 0 ? (
-                    <div style={{ fontSize: 12, color: "hsl(210, 14%, 45%)" }}>No statuses configured</div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>No statuses configured</div>
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
                       {stackedStatusKeys.map(key => {
@@ -718,7 +718,7 @@ export function Dashboard() {
                             }} />
                             <span style={{
                               fontSize: 12,
-                              color: isActive ? "hsl(210, 30%, 90%)" : "hsl(210, 22%, 68%)",
+                              color: isActive ? "var(--text-primary)" : "var(--text-secondary)",
                               fontFamily: "var(--font-sans)",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
@@ -744,17 +744,17 @@ export function Dashboard() {
                 data={stageChartData}
                 margin={{ top: 6, right: 16, left: -10, bottom: 0 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 15%, 20%)" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" vertical={false} />
                 <XAxis
                   dataKey="stage"
-                  tick={{ fill: "hsl(210, 18%, 55%)", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}
+                  tick={{ fill: "var(--text-muted)", fontSize: 12, fontFamily: "DM Sans, sans-serif" }}
                   axisLine={false}
                   tickLine={false}
                   interval={0}
                   tickFormatter={(val: string) => val.length > 14 ? val.slice(0, 13) + "…" : val}
                 />
                 <YAxis
-                  tick={{ fill: "hsl(210, 14%, 45%)", fontSize: 11 }}
+                  tick={{ fill: "var(--text-muted)", fontSize: 11 }}
                   axisLine={false}
                   tickLine={false}
                   allowDecimals={false}

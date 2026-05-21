@@ -26,22 +26,28 @@ export function useAuth() {
   return context;
 }
 
-const IDLE_TIMEOUT  = 15 * 60 * 1000; // 15 min → auto logout
-const WARN_BEFORE   =  1 * 60 * 1000; // show popup 1 min before
+const IDLE_TIMEOUT     = 15 * 60 * 1000; // 15 min → auto logout (true inactivity)
+const WARN_BEFORE      =  2 * 60 * 1000; // show popup 2 min before
+const ACTIVITY_KEY     = 'slh_last_activity';
+const ACTIVITY_THROTTLE_MS = 2_000;       // don't write to LS more than once / 2s
+const TIMEOUT_POLL_MS  = 15_000;          // check idle status every 15s (reliable even on backgrounded tabs)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setTokenState] = useState(localStorage.getItem('slh_token'));
   const [, setLocation] = useLocation();
   const [showWarning, setShowWarning] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(Math.floor(WARN_BEFORE / 1000));
   const [refreshing, setRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
-  const idleTimer    = useRef<NodeJS.Timeout | null>(null);
-  const warnTimer    = useRef<NodeJS.Timeout | null>(null);
-  const countdownRef = useRef<NodeJS.Timeout | null>(null);
-  const tokenRef     = useRef(token);
-  const prevPermsRef = useRef<PermissionMap | undefined>();
+  const countdownRef    = useRef<NodeJS.Timeout | null>(null);
+  const pollRef         = useRef<NodeJS.Timeout | null>(null);
+  const lastWriteRef    = useRef<number>(0);
+  const tokenRef        = useRef(token);
+  const prevPermsRef    = useRef<PermissionMap | undefined>();
+  const activityChannel = useRef<BroadcastChannel | null>(null);
+  const refreshingRef   = useRef(false);    // prevents idle-poll/countdown from logging the user out mid-refresh
+  const showWarningRef  = useRef(false);    // mirror of showWarning for stale-closure-free reads inside the poll
 
   const { data: user, isLoading: loadingUser, error, refetch: refetchMe } = useGetMe({
     query: {
@@ -122,27 +128,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearAllTimers = useCallback(() => {
-    if (idleTimer.current)    clearTimeout(idleTimer.current);
-    if (warnTimer.current)    clearTimeout(warnTimer.current);
     if (countdownRef.current) clearInterval(countdownRef.current);
-    idleTimer.current    = null;
-    warnTimer.current    = null;
+    if (pollRef.current)      clearInterval(pollRef.current);
     countdownRef.current = null;
+    pollRef.current      = null;
   }, []);
 
-  const signOut = useCallback(() => {
+  const signOut = useCallback((reason: 'inactivity' | 'manual' | 'expired' = 'manual') => {
     clearAllTimers();
     setShowWarning(false);
-    setCountdown(60);
+    setCountdown(Math.floor(WARN_BEFORE / 1000));
     setToken(null);
-    // Broadcast logout to other tabs
+    try { localStorage.removeItem(ACTIVITY_KEY); } catch {}
     try { localStorage.setItem('slh_logout', String(Date.now())); } catch {}
-    setLocation('/auth');
+    // Tag the redirect so /auth can show the right message
+    const suffix = reason === 'inactivity' ? '?reason=inactivity' : reason === 'expired' ? '?reason=expired' : '';
+    setLocation('/auth' + suffix);
   }, [clearAllTimers, setToken, setLocation]);
 
-  // Register global 401 handler — any API call returning 401 triggers sign-out
+  // Register global 401 handler — any API call returning 401 triggers sign-out as "expired"
   useEffect(() => {
-    setUnauthorizedHandler(signOut);
+    setUnauthorizedHandler(() => signOut('expired'));
     return () => setUnauthorizedHandler(null);
   }, [signOut]);
 
@@ -155,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const status = (error as any)?.response?.status;
     if (status === 404) {
-      signOut();
+      signOut('expired');
     }
   }, [error, signOut]);
 
@@ -167,70 +173,165 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token, clearAllTimers]);
 
-  // Multi-tab sync: if another tab logs out, log out here too
+  // Multi-tab sync: if another tab logs out, log out here too.
+  // If another tab reports activity, treat it as activity here too.
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'slh_logout') signOut();
-      if (e.key === 'slh_token' && !e.newValue) signOut();
+      if (e.key === 'slh_logout') signOut('manual');
+      if (e.key === 'slh_token' && !e.newValue) signOut('manual');
       if (e.key === 'slh_token' && e.newValue && e.newValue !== tokenRef.current) {
         setTokenState(e.newValue);
         tokenRef.current = e.newValue;
+      }
+      if (e.key === ACTIVITY_KEY && e.newValue) {
+        // Activity recorded in another tab — dismiss our warning if up
+        setShowWarning(false);
       }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, [signOut]);
 
-  const resetTimer = useCallback(() => {
-    clearAllTimers();
-    setShowWarning(false);
-    setCountdown(60);
+  // ── Centralized activity recorder ──────────────────────────────────────
+  // Writes the wall-clock timestamp of the last user interaction to
+  // localStorage (throttled to once / 2s so we don't thrash). All tabs share
+  // the same key, so activity in any tab keeps every tab alive.
+  const recordActivity = useCallback(() => {
+    const now = Date.now();
+    if (now - lastWriteRef.current < ACTIVITY_THROTTLE_MS) return;
+    lastWriteRef.current = now;
+    try { localStorage.setItem(ACTIVITY_KEY, String(now)); } catch {}
+    // Broadcast to other tabs (storage event won't fire in the writing tab)
+    try { activityChannel.current?.postMessage({ type: 'activity', ts: now }); } catch {}
+    // If a warning is open and the user is interacting, dismiss it
+    setShowWarning(prev => prev ? false : prev);
+  }, []);
 
-    warnTimer.current = setTimeout(() => {
-      setShowWarning(true);
-      setCountdown(60);
-      countdownRef.current = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownRef.current!);
-            countdownRef.current = null;
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }, IDLE_TIMEOUT - WARN_BEFORE);
-
-    idleTimer.current = setTimeout(() => {
-      signOut();
-    }, IDLE_TIMEOUT);
-  }, [clearAllTimers, signOut]);
-
-  // Activity listeners + visibility-change handler
+  // ── Activity listeners ─────────────────────────────────────────────────
+  // We listen to a comprehensive set of events but cheaply (single throttled
+  // handler). The handler is stable so React never re-attaches mid-session,
+  // which was a major source of "logged out while typing" bugs.
   useEffect(() => {
     if (!token) return;
 
-    const EVENTS = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
-    EVENTS.forEach(e => window.addEventListener(e, resetTimer, { passive: true }));
+    // Seed the timestamp so a brand-new session doesn't immediately think it's idle
+    try { localStorage.setItem(ACTIVITY_KEY, String(Date.now())); } catch {}
+    lastWriteRef.current = Date.now();
 
-    const onVisibility = () => { if (!document.hidden) resetTimer(); };
-    document.addEventListener('visibilitychange', onVisibility);
+    // Open a BroadcastChannel for cross-tab activity (storage events handle the rest)
+    try { activityChannel.current = new BroadcastChannel('slh-activity'); } catch {
+      activityChannel.current = null;
+    }
+    if (activityChannel.current) {
+      activityChannel.current.onmessage = (e) => {
+        if (e.data?.type === 'activity' && typeof e.data.ts === 'number') {
+          // Update local view of last-activity without re-writing to LS
+          lastWriteRef.current = Math.max(lastWriteRef.current, e.data.ts);
+          setShowWarning(prev => prev ? false : prev);
+        }
+      };
+    }
 
-    resetTimer();
+    const EVENTS = [
+      'mousedown', 'keydown', 'scroll', 'touchstart',
+      'touchmove', 'click', 'pointermove', 'wheel',
+    ];
+    EVENTS.forEach(e => window.addEventListener(e, recordActivity, { passive: true }));
+    // Window focus also counts as activity (user returned to the tab)
+    window.addEventListener('focus', recordActivity);
 
     return () => {
-      EVENTS.forEach(e => window.removeEventListener(e, resetTimer));
-      document.removeEventListener('visibilitychange', onVisibility);
-      clearAllTimers();
+      EVENTS.forEach(e => window.removeEventListener(e, recordActivity));
+      window.removeEventListener('focus', recordActivity);
+      try { activityChannel.current?.close(); } catch {}
+      activityChannel.current = null;
     };
-  }, [token, resetTimer, clearAllTimers]);
+  }, [token, recordActivity]);
+
+  // ── Idle poll ──────────────────────────────────────────────────────────
+  // Instead of one giant setTimeout (unreliable on backgrounded tabs that may
+  // be throttled or suspended for minutes at a time), we poll every 15 s and
+  // compare wall-clock time vs the last activity timestamp. This is reliable
+  // because the check runs whenever the tab regains the event loop — even
+  // after long backgrounding.
+  useEffect(() => {
+    if (!token) return;
+
+    const evaluate = () => {
+      // Don't auto-logout while a "Stay Logged In" refresh is in flight —
+      // the user has explicitly asked to keep the session.
+      if (refreshingRef.current) return;
+      const last = Number(localStorage.getItem(ACTIVITY_KEY) || '0') || lastWriteRef.current;
+      const idleMs = Date.now() - last;
+      if (idleMs >= IDLE_TIMEOUT) {
+        signOut('inactivity');
+        return;
+      }
+      const remaining = IDLE_TIMEOUT - idleMs;
+      if (remaining <= WARN_BEFORE) {
+        const secsLeft = Math.max(1, Math.ceil(remaining / 1000));
+        setCountdown(secsLeft);
+        if (!showWarningRef.current) setShowWarning(true);
+      } else if (showWarningRef.current) {
+        setShowWarning(false);
+      }
+    };
+
+    // Validate immediately on mount / token change / tab visibility
+    evaluate();
+    pollRef.current = setInterval(evaluate, TIMEOUT_POLL_MS);
+
+    const onVisibility = () => { if (!document.hidden) evaluate(); };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      pollRef.current = null;
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [token, signOut]);
+
+  // Keep showWarningRef in sync so the poll's evaluate() never reads a stale
+  // value from its closure.
+  useEffect(() => { showWarningRef.current = showWarning; }, [showWarning]);
+
+  // ── Per-second countdown while warning is visible ──────────────────────
+  useEffect(() => {
+    if (!showWarning) {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      countdownRef.current = null;
+      return;
+    }
+    countdownRef.current = setInterval(() => {
+      // Same refresh guard as evaluate() — never log out while refreshing.
+      if (refreshingRef.current) return;
+      const last = Number(localStorage.getItem(ACTIVITY_KEY) || '0') || lastWriteRef.current;
+      const remaining = IDLE_TIMEOUT - (Date.now() - last);
+      if (remaining <= 0) {
+        signOut('inactivity');
+        return;
+      }
+      setCountdown(Math.max(1, Math.ceil(remaining / 1000)));
+    }, 1000);
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      countdownRef.current = null;
+    };
+  }, [showWarning, signOut]);
 
   const handleStayLoggedIn = useCallback(async () => {
     if (refreshing) return;
+    // Bump activity FIRST so any concurrent poll tick treats us as fresh,
+    // then raise the refresh guard so neither poll nor countdown can call
+    // signOut('inactivity') while the network request is in flight.
+    const nowStart = Date.now();
+    try { localStorage.setItem(ACTIVITY_KEY, String(nowStart)); } catch {}
+    lastWriteRef.current = nowStart;
+    refreshingRef.current = true;
     setRefreshing(true);
     try {
       const currentToken = tokenRef.current;
-      if (!currentToken) { signOut(); return; }
+      if (!currentToken) { signOut('expired'); return; }
 
       const res = await fetch('/api/auth/refresh', {
         method: 'POST',
@@ -238,19 +339,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!res.ok) {
-        signOut();
+        signOut('expired');
         return;
       }
 
       const { token: newToken } = await res.json();
       setToken(newToken);
-      resetTimer();
+      // Final fresh stamp so the next poll considers us active.
+      const now = Date.now();
+      try { localStorage.setItem(ACTIVITY_KEY, String(now)); } catch {}
+      lastWriteRef.current = now;
+      setShowWarning(false);
     } catch {
-      signOut();
+      signOut('expired');
     } finally {
+      refreshingRef.current = false;
       setRefreshing(false);
     }
-  }, [refreshing, signOut, setToken, resetTimer]);
+  }, [refreshing, signOut, setToken]);
 
   const hasPermission = (resource: string, action: string) => {
     if (user?.role === 'admin') return true;
@@ -268,12 +374,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       {/* ── Session timeout warning popup ── */}
       {showWarning && !!token && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 9999,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          background: "hsl(222 22% 3% / 0.75)",
-          backdropFilter: "blur(4px)",
-        }}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="slh-session-warning-title"
+          aria-describedby="slh-session-warning-desc"
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "hsl(222 22% 3% / 0.75)",
+            backdropFilter: "blur(4px)",
+          }}>
           <div style={{
             background: "var(--bg-elevated)",
             border: "1px solid var(--border-subtle)",
@@ -288,7 +399,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             gap: "var(--space-4)",
           }}>
             {/* Icon */}
-            <div style={{
+            <div aria-hidden="true" style={{
               width: 52, height: 52, borderRadius: "50%",
               background: "hsl(38 92% 60% / 0.12)",
               border: "1px solid hsl(38 92% 60% / 0.3)",
@@ -300,7 +411,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             {/* Title */}
             <div>
-              <h2 style={{
+              <h2 id="slh-session-warning-title" style={{
                 fontFamily: "var(--font-display)",
                 fontSize: "var(--text-lg)",
                 fontWeight: 700,
@@ -309,7 +420,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }}>
                 Session Expiring Soon
               </h2>
-              <p style={{
+              <p id="slh-session-warning-desc" style={{
                 marginTop: 8, fontSize: "var(--text-sm)",
                 color: "var(--text-secondary)", lineHeight: 1.5,
               }}>
@@ -318,7 +429,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             </div>
 
             {/* Countdown ring */}
-            <div style={{
+            <div
+              role="timer"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`${countdown} seconds remaining before automatic logout`}
+              style={{
               width: 72, height: 72, borderRadius: "50%",
               background: countdown <= 10
                 ? "hsl(0 72% 51% / 0.12)"
@@ -363,7 +479,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 {refreshing ? "Refreshing…" : "Stay Logged In"}
               </button>
               <button
-                onClick={signOut}
+                onClick={() => signOut('manual')}
                 style={{
                   flex: 1, height: 42,
                   background: "hsl(0 72% 51% / 0.08)",

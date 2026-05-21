@@ -132,7 +132,7 @@ export function Analytics() {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "var(--space-4)", marginBottom: "var(--space-6)" }}>
+      <div className="analytics-stats-grid">
         <AnalyticStatCard label="Win Rate" value={`${Math.round(stats?.winRate || 0)}%`} sub="Leads marked Won / Total" icon={<Target size={16} />} iconClass="stat-icon-success" />
         <AnalyticStatCard label="Avg Conversion" value={avgDisplay} sub="Avg days to Won/Lost status" icon={<Clock size={16} />} iconClass="stat-icon-teal" />
         <AnalyticStatCard label="Active Pipeline" value={stats?.activePipelineCount ?? 0} sub="Leads without Won/Lost status" icon={<Layers size={16} />} iconClass="stat-icon-purple" />
@@ -140,8 +140,8 @@ export function Analytics() {
       </div>
 
       {/* Charts grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
-        <div className="chart-card" style={{ height: 320, display: "flex", flexDirection: "column" }}>
+      <div className="analytics-charts-grid">
+        <div className="chart-card analytics-chart" style={{ display: "flex", flexDirection: "column" }}>
           <div className="chart-title">Lead Volume Trend (30 Days)</div>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={trendData}>
@@ -159,7 +159,7 @@ export function Analytics() {
           </ResponsiveContainer>
         </div>
 
-        <div className="chart-card" style={{ height: 320, display: "flex", flexDirection: "column" }}>
+        <div className="chart-card analytics-chart" style={{ display: "flex", flexDirection: "column" }}>
           <div className="chart-title">Weekly Conversion Rate (8 Weeks)</div>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={weeklyConversion}>
@@ -224,8 +224,8 @@ export function Analytics() {
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-4)", marginBottom: "var(--space-4)" }}>
-        <div className="chart-card" style={{ height: 280, display: "flex", flexDirection: "column" }}>
+      <div className="analytics-charts-grid">
+        <div className="chart-card analytics-chart analytics-chart-sm" style={{ display: "flex", flexDirection: "column" }}>
           <div className="chart-title">Deal Kill Reasons</div>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={formattedKillReasons} layout="vertical" margin={{ left: 16, right: 16 }}>

@@ -1,0 +1,431 @@
+````md id="session-timeout-fix"
+# Fix Session Timeout / Auto Logout Logic Across the System
+
+The current session timeout implementation is unreliable and behaving incorrectly.
+
+There are 2 major issues:
+
+1. Sometimes the session DOES NOT expire even after long inactivity.
+2. Sometimes the session expires EVEN WHEN the user is actively working on the system.
+
+This is a critical authentication/session management issue and must be fixed properly at the architecture level.
+
+---
+
+# CURRENT ISSUES
+
+## Issue 1 — Session Not Expiring
+
+Sometimes users remain logged in indefinitely even after:
+
+- prolonged inactivity
+- idle browser tab
+- system inactivity
+- no interaction
+
+This is a security issue.
+
+---
+
+## Issue 2 — Session Expiring While User Is Active
+
+Users are getting logged out even while:
+
+- typing
+- navigating pages
+- clicking buttons
+- using filters
+- scrolling
+- working continuously
+
+This is incorrect and creates a very poor user experience.
+
+---
+
+# REQUIRED BEHAVIOUR
+
+# SESSION TIMEOUT RULES
+
+## ACTIVE USER
+
+The session MUST remain alive while the user is actively using the application.
+
+ANY valid user interaction should refresh/reset the inactivity timer.
+
+---
+
+## INACTIVE USER
+
+The session should ONLY expire after:
+
+```txt
+X minutes of TRUE inactivity
+```
+
+Example:
+
+```txt
+30 minutes of inactivity
+```
+
+---
+
+# REQUIRED USER ACTIVITY DETECTION
+
+The inactivity timer MUST reset on:
+
+```ts
+mousemove
+mousedown
+click
+scroll
+keypress
+keydown
+touchstart
+touchmove
+pointermove
+visibilitychange
+focus
+navigation
+API activity (optional)
+```
+
+---
+
+# IMPORTANT
+
+DO NOT rely ONLY on:
+
+```ts
+mousemove
+```
+
+or
+
+```ts
+setTimeout
+```
+
+without proper cleanup/reset logic.
+
+---
+
+# REQUIRED ARCHITECTURE
+
+# USE CENTRALIZED SESSION MANAGER
+
+Create ONE reusable global session timeout manager.
+
+DO NOT implement timeout logic separately in different pages/components.
+
+Use:
+
+- Context Provider
+OR
+- Global Auth Provider
+OR
+- Central Session Hook
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+## Recommended Flow
+
+### 1. User activity detected
+
+```ts
+resetInactivityTimer()
+```
+
+---
+
+### 2. Timer restarts cleanly
+
+```ts
+clearTimeout(existingTimer)
+```
+
+then:
+
+```ts
+startNewTimer()
+```
+
+---
+
+### 3. No activity for configured duration
+
+```ts
+logoutUser()
+```
+
+---
+
+# CRITICAL BUG TO FIX
+
+Likely current issue:
+
+- multiple timers running simultaneously
+- timers not cleared correctly
+- stale closures
+- event listeners duplicated
+- timers re-created on every render
+- background tab issues
+- visibility state mishandling
+
+---
+
+# REQUIRED TIMER HANDLING
+
+## Correct Example
+
+```ts
+let inactivityTimer: NodeJS.Timeout;
+
+const resetTimer = () => {
+  clearTimeout(inactivityTimer);
+
+  inactivityTimer = setTimeout(() => {
+    handleSessionTimeout();
+  }, SESSION_TIMEOUT_MS);
+};
+```
+
+---
+
+# REQUIRED EVENT CLEANUP
+
+Ensure ALL listeners are cleaned properly:
+
+```ts
+return () => {
+  events.forEach(event =>
+    window.removeEventListener(event, resetTimer)
+  );
+
+  clearTimeout(inactivityTimer);
+};
+```
+
+---
+
+# BACKGROUND TAB HANDLING
+
+## REQUIRED
+
+Handle browser tab visibility properly.
+
+When tab becomes active again:
+
+```ts
+document.visibilityState
+```
+
+validate:
+
+- session expiry
+- last activity timestamp
+- token validity
+
+---
+
+# TOKEN VALIDATION
+
+Session timeout must sync with:
+
+- JWT expiry
+- backend session expiry
+- refresh token expiry
+
+Frontend and backend timeout durations MUST match.
+
+---
+
+# REQUIRED STORAGE
+
+Persist:
+
+```ts
+lastActivityTimestamp
+```
+
+in:
+
+```ts
+localStorage
+OR
+memory store
+```
+
+so refreshes/tabs stay consistent.
+
+---
+
+# MULTI-TAB SUPPORT
+
+If user is active in ONE tab:
+
+✅ other tabs should remain active
+
+DO NOT logout one tab independently unless backend session expired.
+
+Use:
+
+```ts
+storage events
+BroadcastChannel API
+```
+
+if needed.
+
+---
+
+# REQUIRED USER EXPERIENCE
+
+# BEFORE SESSION EXPIRES
+
+Show warning modal:
+
+Example:
+
+```txt
+Your session will expire in 2 minutes due to inactivity.
+```
+
+Buttons:
+
+```txt
+[ Stay Logged In ]
+[ Logout ]
+```
+
+---
+
+# IF USER CLICKS "Stay Logged In"
+
+```ts
+resetTimer()
+```
+
+and keep session alive.
+
+---
+
+# REQUIRED LOGOUT FLOW
+
+When session truly expires:
+
+✅ clear auth tokens  
+✅ clear sensitive cache  
+✅ redirect to login page  
+✅ show proper message:
+
+```txt
+Your session expired due to inactivity.
+```
+
+NOT:
+
+❌ unauthorized  
+❌ email not whitelisted  
+❌ access denied  
+
+---
+
+# IMPORTANT
+
+DO NOT trigger logout because:
+
+- component re-rendered
+- route changed
+- API call failed
+- permissions updated
+- page refreshed
+
+Timeout must ONLY happen due to:
+
+✅ true inactivity  
+OR  
+✅ actual token/session expiry
+
+---
+
+# REQUIRED QA TESTING
+
+# TEST SCENARIOS
+
+## Active User
+
+✅ Session NEVER expires while actively using system
+
+---
+
+## Idle User
+
+✅ Session expires ONLY after configured idle duration
+
+---
+
+## Background Tab
+
+✅ Timer behaves correctly after tab inactive
+
+---
+
+## Multiple Tabs
+
+✅ Activity in one tab keeps session alive everywhere
+
+---
+
+## Browser Refresh
+
+✅ Session state remains accurate
+
+---
+
+## Long Form Entry
+
+✅ Typing continuously does NOT logout user
+
+---
+
+## Scrolling Only
+
+✅ Scroll activity resets timer
+
+---
+
+## API Polling
+
+✅ Polling alone does NOT falsely count as activity unless intended
+
+---
+
+## Warning Modal
+
+✅ Warning appears before timeout
+
+---
+
+## Token Expiry Sync
+
+✅ Frontend + backend expiry always aligned
+
+---
+
+# REQUIRED FINAL RESULT
+
+After implementation:
+
+✅ Stable session timeout system  
+✅ No random logouts  
+✅ No sessions staying alive forever  
+✅ Proper inactivity tracking  
+✅ Enterprise-grade authentication behaviour  
+✅ Proper cleanup of timers/listeners  
+✅ Reliable multi-tab support  
+✅ Correct idle detection  
+✅ Professional user experience  
+````

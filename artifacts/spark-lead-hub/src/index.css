@@ -628,6 +628,50 @@ a:hover { opacity: 0.85; }
   margin-bottom: var(--space-6);
 }
 
+/* ── Analytics page responsive grids ─────────────────── */
+.analytics-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+.analytics-charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+.analytics-chart    { height: 320px; }
+.analytics-chart-sm { height: 280px; }
+
+@media (max-width: 1024px) {
+  .analytics-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .analytics-charts-grid { grid-template-columns: 1fr; }
+  .analytics-chart    { height: 260px; }
+  .analytics-chart-sm { height: 240px; }
+}
+@media (max-width: 480px) {
+  .analytics-stats-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+}
+
+/* ── Profile page responsive layout ──────────────────── */
+.profile-page         { padding: var(--space-8) var(--space-6); }
+.profile-avatar-row   { display: flex; align-items: flex-end; gap: var(--space-5); margin-bottom: var(--space-8); }
+.profile-actions-row  { display: flex; justify-content: flex-end; gap: var(--space-3); }
+.profile-card-body    { padding: var(--space-8); }
+
+@media (max-width: 640px) {
+  .profile-page         { padding: var(--space-5) var(--space-3); }
+  .profile-card-body    { padding: var(--space-5); }
+  .profile-avatar-row   { flex-direction: column; align-items: center; text-align: center; gap: var(--space-3); margin-bottom: var(--space-6); }
+  .profile-avatar-row > div:last-child { flex: unset; width: 100%; }
+  .profile-avatar-row .profile-action-buttons { justify-content: center; }
+  .profile-actions-row  { flex-direction: column-reverse; align-items: stretch; gap: var(--space-2); }
+  .profile-actions-row > button { width: 100%; justify-content: center; }
+}
+
 /* ============================================
    BUTTON
    ============================================ */
@@ -2790,6 +2834,14 @@ a:hover { opacity: 0.85; }
   .charts-grid, .charts-grid-2 { grid-template-columns: 1fr !important; }
   .chart-card { padding: var(--space-4); }
   .chart-title { font-size: var(--text-sm); }
+
+  /* Trim oversized empty-state vertical space on mobile */
+  .timeline-tab.timeline-empty { min-height: 120px; }
+  .kanban-cards                { min-height: 120px; }
+  .empty-state                 { padding: var(--space-5) var(--space-3); min-height: 0; }
+
+  /* Tighten page wrapper padding so cards aren't floating in whitespace */
+  .page { padding-left: var(--space-3); padding-right: var(--space-3); }
 
   /* [4] TABLE — horizontal scroll, preserve touch */
   .table-scroll-wrapper {

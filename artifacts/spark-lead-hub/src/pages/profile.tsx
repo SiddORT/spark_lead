@@ -109,9 +109,8 @@ export function Profile() {
   const role = user?.role ?? "member";
 
   return (
-    <div style={{
+    <div className="profile-page" style={{
       minHeight: "100vh", background: "var(--bg-base)",
-      padding: "var(--space-8) var(--space-6)",
       display: "flex", flexDirection: "column", alignItems: "center",
     }}>
       {/* Back */}
@@ -159,9 +158,9 @@ export function Profile() {
         </div>
 
         {/* Body */}
-        <div style={{ padding: "var(--space-8)" }}>
+        <div className="profile-card-body">
           {/* Avatar section */}
-          <div style={{ display: "flex", alignItems: "flex-end", gap: "var(--space-5)", marginBottom: "var(--space-8)" }}>
+          <div className="profile-avatar-row">
             {/* Avatar ring */}
             <div style={{ position: "relative", flexShrink: 0 }}>
               <div style={{
@@ -205,7 +204,7 @@ export function Profile() {
               <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginBottom: 10 }}>
                 JPG, PNG or WebP · max 5 MB · cropped to square
               </div>
-              <div style={{ display: "flex", gap: "var(--space-2)" }}>
+              <div className="profile-action-buttons" style={{ display: "flex", gap: "var(--space-2)" }}>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
@@ -332,11 +331,10 @@ export function Profile() {
           </div>
 
           {/* Save */}
-          <div style={{
+          <div className="profile-actions-row" style={{
             marginTop: "var(--space-8)",
             paddingTop: "var(--space-6)",
             borderTop: "1px solid var(--border-subtle)",
-            display: "flex", justifyContent: "flex-end", gap: "var(--space-3)",
           }}>
             <button
               type="button"
