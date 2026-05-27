@@ -1,0 +1,300 @@
+````md
+# Fix Incorrect Lead Change Email Notifications Logic
+
+The current lead notification email system has incorrect recipient logic.
+
+At present:
+
+- Lead Owners receive emails even when THEY themselves make the changes
+- Lead Handlers receive emails even when THEY themselves make the changes
+
+This creates:
+- unnecessary email spam
+- redundant notifications
+- poor UX
+- confusing activity alerts
+- non-enterprise behaviour
+
+A user should NEVER receive an email notification for actions THEY themselves performed.
+
+---
+
+# CURRENT INCORRECT BEHAVIOUR
+
+## SCENARIO 1
+
+### User A = Lead Owner
+### User B = Lead Handler
+
+If:
+- User A edits the lead
+
+Current behaviour:
+❌ User A receives email  
+❌ User B receives email  
+
+Expected behaviour:
+✅ ONLY User B should receive email  
+
+Because:
+- User A already knows the changes they made
+- sending self-notifications is redundant
+
+---
+
+## SCENARIO 2
+
+### User A = Lead Owner
+### User B = Lead Handler
+
+If:
+- User B edits the lead
+
+Current behaviour:
+❌ User A receives email  
+❌ User B receives email  
+
+Expected behaviour:
+✅ ONLY User A should receive email  
+
+---
+
+# REQUIRED LOGIC
+
+# RULE
+
+The user performing the action MUST NEVER receive notification emails for their own actions.
+
+---
+
+# REQUIRED EMAIL RECIPIENT LOGIC
+
+## IF LEAD OWNER MAKES CHANGES
+
+Send notification ONLY TO:
+✅ Lead Handler
+
+Do NOT send to:
+❌ Lead Owner (actor)
+
+---
+
+## IF LEAD HANDLER MAKES CHANGES
+
+Send notification ONLY TO:
+✅ Lead Owner
+
+Do NOT send to:
+❌ Lead Handler (actor)
+
+---
+
+## IF BOTH OWNER + HANDLER ARE SAME USER
+
+Example:
+
+```txt
+Lead Owner = siddharth@company.com
+Lead Handler = siddharth@company.com
+```
+
+If that user edits the lead:
+
+Expected:
+✅ NO EMAIL SHOULD BE SENT
+
+Reason:
+- actor and recipient are same
+- self-notification is meaningless
+
+---
+
+# REQUIRED IMPLEMENTATION
+
+# DETERMINE ACTOR USER
+
+Before sending emails:
+
+Identify:
+
+```ts
+actorUserId
+actorEmail
+```
+
+based on:
+- authenticated session
+- current logged-in user
+- JWT/session auth context
+
+---
+
+# DETERMINE RECIPIENTS
+
+Build recipient list dynamically.
+
+Example:
+
+```ts
+const recipients = [leadOwnerEmail, leadHandlerEmail]
+  .filter(Boolean)
+  .filter(email => email !== actorEmail);
+```
+
+---
+
+# REMOVE DUPLICATES
+
+Ensure duplicate emails are never sent.
+
+Example:
+
+```ts
+const uniqueRecipients = [...new Set(recipients)];
+```
+
+---
+
+# REQUIRED CONDITIONS
+
+# DO NOT SEND EMAIL IF
+
+## SAME USER
+
+```txt
+actorEmail === recipientEmail
+```
+
+---
+
+## EMPTY EMAIL
+
+```txt
+null
+undefined
+empty string
+```
+
+---
+
+## INACTIVE USER
+
+If user account is:
+- disabled
+- archived
+- removed
+
+Do not send.
+
+---
+
+# REQUIRED EMAIL TRIGGERS
+
+Apply this corrected logic to ALL lead-related notifications:
+
+✅ Lead updated  
+✅ Stage changed  
+✅ Follow-up changed  
+✅ Notes added  
+✅ Value changed  
+✅ Lead reassigned  
+✅ Status changed  
+✅ Outcome changed  
+✅ Service changed  
+✅ Company changed  
+✅ Any audit-tracked modification  
+
+---
+
+# REQUIRED AUDIT LOG BEHAVIOUR
+
+Audit logs should STILL record:
+
+```txt
+"Lead updated by Siddharth"
+```
+
+But:
+❌ no self-email should be sent
+
+---
+
+# REQUIRED BACKEND FIX
+
+Review:
+- email notification service
+- lead update handler
+- activity event emitter
+- websocket/email trigger layer
+- automation service
+
+to ensure:
+- actor exclusion logic exists everywhere
+
+---
+
+# REQUIRED QA TESTING
+
+# TEST CASE 1
+
+## Owner edits lead
+
+Expected:
+✅ Handler receives email  
+❌ Owner does not receive email  
+
+---
+
+# TEST CASE 2
+
+## Handler edits lead
+
+Expected:
+✅ Owner receives email  
+❌ Handler does not receive email  
+
+---
+
+# TEST CASE 3
+
+## Owner = Handler = same user
+
+Expected:
+❌ No email sent  
+
+---
+
+# TEST CASE 4
+
+## Third admin edits lead
+
+Expected:
+✅ Owner receives email  
+✅ Handler receives email  
+❌ Acting admin does not receive email  
+
+---
+
+# TEST CASE 5
+
+## Multiple rapid edits
+
+Expected:
+✅ Correct recipients only  
+✅ No duplicate emails  
+✅ No self-notifications  
+
+---
+
+# REQUIRED FINAL RESULT
+
+After implementation:
+
+✅ Users never receive emails for their own actions  
+✅ Only other associated users receive updates  
+✅ Notification logic becomes enterprise-grade  
+✅ Email spam is reduced  
+✅ Lead collaboration behaves correctly  
+✅ Recipient filtering is intelligent and dynamic  
+✅ Notification behaviour aligns with real-world CRM systems  
+````

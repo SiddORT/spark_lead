@@ -576,25 +576,33 @@ router.patch("/:id", requireAuth, requirePermission("leads", "update"), async (r
         }))
       );
 
-      // Send activity alert emails
+      // Send activity alert emails — never to the actor; dedupe if owner === handler
       const updated = await db.select().from(leadsTable).where(eq(leadsTable.id, req.params.id)).limit(1);
       if (updated[0]) {
-        const recipientIds = [updated[0].leadOwner, updated[0].dealHandler].filter(Boolean);
-        for (const recipientId of recipientIds) {
-          try {
-            const user = await db.select().from(usersTable).where(eq(usersTable.id, recipientId!)).limit(1);
-            if (user[0]) {
-              const actor = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
-              const resolvedChanges = await resolveActivitiesForEmail(activities);
-              await sendActivityAlertEmail({
-                recipientEmail: user[0].email,
-                leadName: updated[0].leadName,
-                changes: resolvedChanges,
-                actorName: actor[0]?.displayName || req.user!.email,
-              });
+        const actorId = req.user!.userId;
+        const recipientIds = Array.from(
+          new Set(
+            [updated[0].leadOwner, updated[0].dealHandler]
+              .filter((id): id is string => !!id && id !== actorId)
+          )
+        );
+        if (recipientIds.length > 0) {
+          const actor = await db.select().from(usersTable).where(eq(usersTable.id, actorId)).limit(1);
+          const resolvedChanges = await resolveActivitiesForEmail(activities);
+          for (const recipientId of recipientIds) {
+            try {
+              const user = await db.select().from(usersTable).where(eq(usersTable.id, recipientId)).limit(1);
+              if (user[0]?.email) {
+                await sendActivityAlertEmail({
+                  recipientEmail: user[0].email,
+                  leadName: updated[0].leadName,
+                  changes: resolvedChanges,
+                  actorName: actor[0]?.displayName || req.user!.email,
+                });
+              }
+            } catch {
+              // ignore email errors
             }
-          } catch {
-            // ignore email errors
           }
         }
       }
@@ -720,16 +728,20 @@ router.post("/:id/notes", requireAuth, requirePermission("leads", "create"), asy
     const note = await db.select().from(leadNotesTable).where(eq(leadNotesTable.id, noteId)).limit(1);
     const author = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
 
-    // Send activity alert
+    // Send activity alert — never to the actor; dedupe if owner === handler
     const lead = await db.select().from(leadsTable).where(eq(leadsTable.id, req.params.id)).limit(1);
     if (lead[0]) {
-      const recipientIds = [lead[0].leadOwner, lead[0].dealHandler].filter(
-        (id) => id && id !== req.user!.userId
+      const actorId = req.user!.userId;
+      const recipientIds = Array.from(
+        new Set(
+          [lead[0].leadOwner, lead[0].dealHandler]
+            .filter((id): id is string => !!id && id !== actorId)
+        )
       );
       for (const recipientId of recipientIds) {
         try {
-          const user = await db.select().from(usersTable).where(eq(usersTable.id, recipientId!)).limit(1);
-          if (user[0]) {
+          const user = await db.select().from(usersTable).where(eq(usersTable.id, recipientId)).limit(1);
+          if (user[0]?.email) {
             await sendActivityAlertEmail({
               recipientEmail: user[0].email,
               leadName: lead[0].leadName,
