@@ -823,6 +823,43 @@ function DetailsTab({
 }
 
 // ─── Followers section (Details tab) ──────────────────
+const FOLLOWERS_PREVIEW_LIMIT = 5;
+
+function FollowerRow({
+  follower,
+  ownerId,
+  handlerId,
+  showDate,
+}: {
+  follower: any;
+  ownerId: string | null;
+  handlerId: string | null;
+  showDate?: boolean;
+}) {
+  const isOwner = follower.userId === ownerId;
+  const isHandler = follower.userId === handlerId;
+  const tag = isOwner ? "Owner" : isHandler ? "Handler" : "Follower";
+  const tagClass = isOwner ? "is-owner" : isHandler ? "is-handler" : "";
+  return (
+    <div className="follower-row">
+      <span className="follower-avatar" aria-hidden>
+        {(follower.displayName || follower.email || "?")[0].toUpperCase()}
+      </span>
+      <div className="follower-meta">
+        <div className="follower-name">{follower.displayName}</div>
+        <div className="follower-email">{follower.email}</div>
+      </div>
+      {showDate && follower.createdAt && (
+        <span className="follower-since" title={formatFullDate(follower.createdAt)}>
+          <CalendarClock size={11} />
+          {format(new Date(follower.createdAt), "d MMM yyyy")}
+        </span>
+      )}
+      <span className={`follower-role-tag ${tagClass}`.trim()}>{tag}</span>
+    </div>
+  );
+}
+
 function FollowersSection({
   leadId,
   ownerId,
@@ -833,128 +870,176 @@ function FollowersSection({
   handlerId: string | null;
 }) {
   const { data: followers = [] } = useGetLeadFollowers(leadId);
+  const [modalOpen, setModalOpen] = useState(false);
+  const list = followers as any[];
+  const visible = list.slice(0, FOLLOWERS_PREVIEW_LIMIT);
+  const hasMore = list.length > FOLLOWERS_PREVIEW_LIMIT;
+
   return (
     <div>
-      <div
-        className="details-section-label"
-        style={{ display: "flex", alignItems: "center", gap: 6 }}
-      >
+      <div className="details-section-label followers-section-header">
         <Users size={13} style={{ opacity: 0.7 }} />
         Followers
-        <span
-          style={{
-            marginLeft: 6,
-            fontSize: 11,
-            padding: "1px 7px",
-            borderRadius: 999,
-            background: "var(--surface-2, hsl(220 18% 14%))",
-            color: "var(--text-secondary)",
-            fontWeight: 600,
-          }}
-        >
-          {(followers as any[]).length}
-        </span>
+        <span className="followers-count-pill">{list.length}</span>
       </div>
 
-      {(followers as any[]).length === 0 ? (
-        <div
-          style={{
-            fontSize: "var(--text-xs)",
-            color: "var(--text-muted)",
-            padding: "var(--sp-3) 0",
-          }}
-        >
+      {list.length === 0 ? (
+        <div className="followers-empty">
           No followers yet. Anyone except the Owner and Handler can follow this lead.
         </div>
       ) : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-            marginTop: 4,
-          }}
-        >
-          {(followers as any[]).map((f: any) => {
-            const isOwner = f.userId === ownerId;
-            const isHandler = f.userId === handlerId;
-            const tag = isOwner ? "Owner" : isHandler ? "Handler" : "Follower";
-            return (
-              <div
+        <>
+          <div className="followers-list">
+            {visible.map((f: any) => (
+              <FollowerRow
                 key={f.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "8px 10px",
-                  borderRadius: 8,
-                  background: "var(--surface-2, hsl(220 18% 12%))",
-                  border: "1px solid var(--border, hsl(220 14% 20%))",
-                }}
-              >
-                <span
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    background: "var(--teal-dim)",
-                    color: "var(--teal)",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    flexShrink: 0,
-                  }}
-                >
-                  {(f.displayName || f.email || "?")[0].toUpperCase()}
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: "var(--text-sm)",
-                      fontWeight: 600,
-                      color: "var(--text-primary)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {f.displayName}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {f.email}
-                  </div>
-                </div>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: "0.05em",
-                    textTransform: "uppercase",
-                    padding: "2px 7px",
-                    borderRadius: 4,
-                    background: "var(--teal-dim)",
-                    color: "var(--teal)",
-                    flexShrink: 0,
-                  }}
-                >
-                  {tag}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+                follower={f}
+                ownerId={ownerId}
+                handlerId={handlerId}
+                showDate
+              />
+            ))}
+          </div>
+          {hasMore && (
+            <button
+              type="button"
+              className="followers-view-all"
+              onClick={() => setModalOpen(true)}
+            >
+              <Users size={13} />
+              View All Followers ({list.length})
+            </button>
+          )}
+          {!hasMore && list.length >= 3 && (
+            <button
+              type="button"
+              className="followers-view-all"
+              onClick={() => setModalOpen(true)}
+            >
+              <Search size={12} />
+              Search Followers
+            </button>
+          )}
+        </>
+      )}
+
+      {modalOpen && (
+        <FollowersModal
+          followers={list}
+          ownerId={ownerId}
+          handlerId={handlerId}
+          onClose={() => setModalOpen(false)}
+        />
       )}
     </div>
+  );
+}
+
+// ─── Followers modal (View All + search) ──────────────
+function FollowersModal({
+  followers,
+  ownerId,
+  handlerId,
+  onClose,
+}: {
+  followers: any[];
+  ownerId: string | null;
+  handlerId: string | null;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  // ESC to close, lock background scroll, restore focus to opener
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+      if (opener && typeof opener.focus === "function") {
+        try {
+          opener.focus();
+        } catch {
+          /* opener no longer in DOM */
+        }
+      }
+    };
+  }, [onClose]);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? followers.filter(
+        (f) =>
+          (f.displayName || "").toLowerCase().includes(q) ||
+          (f.email || "").toLowerCase().includes(q),
+      )
+    : followers;
+
+  return createPortal(
+    <div
+      className="followers-modal-overlay"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="All followers"
+    >
+      <div className="followers-modal">
+        <div className="followers-modal-header">
+          <h3 className="followers-modal-title">
+            <Users size={16} style={{ color: "var(--teal)" }} />
+            Followers ({followers.length})
+          </h3>
+          <button
+            type="button"
+            className="followers-modal-close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="followers-modal-search">
+          <div className="followers-modal-search-wrap">
+            <Search size={14} className="followers-modal-search-icon" />
+            <input
+              type="text"
+              className="followers-modal-search-input"
+              placeholder="Search followers by name or email…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoFocus
+            />
+          </div>
+        </div>
+
+        <div className="followers-modal-body">
+          {filtered.length === 0 ? (
+            <div className="followers-modal-empty">
+              No followers match "{query}".
+            </div>
+          ) : (
+            filtered.map((f: any) => (
+              <FollowerRow
+                key={f.id}
+                follower={f}
+                ownerId={ownerId}
+                handlerId={handlerId}
+                showDate
+              />
+            ))
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -998,20 +1083,8 @@ function FollowButton({ leadId, lead }: { leadId: string; lead: any }) {
   if (isOwner || isHandler) {
     return (
       <span
+        className="follow-pill-static"
         title="You already receive updates as Owner or Handler"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 5,
-          fontSize: 11,
-          fontWeight: 600,
-          padding: "5px 10px",
-          borderRadius: 6,
-          color: "var(--text-secondary)",
-          background: "var(--surface-2, hsl(220 18% 14%))",
-          border: "1px solid var(--border, hsl(220 14% 22%))",
-          whiteSpace: "nowrap",
-        }}
       >
         <Eye size={12} />
         <span className="follow-btn-label">Already Receiving Updates</span>
@@ -1034,42 +1107,7 @@ function FollowButton({ leadId, lead }: { leadId: string; lead: any }) {
       onClick={onClick}
       disabled={busy}
       title={isFollowing ? "Unfollow this lead" : "Follow this lead to receive updates"}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 6,
-        fontSize: 12,
-        fontWeight: 600,
-        padding: "6px 12px",
-        borderRadius: 6,
-        cursor: busy ? "wait" : "pointer",
-        transition: "all 0.18s ease",
-        whiteSpace: "nowrap",
-        color: isFollowing ? "var(--teal)" : "var(--text-secondary)",
-        background: isFollowing ? "var(--teal-dim)" : "transparent",
-        border: `1px solid ${isFollowing ? "hsl(196 100% 46% / 0.45)" : "var(--border, hsl(220 14% 22%))"}`,
-        opacity: busy ? 0.6 : 1,
-      }}
-      onMouseEnter={(e) => {
-        if (busy) return;
-        if (isFollowing) {
-          // hover suggests removal
-          e.currentTarget.style.background = "hsl(0 70% 50% / 0.12)";
-          e.currentTarget.style.borderColor = "hsl(0 70% 55% / 0.4)";
-          e.currentTarget.style.color = "hsl(0 70% 65%)";
-        } else {
-          e.currentTarget.style.background = "var(--teal-dim)";
-          e.currentTarget.style.borderColor = "hsl(196 100% 46% / 0.45)";
-          e.currentTarget.style.color = "var(--teal)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = isFollowing ? "var(--teal-dim)" : "transparent";
-        e.currentTarget.style.borderColor = isFollowing
-          ? "hsl(196 100% 46% / 0.45)"
-          : "var(--border, hsl(220 14% 22%))";
-        e.currentTarget.style.color = isFollowing ? "var(--teal)" : "var(--text-secondary)";
-      }}
+      className={`follow-pill ${isFollowing ? "is-following" : ""}`.trim()}
     >
       {isFollowing ? <UserMinus size={13} /> : <UserPlus size={13} />}
       <span className="follow-btn-label">{isFollowing ? "Following" : "Follow Lead"}</span>
