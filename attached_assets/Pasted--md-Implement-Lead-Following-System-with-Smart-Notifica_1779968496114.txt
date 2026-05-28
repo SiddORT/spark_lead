@@ -1,0 +1,562 @@
+````md
+# Implement Lead Following System with Smart Notifications, Enterprise Logic, and Fully Refined Cross-Platform UX
+
+I want to implement a complete **Lead Following System** inside the CRM platform.
+
+The system must be:
+- enterprise-grade
+- logically perfect
+- highly refined
+- scalable
+- smooth
+- responsive
+- bug-free
+- production-ready
+
+The entire feature must integrate seamlessly with:
+- existing lead owner logic
+- lead handler logic
+- notifications
+- email system
+- audit logs
+- dashboard activity
+- mobile responsiveness
+- theme system
+- existing permission structure
+
+The implementation must be done thoroughly without leaving any gaps behind.
+
+---
+
+# FEATURE OVERVIEW
+
+Users should now be able to:
+
+✅ Follow specific leads  
+✅ Follow multiple leads  
+✅ Receive updates for followed leads  
+✅ Unfollow leads  
+✅ View followed leads list  
+✅ Get notifications for followed leads  
+
+BUT:
+
+Users who are already:
+- Lead Owner
+OR
+- Lead Handler
+
+must NOT be allowed to follow the same lead because they already receive updates by default.
+
+---
+
+# REQUIRED LEAD FOLLOWING LOGIC
+
+# USER CAN FOLLOW LEADS ONLY IF
+
+The user is:
+
+❌ NOT Lead Owner  
+AND  
+❌ NOT Lead Handler  
+
+for that lead.
+
+---
+
+# EXAMPLE
+
+## Lead A
+
+Lead Owner:
+```txt
+Siddharth
+```
+
+Lead Handler:
+```txt
+Vishal
+```
+
+User:
+```txt
+Amit
+```
+
+Amit CAN follow the lead.
+
+---
+
+## But
+
+Siddharth CANNOT follow the lead because:
+- already Lead Owner
+
+Vishal CANNOT follow the lead because:
+- already Lead Handler
+
+---
+
+# REQUIRED FOLLOW SYSTEM
+
+# ADD FOLLOW BUTTON
+
+Inside:
+- lead details page
+- lead card
+- lead header
+- lead action menu
+
+depending on current UI architecture.
+
+---
+
+# BUTTON STATES
+
+## IF USER CAN FOLLOW
+
+Show:
+
+```txt
+Follow Lead
+```
+
+---
+
+## IF USER IS FOLLOWING
+
+Show:
+
+```txt
+Following
+```
+
+with:
+- active visual state
+- filled button/icon
+- ability to unfollow
+
+---
+
+## IF USER IS OWNER/HANDLER
+
+Do NOT show follow option.
+
+OR:
+
+Show disabled state:
+
+```txt
+Already Receiving Updates
+```
+
+---
+
+# REQUIRED FOLLOWER NOTIFICATIONS
+
+# USERS WHO SHOULD RECEIVE LEAD UPDATE NOTIFICATIONS
+
+## ALWAYS
+
+### Lead Owner
+(unless actor)
+
+### Lead Handler
+(unless actor)
+
+---
+
+## ALSO
+
+### All Followers
+(unless actor)
+
+---
+
+# VERY IMPORTANT RULE
+
+# ACTOR MUST NEVER RECEIVE NOTIFICATIONS
+
+The user making changes must NEVER receive:
+- email
+- push
+- toast
+- activity notification
+
+for their own actions.
+
+---
+
+# EXAMPLE
+
+## Lead Owner edits lead
+
+Recipients:
+
+✅ Lead Handler  
+✅ Followers  
+
+❌ NOT Lead Owner (actor)
+
+---
+
+## Follower edits lead
+
+Recipients:
+
+✅ Lead Owner  
+✅ Lead Handler  
+✅ Other Followers  
+
+❌ NOT Acting Follower
+
+---
+
+# FOLLOW START NOTIFICATIONS
+
+When someone starts following a lead:
+
+## Notify:
+
+✅ Lead Owner  
+✅ Lead Handler  
+
+(unless they are actor)
+
+---
+
+# FOLLOW NOTIFICATION EXAMPLE
+
+```txt
+Amit Patel started following Lead: TechNova Expansion
+```
+
+---
+
+# UNFOLLOW LOGIC
+
+Users should:
+- be able to unfollow anytime
+- instantly stop receiving updates
+
+---
+
+# REQUIRED DATABASE DESIGN
+
+Implement proper scalable schema.
+
+---
+
+# REQUIRED FOLLOWERS TABLE
+
+Example:
+
+```ts
+lead_followers
+---------------
+id
+lead_id
+user_id
+created_at
+```
+
+---
+
+# REQUIRED CONSTRAINTS
+
+Prevent:
+- duplicate follows
+- invalid follows
+- owner following own lead
+- handler following own lead
+
+---
+
+# REQUIRED API LOGIC
+
+# FOLLOW LEAD
+
+```txt
+POST /leads/:id/follow
+```
+
+---
+
+# UNFOLLOW LEAD
+
+```txt
+DELETE /leads/:id/follow
+```
+
+---
+
+# GET FOLLOWERS
+
+```txt
+GET /leads/:id/followers
+```
+
+---
+
+# REQUIRED UI FEATURES
+
+# FOLLOWER COUNT
+
+Optional but preferred:
+
+Show:
+```txt
+3 Followers
+```
+
+---
+
+# FOLLOWER LIST
+
+Inside lead details:
+
+Show:
+- avatar
+- name
+- role
+
+---
+
+# ACTIVITY TIMELINE
+
+Add entries:
+
+```txt
+Amit started following this lead
+```
+
+```txt
+Vishal unfollowed this lead
+```
+
+---
+
+# REQUIRED EMAIL LOGIC
+
+Ensure:
+- deduplicated recipient list
+- no self-notifications
+- no duplicate emails
+- clean recipient filtering
+
+---
+
+# REQUIRED RECIPIENT FILTERING
+
+Example:
+
+```ts
+const recipients = [
+  leadOwner,
+  leadHandler,
+  ...followers
+]
+.filter(unique)
+.filter(notActor)
+.filter(validUser)
+```
+
+---
+
+# REQUIRED NOTIFICATION TYPES
+
+Followers should receive updates for:
+
+✅ Lead updated  
+✅ Stage changed  
+✅ Value changed  
+✅ Notes added  
+✅ Follow-up changed  
+✅ Outcome changed  
+✅ Handler changed  
+✅ Owner changed  
+✅ Company changed  
+✅ Service changed  
+✅ Lead archived/restored  
+✅ Any tracked audit event  
+
+---
+
+# REQUIRED REAL-TIME SUPPORT
+
+If websocket/realtime system exists:
+
+Followers should receive:
+- live notifications
+- real-time activity updates
+
+without refresh.
+
+---
+
+# REQUIRED MOBILE RESPONSIVENESS
+
+This entire feature must work perfectly on:
+
+✅ Mobile phones  
+✅ Tablets  
+✅ Laptops  
+✅ Desktop screens  
+✅ Ultra-wide displays  
+
+---
+
+# REQUIRED MOBILE UX
+
+Ensure:
+
+✅ Follow button accessible  
+✅ Followers list responsive  
+✅ Notification drawer responsive  
+✅ No overflow issues  
+✅ No clipping  
+✅ No broken layouts  
+✅ Proper touch targets  
+✅ Smooth scrolling  
+
+---
+
+# REQUIRED PERFORMANCE
+
+The implementation must be:
+- lightweight
+- optimized
+- smooth
+
+Avoid:
+- excessive re-renders
+- heavy polling
+- UI lag
+- notification flooding
+
+---
+
+# REQUIRED ANIMATION QUALITY
+
+The system should feel:
+- premium
+- fluid
+- buttery smooth
+
+---
+
+# REQUIRED UX QUALITY
+
+Interactions should feel:
+- instant
+- polished
+- responsive
+- modern
+
+---
+
+# REQUIRED SCROLL PERFORMANCE
+
+Scrolling across:
+- lead lists
+- activity
+- notification panels
+- followers list
+
+must feel:
+✅ smooth  
+✅ high-refresh-rate quality  
+✅ responsive even on lower-end devices  
+
+---
+
+# REQUIRED THEME SUPPORT
+
+Feature must fully support:
+
+✅ Light mode  
+✅ Dark mode  
+
+with:
+- consistent visuals
+- theme-aware styling
+- proper hover states
+- proper shadows
+- readable typography
+
+---
+
+# REQUIRED QA TESTING
+
+Test ALL scenarios thoroughly.
+
+---
+
+# TEST CASES
+
+## FOLLOWING
+
+✅ User can follow valid lead  
+✅ User cannot follow twice  
+✅ Owner cannot follow own lead  
+✅ Handler cannot follow own lead  
+
+---
+
+## NOTIFICATIONS
+
+✅ Owner receives updates  
+✅ Handler receives updates  
+✅ Followers receive updates  
+✅ Actor never receives updates  
+✅ Duplicate notifications prevented  
+
+---
+
+## FOLLOW EVENTS
+
+✅ Owner notified when someone follows  
+✅ Handler notified when someone follows  
+✅ Notifications stop after unfollow  
+
+---
+
+## RESPONSIVENESS
+
+✅ Mobile layouts perfect  
+✅ Tablet layouts perfect  
+✅ Desktop layouts perfect  
+✅ No overflow issues  
+✅ No clipped UI  
+
+---
+
+## PERFORMANCE
+
+✅ No lag  
+✅ No stutters  
+✅ No heavy rendering  
+✅ Smooth animations  
+✅ Smooth scrolling  
+
+---
+
+# REQUIRED FINAL RESULT
+
+After implementation:
+
+✅ Users can follow leads  
+✅ Followers receive updates intelligently  
+✅ Owner/handler logic remains intact  
+✅ No self-notifications  
+✅ Enterprise-grade notification system  
+✅ Refined UI/UX  
+✅ Fully responsive on all screens  
+✅ Smooth premium interactions  
+✅ No logical gaps  
+✅ No UI gaps  
+✅ No duplicate notifications  
+✅ No bugs  
+✅ Production-ready CRM-grade implementation  
+✅ Entire experience feels polished, modern, and world-class  
+````
