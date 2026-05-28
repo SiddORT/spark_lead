@@ -27,12 +27,14 @@ import type {
   CreateLeadInput,
   CreateServiceInput,
   ErrorResponse,
+  FollowLead201,
   GetAccessRequestsParams,
   HealthStatus,
   InviteUserInput,
   KillReasonCount,
   Lead,
   LeadActivity,
+  LeadFollower,
   LeadNote,
   LinkCompaniesInput,
   LoginRequest,
@@ -44,6 +46,7 @@ import type {
   SuccessResponse,
   TeamMember,
   TrendPoint,
+  UnfollowLead200,
   UpdateCompanyInput,
   UpdateLeadInput,
   UpdateNoteInput,
@@ -1559,6 +1562,261 @@ export function useGetLeadActivities<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get followers for a lead
+ */
+export const getGetLeadFollowersUrl = (id: string) => {
+  return `/api/leads/${id}/followers`;
+};
+
+export const getLeadFollowers = async (
+  id: string,
+  options?: RequestInit,
+): Promise<LeadFollower[]> => {
+  return customFetch<LeadFollower[]>(getGetLeadFollowersUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetLeadFollowersQueryKey = (id: string) => {
+  return [`/api/leads/${id}/followers`] as const;
+};
+
+export const getGetLeadFollowersQueryOptions = <
+  TData = Awaited<ReturnType<typeof getLeadFollowers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLeadFollowers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetLeadFollowersQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getLeadFollowers>>
+  > = ({ signal }) => getLeadFollowers(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getLeadFollowers>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetLeadFollowersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getLeadFollowers>>
+>;
+export type GetLeadFollowersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get followers for a lead
+ */
+
+export function useGetLeadFollowers<
+  TData = Awaited<ReturnType<typeof getLeadFollowers>>,
+  TError = ErrorType<unknown>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getLeadFollowers>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetLeadFollowersQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Follow a lead
+ */
+export const getFollowLeadUrl = (id: string) => {
+  return `/api/leads/${id}/follow`;
+};
+
+export const followLead = async (
+  id: string,
+  options?: RequestInit,
+): Promise<FollowLead201> => {
+  return customFetch<FollowLead201>(getFollowLeadUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getFollowLeadMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof followLead>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof followLead>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["followLead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof followLead>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return followLead(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type FollowLeadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof followLead>>
+>;
+
+export type FollowLeadMutationError = ErrorType<void>;
+
+/**
+ * @summary Follow a lead
+ */
+export const useFollowLead = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof followLead>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof followLead>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getFollowLeadMutationOptions(options));
+};
+
+/**
+ * @summary Unfollow a lead
+ */
+export const getUnfollowLeadUrl = (id: string) => {
+  return `/api/leads/${id}/follow`;
+};
+
+export const unfollowLead = async (
+  id: string,
+  options?: RequestInit,
+): Promise<UnfollowLead200> => {
+  return customFetch<UnfollowLead200>(getUnfollowLeadUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getUnfollowLeadMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unfollowLead>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof unfollowLead>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["unfollowLead"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof unfollowLead>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return unfollowLead(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UnfollowLeadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof unfollowLead>>
+>;
+
+export type UnfollowLeadMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Unfollow a lead
+ */
+export const useUnfollowLead = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof unfollowLead>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof unfollowLead>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getUnfollowLeadMutationOptions(options));
+};
 
 /**
  * @summary Export leads as CSV

@@ -471,6 +471,41 @@ export const GetLeadActivitiesResponse = zod.array(
 );
 
 /**
+ * @summary Get followers for a lead
+ */
+export const GetLeadFollowersParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetLeadFollowersResponseItem = zod.object({
+  id: zod.string(),
+  userId: zod.string(),
+  displayName: zod.string(),
+  email: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetLeadFollowersResponse = zod.array(GetLeadFollowersResponseItem);
+
+/**
+ * @summary Follow a lead
+ */
+export const FollowLeadParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Unfollow a lead
+ */
+export const UnfollowLeadParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UnfollowLeadResponse = zod.object({
+  success: zod.boolean().optional(),
+  notFollowing: zod.boolean().optional(),
+});
+
+/**
  * @summary Get companies
  */
 export const GetCompaniesResponseItem = zod.object({

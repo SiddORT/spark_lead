@@ -8,6 +8,7 @@ import {
   leadCompaniesTable,
   leadDocumentsTable,
   leadValueHistoryTable,
+  leadFollowersTable,
   companiesTable,
   servicesTable,
   usersTable,
@@ -20,6 +21,32 @@ import { eq, inArray, and, or, gte, asc, desc, sql } from "drizzle-orm";
 import { requireAuth, requirePermission } from "../lib/auth";
 import type { AuthRequest } from "../lib/auth";
 import { sendActivityAlertEmail, type ActivityChange } from "../lib/email";
+
+// ── Recipients helper: owner + handler + followers, minus actor, deduped ─────
+async function getLeadNotificationRecipientIds(
+  leadId: string,
+  actorId: string,
+): Promise<string[]> {
+  const lead = await db
+    .select({ leadOwner: leadsTable.leadOwner, dealHandler: leadsTable.dealHandler })
+    .from(leadsTable)
+    .where(eq(leadsTable.id, leadId))
+    .limit(1);
+  if (!lead[0]) return [];
+
+  const followers = await db
+    .select({ userId: leadFollowersTable.userId })
+    .from(leadFollowersTable)
+    .where(eq(leadFollowersTable.leadId, leadId));
+
+  const ids = [
+    lead[0].leadOwner,
+    lead[0].dealHandler,
+    ...followers.map((f) => f.userId),
+  ].filter((id): id is string => !!id && id !== actorId);
+
+  return Array.from(new Set(ids));
+}
 
 // ── Human-readable field labels ───────────────────────────────────────────────
 const FIELD_LABELS: Record<string, string> = {
@@ -576,16 +603,11 @@ router.patch("/:id", requireAuth, requirePermission("leads", "update"), async (r
         }))
       );
 
-      // Send activity alert emails — never to the actor; dedupe if owner === handler
+      // Send activity alert emails — owner + handler + followers, minus actor, deduped
       const updated = await db.select().from(leadsTable).where(eq(leadsTable.id, req.params.id)).limit(1);
       if (updated[0]) {
         const actorId = req.user!.userId;
-        const recipientIds = Array.from(
-          new Set(
-            [updated[0].leadOwner, updated[0].dealHandler]
-              .filter((id): id is string => !!id && id !== actorId)
-          )
-        );
+        const recipientIds = await getLeadNotificationRecipientIds(req.params.id, actorId);
         if (recipientIds.length > 0) {
           const actor = await db.select().from(usersTable).where(eq(usersTable.id, actorId)).limit(1);
           const resolvedChanges = await resolveActivitiesForEmail(activities);
@@ -728,16 +750,11 @@ router.post("/:id/notes", requireAuth, requirePermission("leads", "create"), asy
     const note = await db.select().from(leadNotesTable).where(eq(leadNotesTable.id, noteId)).limit(1);
     const author = await db.select().from(usersTable).where(eq(usersTable.id, req.user!.userId)).limit(1);
 
-    // Send activity alert — never to the actor; dedupe if owner === handler
+    // Send activity alert — owner + handler + followers, minus actor, deduped
     const lead = await db.select().from(leadsTable).where(eq(leadsTable.id, req.params.id)).limit(1);
     if (lead[0]) {
       const actorId = req.user!.userId;
-      const recipientIds = Array.from(
-        new Set(
-          [lead[0].leadOwner, lead[0].dealHandler]
-            .filter((id): id is string => !!id && id !== actorId)
-        )
-      );
+      const recipientIds = await getLeadNotificationRecipientIds(req.params.id, actorId);
       for (const recipientId of recipientIds) {
         try {
           const user = await db.select().from(usersTable).where(eq(usersTable.id, recipientId)).limit(1);
@@ -888,6 +905,158 @@ router.get("/:id/value-history", requireAuth, async (req: AuthRequest, res) => {
     })));
   } catch (err) {
     req.log.error({ err }, "Get value history error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// ── Followers ────────────────────────────────────────────────────────────────
+
+// GET /leads/:id/followers — list followers with user details
+router.get("/:id/followers", requireAuth, requirePermission("leads", "read"), async (req: AuthRequest, res) => {
+  try {
+    const rows = await db
+      .select({
+        id: leadFollowersTable.id,
+        userId: leadFollowersTable.userId,
+        createdAt: leadFollowersTable.createdAt,
+        displayName: usersTable.displayName,
+        email: usersTable.email,
+      })
+      .from(leadFollowersTable)
+      .leftJoin(usersTable, eq(leadFollowersTable.userId, usersTable.id))
+      .where(eq(leadFollowersTable.leadId, req.params.id))
+      .orderBy(leadFollowersTable.createdAt);
+
+    res.json(
+      rows.map((r) => ({
+        id: r.id,
+        userId: r.userId,
+        displayName: r.displayName || "Unknown",
+        email: r.email || "",
+        createdAt: r.createdAt.toISOString(),
+      })),
+    );
+  } catch (err) {
+    req.log.error({ err }, "Get followers error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// POST /leads/:id/follow — follow this lead
+router.post("/:id/follow", requireAuth, requirePermission("leads", "read"), async (req: AuthRequest, res) => {
+  try {
+    const actorId = req.user!.userId;
+    const leadId  = req.params.id;
+
+    const lead = await db.select().from(leadsTable).where(eq(leadsTable.id, leadId)).limit(1);
+    if (!lead[0]) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+
+    // Owner/handler already receive updates — block following
+    if (lead[0].leadOwner === actorId || lead[0].dealHandler === actorId) {
+      res.status(400).json({ message: "You already receive updates for this lead as Owner or Handler." });
+      return;
+    }
+
+    // Race-safe idempotent insert: rely on the unique (lead_id, user_id) index.
+    // .returning() yields the inserted row only when a real insert happened;
+    // on conflict we get an empty array and skip activity + email side effects.
+    const inserted = await db
+      .insert(leadFollowersTable)
+      .values({ id: uuidv4(), leadId, userId: actorId })
+      .onConflictDoNothing({
+        target: [leadFollowersTable.leadId, leadFollowersTable.userId],
+      })
+      .returning({ id: leadFollowersTable.id });
+
+    if (inserted.length === 0) {
+      res.status(200).json({ success: true, alreadyFollowing: true });
+      return;
+    }
+
+    // Activity log (only on a real follow event)
+    const actor = await db.select().from(usersTable).where(eq(usersTable.id, actorId)).limit(1);
+    await db.insert(leadActivitiesTable).values({
+      id: uuidv4(),
+      leadId,
+      userId: actorId,
+      action: "follower_added",
+      newValue: actor[0]?.displayName || actor[0]?.email || "User",
+    });
+
+    // Notify owner + handler (minus actor, deduped)
+    const recipientIds = Array.from(
+      new Set(
+        [lead[0].leadOwner, lead[0].dealHandler].filter(
+          (id): id is string => !!id && id !== actorId,
+        ),
+      ),
+    );
+    for (const recipientId of recipientIds) {
+      try {
+        const user = await db.select().from(usersTable).where(eq(usersTable.id, recipientId)).limit(1);
+        if (user[0]?.email) {
+          await sendActivityAlertEmail({
+            recipientEmail: user[0].email,
+            leadName: lead[0].leadName,
+            changes: [
+              {
+                label: "New Follower",
+                oldValue: "",
+                newValue: `${actor[0]?.displayName || req.user!.email} started following this lead`,
+                isNote: true,
+              },
+            ],
+            actorName: actor[0]?.displayName || req.user!.email,
+          });
+        }
+      } catch {
+        // ignore email errors
+      }
+    }
+
+    res.status(201).json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Follow lead error");
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// DELETE /leads/:id/follow — unfollow this lead
+router.delete("/:id/follow", requireAuth, requirePermission("leads", "read"), async (req: AuthRequest, res) => {
+  try {
+    const actorId = req.user!.userId;
+    const leadId  = req.params.id;
+
+    const existing = await db
+      .select()
+      .from(leadFollowersTable)
+      .where(and(eq(leadFollowersTable.leadId, leadId), eq(leadFollowersTable.userId, actorId)))
+      .limit(1);
+
+    if (!existing[0]) {
+      res.status(200).json({ success: true, notFollowing: true });
+      return;
+    }
+
+    await db
+      .delete(leadFollowersTable)
+      .where(and(eq(leadFollowersTable.leadId, leadId), eq(leadFollowersTable.userId, actorId)));
+
+    const actor = await db.select().from(usersTable).where(eq(usersTable.id, actorId)).limit(1);
+    await db.insert(leadActivitiesTable).values({
+      id: uuidv4(),
+      leadId,
+      userId: actorId,
+      action: "follower_removed",
+      newValue: actor[0]?.displayName || actor[0]?.email || "User",
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Unfollow lead error");
     res.status(500).json({ message: "Internal server error" });
   }
 });

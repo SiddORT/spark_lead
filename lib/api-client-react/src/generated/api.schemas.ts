@@ -370,6 +370,14 @@ export interface LeadActivity {
   actorName: string;
 }
 
+export interface LeadFollower {
+  id: string;
+  userId: string;
+  displayName: string;
+  email: string;
+  createdAt: string;
+}
+
 export interface CreateCompanyInput {
   name: string;
   industry?: string | null;
@@ -552,3 +560,13 @@ export const GetAccessRequestsStatus = {
   approved: "approved",
   rejected: "rejected",
 } as const;
+
+export type FollowLead201 = {
+  success?: boolean;
+  alreadyFollowing?: boolean;
+};
+
+export type UnfollowLead200 = {
+  success?: boolean;
+  notFollowing?: boolean;
+};

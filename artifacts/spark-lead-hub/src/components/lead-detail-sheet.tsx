@@ -6,6 +6,8 @@ import {
   useGetServices, useGetServiceCompanies, getGetLeadsQueryKey,
   getGetLeadActivitiesQueryKey, getGetLeadQueryKey,
   useGetTeamMembers, useGetCompanies,
+  useGetLeadFollowers, useFollowLead, useUnfollowLead,
+  getGetLeadFollowersQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow, addDays } from "date-fns";
@@ -13,7 +15,7 @@ import { formatFullDate } from "@/lib/utils";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
   FileText, MessageSquare, History, Copy, CalendarClock, Search, AlertTriangle,
-  TrendingUp, Folder,
+  TrendingUp, Folder, Users, UserPlus, UserMinus, Eye,
 } from "lucide-react";
 import { DocumentsTab } from "./documents-tab";
 import { useLocation } from "wouter";
@@ -811,7 +813,267 @@ function DetailsTab({
           </div>
         </div>
       </div>
+
+      <hr className="details-divider" />
+
+      {/* ── Section: Followers ── */}
+      <FollowersSection leadId={lead.id} ownerId={lead.leadOwner} handlerId={lead.dealHandler} />
     </div>
+  );
+}
+
+// ─── Followers section (Details tab) ──────────────────
+function FollowersSection({
+  leadId,
+  ownerId,
+  handlerId,
+}: {
+  leadId: string;
+  ownerId: string | null;
+  handlerId: string | null;
+}) {
+  const { data: followers = [] } = useGetLeadFollowers(leadId);
+  return (
+    <div>
+      <div
+        className="details-section-label"
+        style={{ display: "flex", alignItems: "center", gap: 6 }}
+      >
+        <Users size={13} style={{ opacity: 0.7 }} />
+        Followers
+        <span
+          style={{
+            marginLeft: 6,
+            fontSize: 11,
+            padding: "1px 7px",
+            borderRadius: 999,
+            background: "var(--surface-2, hsl(220 18% 14%))",
+            color: "var(--text-secondary)",
+            fontWeight: 600,
+          }}
+        >
+          {(followers as any[]).length}
+        </span>
+      </div>
+
+      {(followers as any[]).length === 0 ? (
+        <div
+          style={{
+            fontSize: "var(--text-xs)",
+            color: "var(--text-muted)",
+            padding: "var(--sp-3) 0",
+          }}
+        >
+          No followers yet. Anyone except the Owner and Handler can follow this lead.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            marginTop: 4,
+          }}
+        >
+          {(followers as any[]).map((f: any) => {
+            const isOwner = f.userId === ownerId;
+            const isHandler = f.userId === handlerId;
+            const tag = isOwner ? "Owner" : isHandler ? "Handler" : "Follower";
+            return (
+              <div
+                key={f.id}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 10px",
+                  borderRadius: 8,
+                  background: "var(--surface-2, hsl(220 18% 12%))",
+                  border: "1px solid var(--border, hsl(220 14% 20%))",
+                }}
+              >
+                <span
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background: "var(--teal-dim)",
+                    color: "var(--teal)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  {(f.displayName || f.email || "?")[0].toUpperCase()}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: "var(--text-sm)",
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {f.displayName}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: "var(--text-muted)",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {f.email}
+                  </div>
+                </div>
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.05em",
+                    textTransform: "uppercase",
+                    padding: "2px 7px",
+                    borderRadius: 4,
+                    background: "var(--teal-dim)",
+                    color: "var(--teal)",
+                    flexShrink: 0,
+                  }}
+                >
+                  {tag}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Follow / Unfollow button (header) ────────────────
+function FollowButton({ leadId, lead }: { leadId: string; lead: any }) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { data: followers = [] } = useGetLeadFollowers(leadId);
+
+  const followMutation = useFollowLead({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetLeadFollowersQueryKey(leadId) });
+        queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
+        toast.success("You're now following this lead");
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || "Could not follow lead");
+      },
+    },
+  });
+  const unfollowMutation = useUnfollowLead({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetLeadFollowersQueryKey(leadId) });
+        queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
+        toast.success("Unfollowed");
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || "Could not unfollow");
+      },
+    },
+  });
+
+  if (!user || !lead) return null;
+
+  const isOwner = lead.leadOwner === user.id;
+  const isHandler = lead.dealHandler === user.id;
+
+  // Owner/handler already receive updates — show informational pill
+  if (isOwner || isHandler) {
+    return (
+      <span
+        title="You already receive updates as Owner or Handler"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          fontSize: 11,
+          fontWeight: 600,
+          padding: "5px 10px",
+          borderRadius: 6,
+          color: "var(--text-secondary)",
+          background: "var(--surface-2, hsl(220 18% 14%))",
+          border: "1px solid var(--border, hsl(220 14% 22%))",
+          whiteSpace: "nowrap",
+        }}
+      >
+        <Eye size={12} />
+        <span className="follow-btn-label">Already Receiving Updates</span>
+      </span>
+    );
+  }
+
+  const isFollowing = (followers as any[]).some((f: any) => f.userId === user.id);
+  const busy = followMutation.isPending || unfollowMutation.isPending;
+
+  const onClick = () => {
+    if (busy) return;
+    if (isFollowing) unfollowMutation.mutate({ id: leadId });
+    else followMutation.mutate({ id: leadId });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      title={isFollowing ? "Unfollow this lead" : "Follow this lead to receive updates"}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        fontSize: 12,
+        fontWeight: 600,
+        padding: "6px 12px",
+        borderRadius: 6,
+        cursor: busy ? "wait" : "pointer",
+        transition: "all 0.18s ease",
+        whiteSpace: "nowrap",
+        color: isFollowing ? "var(--teal)" : "var(--text-secondary)",
+        background: isFollowing ? "var(--teal-dim)" : "transparent",
+        border: `1px solid ${isFollowing ? "hsl(196 100% 46% / 0.45)" : "var(--border, hsl(220 14% 22%))"}`,
+        opacity: busy ? 0.6 : 1,
+      }}
+      onMouseEnter={(e) => {
+        if (busy) return;
+        if (isFollowing) {
+          // hover suggests removal
+          e.currentTarget.style.background = "hsl(0 70% 50% / 0.12)";
+          e.currentTarget.style.borderColor = "hsl(0 70% 55% / 0.4)";
+          e.currentTarget.style.color = "hsl(0 70% 65%)";
+        } else {
+          e.currentTarget.style.background = "var(--teal-dim)";
+          e.currentTarget.style.borderColor = "hsl(196 100% 46% / 0.45)";
+          e.currentTarget.style.color = "var(--teal)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = isFollowing ? "var(--teal-dim)" : "transparent";
+        e.currentTarget.style.borderColor = isFollowing
+          ? "hsl(196 100% 46% / 0.45)"
+          : "var(--border, hsl(220 14% 22%))";
+        e.currentTarget.style.color = isFollowing ? "var(--teal)" : "var(--text-secondary)";
+      }}
+    >
+      {isFollowing ? <UserMinus size={13} /> : <UserPlus size={13} />}
+      <span className="follow-btn-label">{isFollowing ? "Following" : "Follow Lead"}</span>
+    </button>
   );
 }
 
@@ -868,6 +1130,16 @@ function TimelineTab({ leadId }: { leadId: string }) {
                       </span>
                     </div>
                   )}
+                </>
+              ) : a.action === "follower_added" ? (
+                <>
+                  <strong>{a.actorName}</strong>
+                  <span style={{ color: "var(--text-secondary)" }}> started following this lead</span>
+                </>
+              ) : a.action === "follower_removed" ? (
+                <>
+                  <strong>{a.actorName}</strong>
+                  <span style={{ color: "var(--text-secondary)" }}> unfollowed this lead</span>
                 </>
               ) : a.fieldName ? (
                 <>
@@ -1228,8 +1500,11 @@ export function LeadDetailSheet({
             )}
           </div>
 
-          {/* Actions: duplicate + delete + close */}
+          {/* Actions: follow + duplicate + delete + close */}
           <div className="sheet-topbar-actions">
+            {lead && !confirmingDelete && (
+              <FollowButton leadId={lead.id} lead={lead} />
+            )}
             {!confirmingDelete && (
               <button
                 className="sheet-delete-btn"

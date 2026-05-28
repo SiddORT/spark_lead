@@ -437,6 +437,79 @@ paths:
                 items:
                   $ref: "#/components/schemas/LeadActivity"
 
+  /leads/{id}/followers:
+    get:
+      operationId: getLeadFollowers
+      tags: [leads]
+      summary: Get followers for a lead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Followers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeadFollower"
+
+  /leads/{id}/follow:
+    post:
+      operationId: followLead
+      tags: [leads]
+      summary: Follow a lead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          description: Followed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  alreadyFollowing: { type: boolean }
+        "400":
+          description: Cannot follow (owner/handler)
+        "404":
+          description: Lead not found
+    delete:
+      operationId: unfollowLead
+      tags: [leads]
+      summary: Unfollow a lead
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Unfollowed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  notFollowing: { type: boolean }
+
   /leads/export/csv:
     get:
       operationId: exportLeadsCsv
@@ -1484,6 +1557,26 @@ components:
         - action
         - createdAt
         - actorName
+
+    LeadFollower:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - displayName
+        - email
+        - createdAt
 
     Company:
       type: object

@@ -295,6 +295,23 @@ export const leadActivitiesTable = pgTable("lead_activities", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const leadFollowersTable = pgTable(
+  "lead_followers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leadsTable.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    leadUserUnique: unique("lead_followers_lead_user_unique").on(t.leadId, t.userId),
+  }),
+);
+
 export const auditLogTable = pgTable("audit_log", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").references(() => usersTable.id),
@@ -320,3 +337,4 @@ export type PipelineStage = typeof pipelineStagesTable.$inferSelect;
 export type PipelineStatus = typeof pipelineStatusesTable.$inferSelect;
 export type LeadDocument = typeof leadDocumentsTable.$inferSelect;
 export type LeadValueHistory = typeof leadValueHistoryTable.$inferSelect;
+export type LeadFollower = typeof leadFollowersTable.$inferSelect;

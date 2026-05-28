@@ -2365,6 +2365,14 @@ a:hover { opacity: 0.85; }
   gap: var(--sp-2);
   flex-shrink: 0;
   margin-top: 2px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* On narrow screens, collapse follow-button labels to icon-only to keep the
+   header from overflowing. The button itself stays tappable. */
+@media (max-width: 640px) {
+  .follow-btn-label { display: none; }
 }
 
 /* Delete icon button */
