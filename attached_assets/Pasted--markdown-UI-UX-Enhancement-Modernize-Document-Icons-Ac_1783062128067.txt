@@ -1,0 +1,265 @@
+```markdown
+# UI/UX Enhancement – Modernize Document Icons & Actions in Lead Documents Module
+
+## Objective
+
+The icons currently used in the **Lead Documents** section are very basic, outdated, and do not align with the premium UI/UX of the rest of the SparkLead application.
+
+Replace the existing document and action icons with a modern, consistent icon set that matches the design language used throughout the system.
+
+**Important:** This is purely a UI/UX enhancement. Do **not** modify any existing functionality, business logic, permissions, APIs, or document management workflows.
+
+---
+
+# Current Issues
+
+The current document list uses simplistic icons that make the module feel unfinished.
+
+Examples include:
+
+- Generic file icons
+- Weak upload icon
+- Small external/open icon
+- Basic delete icon
+- No visual differentiation between file types
+
+Compared to the rest of the system, this section feels visually inconsistent.
+
+---
+
+# Expected Improvements
+
+Replace all document-related icons with modern, professional icons from the existing application icon library (preferably Lucide, Heroicons, or the project's current icon set).
+
+The icons should:
+
+- Match the overall design language
+- Be crisp and modern
+- Be consistent across Light and Dark themes
+- Maintain equal sizing and spacing
+- Have proper hover animations
+- Include tooltips where appropriate
+
+---
+
+# Document Type Icons
+
+Instead of using one generic file icon, display icons based on the uploaded file type.
+
+Examples:
+
+### PDF
+- FileText / FileTypePdf icon
+
+### Word Documents
+- FileText icon
+
+### Excel / CSV
+- FileSpreadsheet icon
+
+### Images
+- Image icon
+
+### PowerPoint
+- Presentation icon
+
+### ZIP / Archive
+- Archive icon
+
+### Unknown Files
+- Generic File icon
+
+The icon should automatically change depending on the uploaded file type.
+
+---
+
+# Action Icons
+
+Replace existing action icons with cleaner alternatives.
+
+### Open / Preview
+
+Replace with a modern:
+
+- External Link
+- Eye
+- Square Arrow Out
+
+icon.
+
+Tooltip:
+
+> View Document
+
+---
+
+### Download
+
+If download functionality exists or is introduced:
+
+Use:
+
+- Download icon
+
+Tooltip:
+
+> Download Document
+
+---
+
+### Delete
+
+Replace with a clean trash icon.
+
+Use subtle hover animations.
+
+Tooltip:
+
+> Delete Document
+
+The delete action should remain visually secondary until hovered to avoid accidental clicks.
+
+---
+
+### Upload Button
+
+Improve the Upload Files button.
+
+Use:
+
+- Upload Cloud
+- Upload
+- Cloud Upload
+
+icon with proper spacing.
+
+---
+
+# File Row Improvements
+
+Each document row should have:
+
+- Appropriate file-type icon
+- Document name
+- Stage badge
+- Outcome badge
+- File size
+- Upload date & time
+- Uploaded by
+- View action
+- Download action (if applicable)
+- Delete action (if permitted)
+
+Ensure the spacing between all elements is clean and balanced.
+
+---
+
+# Hover Effects
+
+Every action icon should include:
+
+- Hover highlight
+- Cursor pointer
+- Smooth transition
+- Scale animation (subtle)
+- Theme-aware colors
+
+No abrupt animations.
+
+---
+
+# Accessibility
+
+Ensure:
+
+- All icons have tooltips.
+- Icons are keyboard accessible.
+- Proper focus states exist.
+- Sufficient color contrast in both themes.
+
+---
+
+# Theme Compatibility
+
+Verify the entire Documents section in:
+
+### Light Mode
+
+- Icons should remain crisp and visible.
+- Hover colors should match the light theme.
+- No low-contrast icons.
+
+### Dark Mode
+
+- Icons should automatically adapt.
+- Hover colors should remain visible.
+- No washed-out colors.
+
+---
+
+# Responsive Behaviour
+
+Verify on:
+
+- Desktop
+- Laptop
+- Tablet
+- Mobile
+
+Icons should:
+
+- Never overlap text.
+- Never become blurry.
+- Maintain touch-friendly spacing.
+- Stack gracefully on smaller screens.
+
+---
+
+# Performance
+
+These UI enhancements must not introduce:
+
+- Layout shifts
+- Rendering delays
+- Slow scrolling
+- Flickering
+- Extra API calls
+- Performance regressions
+
+---
+
+# Regression Testing
+
+After implementation, thoroughly test:
+
+### Documents
+
+- Upload
+- Preview
+- Download
+- Delete
+- File type detection
+- Different file formats
+- Long file names
+- Multiple documents
+- Mobile responsiveness
+
+Verify that every action continues to function exactly as before.
+
+---
+
+# Final Validation Checklist
+
+Before considering this task complete, verify that:
+
+- ✅ All document icons have been replaced with modern, professional icons.
+- ✅ File-type specific icons are displayed automatically.
+- ✅ Action icons (View, Download, Delete, Upload) are visually consistent.
+- ✅ Hover states and tooltips work correctly.
+- ✅ Icons are fully responsive across all devices.
+- ✅ Light and Dark themes render perfectly.
+- ✅ Accessibility standards are maintained.
+- ✅ No existing functionality has been modified.
+- ✅ No new UI, UX, logical, or backend issues have been introduced anywhere in the application.
+- ✅ The overall Documents module now feels polished, modern, and consistent with the premium design language of the rest of the SparkLead system.
+```

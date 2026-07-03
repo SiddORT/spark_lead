@@ -1,5 +1,9 @@
 import { useState, useRef } from "react";
-import { FileText, Upload, Trash2, ExternalLink, Loader2, FolderOpen } from "lucide-react";
+import {
+  File, FileText, FileSpreadsheet, FileImage, FileVideo, FileAudio, FileArchive,
+  Presentation, CloudUpload, Trash2, ExternalLink, Download, Loader2, FolderOpen,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,17 +20,30 @@ function formatFileSize(bytes: number | null | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getMimeIcon(mimeType: string | null | undefined): string {
-  if (!mimeType) return "📎";
-  if (mimeType.startsWith("image/")) return "🖼️";
-  if (mimeType === "application/pdf") return "📄";
-  if (mimeType.includes("word") || mimeType.includes("document")) return "📝";
-  if (mimeType.includes("sheet") || mimeType.includes("excel")) return "📊";
-  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return "📊";
-  if (mimeType.startsWith("video/")) return "🎥";
-  if (mimeType.startsWith("audio/")) return "🎵";
-  if (mimeType.includes("zip") || mimeType.includes("archive")) return "🗜️";
-  return "📎";
+function getFileTypeMeta(
+  mimeType: string | null | undefined,
+  fileName: string | null | undefined,
+): { Icon: LucideIcon; className: string; label: string } {
+  const mime = (mimeType || "").toLowerCase();
+  const ext = (fileName || "").split(".").pop()?.toLowerCase() || "";
+
+  if (mime === "application/pdf" || ext === "pdf")
+    return { Icon: FileText, className: "ft-pdf", label: "PDF document" };
+  if (mime.includes("word") || mime.includes("msword") || ["doc", "docx", "rtf", "odt"].includes(ext))
+    return { Icon: FileText, className: "ft-doc", label: "Word document" };
+  if (mime.includes("sheet") || mime.includes("excel") || mime === "text/csv" || ["xls", "xlsx", "csv", "ods"].includes(ext))
+    return { Icon: FileSpreadsheet, className: "ft-sheet", label: "Spreadsheet" };
+  if (mime.includes("presentation") || mime.includes("powerpoint") || ["ppt", "pptx", "odp"].includes(ext))
+    return { Icon: Presentation, className: "ft-slides", label: "Presentation" };
+  if (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"].includes(ext))
+    return { Icon: FileImage, className: "ft-image", label: "Image" };
+  if (mime.startsWith("video/") || ["mp4", "mov", "webm", "avi", "mkv"].includes(ext))
+    return { Icon: FileVideo, className: "ft-video", label: "Video" };
+  if (mime.startsWith("audio/") || ["mp3", "wav", "ogg", "m4a", "flac"].includes(ext))
+    return { Icon: FileAudio, className: "ft-audio", label: "Audio" };
+  if (mime.includes("zip") || mime.includes("archive") || mime.includes("compressed") || ["zip", "rar", "7z", "tar", "gz"].includes(ext))
+    return { Icon: FileArchive, className: "ft-archive", label: "Archive" };
+  return { Icon: File, className: "ft-file", label: "File" };
 }
 
 interface Document {
@@ -206,37 +223,20 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           type="button"
+          title="Upload files to this lead"
           style={{ display: "flex", alignItems: "center", gap: 6 }}
         >
-          {uploading ? <Loader2 size={14} className="spin" /> : <Upload size={14} />}
+          {uploading ? <Loader2 size={14} className="spin" /> : <CloudUpload size={15} />}
           {uploading ? "Uploading…" : "Upload Files"}
         </button>
         {/* Context chips — what stage/status will be tagged on uploaded files */}
         {(leadStageName || leadStatusName) && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             {leadStageName && (
-              <span style={{
-                display: "inline-flex", alignItems: "center", gap: 4,
-                fontSize: 11, fontWeight: 600,
-                background: "hsl(258 65% 55% / 0.12)",
-                color: "hsl(258 80% 75%)",
-                border: "1px solid hsl(258 65% 55% / 0.25)",
-                borderRadius: 6, padding: "3px 9px",
-              }}>
-                📍 {leadStageName}
-              </span>
+              <span className="docs-context-chip is-stage">📍 {leadStageName}</span>
             )}
             {leadStatusName && (
-              <span style={{
-                display: "inline-flex", alignItems: "center", gap: 4,
-                fontSize: 11, fontWeight: 600,
-                background: "hsl(196 100% 46% / 0.10)",
-                color: "var(--teal)",
-                border: "1px solid hsl(196 100% 46% / 0.25)",
-                borderRadius: 6, padding: "3px 9px",
-              }}>
-                📌 {leadStatusName}
-              </span>
+              <span className="docs-context-chip is-status">📌 {leadStatusName}</span>
             )}
           </div>
         )}
@@ -261,85 +261,71 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
           </div>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-2)" }}>
-          {docs.map((doc) => (
-            <div
-              key={doc.id}
-              style={{
-                display: "flex", alignItems: "center", gap: "var(--sp-3)",
-                padding: "var(--sp-3) var(--sp-4)",
-                background: "hsl(222, 20%, 12% / 0.6)",
-                border: "1px solid var(--border-subtle)",
-                borderRadius: 10,
-              }}
-            >
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{getMimeIcon(doc.mimeType)}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--text-primary)",
-                  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                }}>
-                  {doc.fileName}
+        <div className="docs-list">
+          {docs.map((doc) => {
+            const { Icon, className, label } = getFileTypeMeta(doc.mimeType, doc.fileName);
+            return (
+              <div key={doc.id} className="docs-row">
+                <span className={`docs-file-icon ${className}`} title={label} aria-label={label}>
+                  <Icon size={17} strokeWidth={1.8} />
+                </span>
+                <div className="docs-info">
+                  <div className="docs-name" title={doc.fileName}>{doc.fileName}</div>
+                  <div className="docs-sub">
+                    {doc.stage && (
+                      <span className="docs-chip is-stage">📍 {doc.stage}</span>
+                    )}
+                    {doc.status && (
+                      <span className="docs-chip is-status">📌 {doc.status}</span>
+                    )}
+                    {(doc.stage || doc.status) && doc.fileSize && (
+                      <span className="docs-dot">·</span>
+                    )}
+                    {doc.fileSize && <span>{formatFileSize(doc.fileSize)}</span>}
+                    <span className="docs-dot">·</span>
+                    <span>{format(new Date(doc.uploadedAt), "d MMM yyyy, h:mm a")}</span>
+                    {doc.uploaderName && (
+                      <>
+                        <span className="docs-dot">·</span>
+                        <span>{doc.uploaderName}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <div style={{ fontSize: "var(--text-xs)", color: "var(--text-muted)", marginTop: 4, display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
-                  {doc.stage && (
-                    <span style={{
-                      display: "inline-flex", alignItems: "center",
-                      background: "hsl(258 65% 55% / 0.12)", color: "hsl(258 80% 78%)",
-                      border: "1px solid hsl(258 65% 55% / 0.22)",
-                      borderRadius: 5, padding: "1px 7px", fontWeight: 600, fontSize: "10px",
-                    }}>
-                      📍 {doc.stage}
-                    </span>
-                  )}
-                  {doc.status && (
-                    <span style={{
-                      display: "inline-flex", alignItems: "center",
-                      background: "hsl(196 100% 46% / 0.10)", color: "var(--teal)",
-                      border: "1px solid hsl(196 100% 46% / 0.22)",
-                      borderRadius: 5, padding: "1px 7px", fontWeight: 600, fontSize: "10px",
-                    }}>
-                      📌 {doc.status}
-                    </span>
-                  )}
-                  {(doc.stage || doc.status) && doc.fileSize && (
-                    <span style={{ color: "hsl(222 15% 45%)" }}>·</span>
-                  )}
-                  {doc.fileSize && (
-                    <span style={{ color: "hsl(222 15% 55%)", fontWeight: 500 }}>{formatFileSize(doc.fileSize)}</span>
-                  )}
-                  <span style={{ color: "hsl(222 15% 45%)" }}>·</span>
-                  <span style={{ color: "hsl(222 15% 55%)" }}>{format(new Date(doc.uploadedAt), "d MMM yyyy, h:mm a")}</span>
-                  {doc.uploaderName && (
-                    <><span style={{ color: "hsl(222 15% 45%)" }}>·</span>
-                    <span style={{ color: "hsl(222 15% 60%)", fontWeight: 500 }}>{doc.uploaderName}</span></>
-                  )}
+                <div className="docs-actions">
+                  <a
+                    href={doc.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="docs-action-btn"
+                    title="View Document"
+                    aria-label={`View ${doc.fileName}`}
+                  >
+                    <ExternalLink size={15} />
+                  </a>
+                  <a
+                    href={doc.fileUrl}
+                    download={doc.fileName}
+                    className="docs-action-btn"
+                    title="Download Document"
+                    aria-label={`Download ${doc.fileName}`}
+                  >
+                    <Download size={15} />
+                  </a>
+                  <button
+                    className="docs-action-btn is-danger"
+                    onClick={() => handleDelete(doc.id)}
+                    disabled={deletingId === doc.id}
+                    title="Delete Document"
+                    aria-label={`Delete ${doc.fileName}`}
+                    type="button"
+                  >
+                    {deletingId === doc.id ? <Loader2 size={15} className="spin" /> : <Trash2 size={15} />}
+                  </button>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: "var(--sp-1)", flexShrink: 0 }}>
-                <a
-                  href={doc.fileUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-ghost btn-sm"
-                  style={{ padding: "4px 8px" }}
-                  title="View / Download"
-                >
-                  <ExternalLink size={13} />
-                </a>
-                <button
-                  className="btn btn-ghost btn-sm"
-                  style={{ padding: "4px 8px", color: "hsl(0 70% 60%)" }}
-                  onClick={() => handleDelete(doc.id)}
-                  disabled={deletingId === doc.id}
-                  title="Delete"
-                  type="button"
-                >
-                  {deletingId === doc.id ? <Loader2 size={13} className="spin" /> : <Trash2 size={13} />}
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

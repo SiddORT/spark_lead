@@ -2550,6 +2550,149 @@ a:hover { opacity: 0.85; }
 }
 
 /* ──────────────────────────────────────────────────────────────────
+   Documents tab — modern rows, file-type icons & actions
+   ────────────────────────────────────────────────────────────────── */
+.docs-list { display: flex; flex-direction: column; gap: var(--sp-2); }
+.docs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.docs-row:hover { border-color: var(--border-default); }
+.docs-file-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.docs-file-icon.ft-pdf     { background: hsl(4 70% 55% / 0.12);   color: hsl(4 75% 62%); }
+.docs-file-icon.ft-doc     { background: hsl(212 85% 55% / 0.12); color: hsl(212 90% 64%); }
+.docs-file-icon.ft-sheet   { background: hsl(150 60% 45% / 0.12); color: hsl(150 55% 50%); }
+.docs-file-icon.ft-slides  { background: hsl(28 90% 55% / 0.12);  color: hsl(28 95% 58%); }
+.docs-file-icon.ft-image   { background: hsl(258 65% 55% / 0.12); color: hsl(258 75% 68%); }
+.docs-file-icon.ft-video   { background: hsl(320 65% 55% / 0.12); color: hsl(320 70% 64%); }
+.docs-file-icon.ft-audio   { background: hsl(180 60% 45% / 0.12); color: hsl(180 55% 48%); }
+.docs-file-icon.ft-archive { background: hsl(45 85% 50% / 0.12);  color: hsl(45 90% 52%); }
+.docs-file-icon.ft-file    { background: var(--bg-elevated);      color: var(--text-muted); }
+[data-theme="light"] .docs-file-icon.ft-pdf     { color: hsl(4 72% 46%); }
+[data-theme="light"] .docs-file-icon.ft-doc     { color: hsl(212 85% 44%); }
+[data-theme="light"] .docs-file-icon.ft-sheet   { color: hsl(150 60% 34%); }
+[data-theme="light"] .docs-file-icon.ft-slides  { color: hsl(28 90% 42%); }
+[data-theme="light"] .docs-file-icon.ft-image   { color: hsl(258 60% 48%); }
+[data-theme="light"] .docs-file-icon.ft-video   { color: hsl(320 65% 44%); }
+[data-theme="light"] .docs-file-icon.ft-audio   { color: hsl(180 60% 32%); }
+[data-theme="light"] .docs-file-icon.ft-archive { color: hsl(42 90% 34%); }
+.docs-info { flex: 1; min-width: 0; }
+.docs-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.docs-sub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.docs-dot { color: var(--text-muted); opacity: 0.55; }
+.docs-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 5px;
+  padding: 1px 7px;
+  font-weight: 600;
+  font-size: 10px;
+}
+.docs-chip.is-stage {
+  background: hsl(258 65% 55% / 0.12);
+  color: hsl(258 80% 78%);
+  border: 1px solid hsl(258 65% 55% / 0.22);
+}
+.docs-chip.is-status {
+  background: hsl(196 100% 46% / 0.10);
+  color: var(--teal);
+  border: 1px solid hsl(196 100% 46% / 0.22);
+}
+[data-theme="light"] .docs-chip.is-stage { color: hsl(258 60% 44%); }
+.docs-context-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 3px 9px;
+}
+.docs-context-chip.is-stage {
+  background: hsl(258 65% 55% / 0.12);
+  color: hsl(258 80% 75%);
+  border: 1px solid hsl(258 65% 55% / 0.25);
+}
+.docs-context-chip.is-status {
+  background: hsl(196 100% 46% / 0.10);
+  color: var(--teal);
+  border: 1px solid hsl(196 100% 46% / 0.25);
+}
+[data-theme="light"] .docs-context-chip.is-stage { color: hsl(258 60% 44%); }
+.docs-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.docs-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--t-fast), background var(--t-fast), transform var(--t-fast), border-color var(--t-fast);
+}
+.docs-action-btn:hover {
+  color: var(--teal);
+  background: var(--teal-dim);
+  transform: scale(1.06);
+}
+.docs-action-btn:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+.docs-action-btn.is-danger:hover {
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+.docs-action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+@media (max-width: 520px) {
+  .docs-row { flex-wrap: wrap; }
+  .docs-actions { margin-left: calc(36px + var(--sp-3)); }
+  .docs-action-btn { width: 36px; height: 36px; }
+}
+
+/* ──────────────────────────────────────────────────────────────────
    Document entries in the lead timeline
    ────────────────────────────────────────────────────────────────── */
 .doc-timeline-card {
