@@ -146,7 +146,7 @@ export function AuthPage() {
             letterSpacing: "0.2px",
             fontFamily: "var(--font-body)",
           }}>
-            SparkLead — Team Access Only
+            SparkLead — Team Access
           </p>
         </div>
 
