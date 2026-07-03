@@ -1,0 +1,201 @@
+# SparkLead CRM – Lead Timeline Enhancement for Document Activities
+
+## Objective
+The Lead Timeline is intended to serve as the complete audit trail of every significant activity performed on a lead. Currently, document-related activities are **not being recorded in the Lead Timeline**, resulting in an incomplete activity history.
+
+This needs to be corrected while ensuring that **no existing functionality is affected** and **no new bugs or regressions are introduced**.
+
+---
+
+# Current Issue
+
+When a user uploads a document to a lead under the **Documents** tab, the document is successfully uploaded and displayed in the Documents section.
+
+However, **no corresponding activity is created in the Lead Timeline**.
+
+As a result, users cannot determine:
+
+- Who uploaded the document
+- When it was uploaded
+- Which document was uploaded
+- Whether the document was updated or replaced
+- Whether the document was deleted
+
+This creates an incomplete audit trail for the lead.
+
+---
+
+# Expected Behaviour
+
+Every document-related action must automatically create a corresponding timeline entry.
+
+The Lead Timeline should capture all document events in chronological order alongside other lead activities.
+
+---
+
+# Timeline Events to Record
+
+The following actions must create timeline entries:
+
+### Document Uploaded
+Example:
+
+> **John Smith uploaded "Proposal_V2.pdf" under Qualification & Analysis.**
+
+Include:
+- User name
+- Document name
+- Document category/stage
+- Timestamp
+
+---
+
+### Document Updated / Replaced
+Example:
+
+> **John Smith replaced "Proposal_V1.pdf" with "Proposal_V2.pdf".**
+
+Include:
+- Previous document name
+- New document name
+- Timestamp
+- User
+
+---
+
+### Document Deleted
+Example:
+
+> **John Smith deleted "Proposal_V2.pdf".**
+
+Include:
+- Document name
+- Timestamp
+- User
+
+---
+
+### Document Downloaded (Optional)
+If download tracking already exists or is planned, log:
+
+> **John Smith downloaded "Proposal_V2.pdf".**
+
+Otherwise, do not introduce this unless it aligns with the existing audit strategy.
+
+---
+
+# Timeline Design Requirements
+
+Document events should:
+
+- Follow the same visual design as all other timeline entries
+- Use the existing timeline component (do not create a separate design)
+- Display in proper chronological order
+- Respect theme (Light/Dark)
+- Display correctly on desktop, tablet, and mobile
+- Include proper icons for document-related events
+
+---
+
+# Notification & Activity Logging
+
+If the system currently generates notifications or activity logs for lead changes, ensure that document uploads, updates, and deletions are handled consistently with the existing architecture.
+
+Do **not** duplicate notifications if one already exists.
+
+---
+
+# Backend Requirements
+
+Review the document upload/update/delete APIs and ensure they:
+
+- Trigger timeline event creation
+- Save activity atomically with the document operation
+- Handle rollback correctly if either operation fails
+- Prevent duplicate timeline entries
+- Maintain correct timestamps and user attribution
+
+---
+
+# Regression Testing
+
+After implementing the enhancement, thoroughly verify the following scenarios:
+
+## Upload
+- Upload a new document
+- Confirm it appears in the Documents tab
+- Confirm a timeline entry is created
+- Verify user, document name, category, and timestamp are correct
+
+---
+
+## Replace / Update
+- Replace an existing document
+- Verify the document list updates correctly
+- Verify the timeline reflects the replacement
+
+---
+
+## Delete
+- Delete a document
+- Confirm it is removed from the Documents tab
+- Confirm a corresponding timeline entry is created
+
+---
+
+## Multiple Documents
+- Upload multiple documents
+- Verify each upload generates a separate timeline entry
+- Ensure chronological ordering is maintained
+
+---
+
+## Permissions
+Verify that:
+- Users without document permissions cannot perform document actions
+- No timeline entries are created for unauthorized or failed actions
+
+---
+
+## Responsive Testing
+Verify the Timeline renders correctly on:
+- Mobile
+- Tablet
+- Desktop
+
+Ensure long document names wrap gracefully and do not break the layout.
+
+---
+
+## Theme Testing
+Verify document timeline entries display correctly in:
+- Light Mode
+- Dark Mode
+
+Icons, text, badges, timestamps, and spacing should remain visually consistent with the selected theme.
+
+---
+
+# Important Constraints
+
+- Do **not** modify or break the existing Lead Timeline implementation.
+- Do **not** change the current Documents module workflow unless required for this enhancement.
+- Do **not** introduce duplicate timeline records.
+- Preserve all existing document functionality, notifications, permissions, and activity tracking.
+
+---
+
+# Final Validation Checklist
+
+Before considering this task complete, verify that:
+
+- ✅ Uploading a document creates a timeline entry.
+- ✅ Updating/replacing a document creates a timeline entry.
+- ✅ Deleting a document creates a timeline entry.
+- ✅ Timeline entries include the correct user, document name, category, and timestamp.
+- ✅ Timeline ordering remains correct.
+- ✅ Existing timeline functionality remains unaffected.
+- ✅ No duplicate entries are created.
+- ✅ No backend exceptions or API regressions are introduced.
+- ✅ The enhancement works correctly across desktop, tablet, and mobile.
+- ✅ The implementation has been regression tested to ensure no existing functionality has been disturbed or any new issues have been introduced.

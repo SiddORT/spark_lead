@@ -2,6 +2,8 @@ import { useState, useRef } from "react";
 import { FileText, Upload, Trash2, ExternalLink, Loader2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
+import { getGetLeadActivitiesQueryKey } from "@workspace/api-client-react";
 
 const BASE_URL = import.meta.env.BASE_URL?.replace(/\/$/, "") || "";
 const API_BASE = `${BASE_URL}/api`;
@@ -78,6 +80,13 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
   const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+
+  // Keep the Timeline tab and any cached documents queries in sync
+  const invalidateRelated = () => {
+    queryClient.invalidateQueries({ queryKey: getGetLeadActivitiesQueryKey(leadId) });
+    queryClient.invalidateQueries({ queryKey: [`/api/leads/${leadId}/documents`] });
+  };
 
   // Fetch on first render
   if (!loaded && !loading) {
@@ -148,7 +157,10 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
       }
     }
 
-    if (successCount > 0) toast.success(`${successCount} file${successCount > 1 ? "s" : ""} uploaded`);
+    if (successCount > 0) {
+      toast.success(`${successCount} file${successCount > 1 ? "s" : ""} uploaded`);
+      invalidateRelated();
+    }
     if (errorCount > 0) toast.error(`${errorCount} file${errorCount > 1 ? "s" : ""} failed to upload`);
 
     setUploading(false);
@@ -165,6 +177,9 @@ export function DocumentsTab({ leadId, leadStageName, leadStatusName, token }: D
       if (res.ok) {
         setDocs((prev) => prev.filter((d) => d.id !== docId));
         toast.success("Document deleted");
+        invalidateRelated();
+      } else {
+        toast.error("Failed to delete document");
       }
     } catch {
       toast.error("Failed to delete document");

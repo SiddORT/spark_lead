@@ -1,0 +1,1 @@
+- [Lead timeline rendering traps](lead-timeline-rendering.md) — timeline branches go in TimelineTab (ActivityLog is dead code); doc deleted-state must derive from the activities feed, not a separate query.

@@ -1,0 +1,394 @@
+```markdown
+# SparkLead CRM – Comprehensive System Stability, UX Refinement & Full Regression Audit
+
+## Objective
+The system has reached a mature stage, however there are still several UI/UX inconsistencies, functional gaps, and edge-case bugs that need to be resolved. The goal is **not only to fix the issue mentioned below**, but to perform a **complete product-wide quality audit** and deliver a highly polished, production-ready application.
+
+---
+
+# 1. Follow-Up Page – Lead Details Cannot Be Opened
+
+## Current Issue
+The leads displayed in the **Follow-Up** module are not clickable.
+
+Users should be able to open the complete Lead Details panel exactly the same way as they can from:
+
+- Dashboard
+- Lead Listing
+- Kanban Board
+- Analytics
+- Search Results
+- Notifications
+- Everywhere else a lead is displayed
+
+Currently clicking the lead does nothing.
+
+This breaks navigation consistency.
+
+---
+
+## Expected Behaviour
+
+Clicking anywhere on the lead row (or at minimum the Lead Name) should:
+
+- Open the Lead Details drawer/panel
+- Preserve all existing functionality
+- Allow editing (based on permissions)
+- Show Notes
+- Show Timeline
+- Show Documents
+- Show Followers
+- Show Activity History
+- Show Assignment
+- Everything exactly identical to opening the lead from other modules.
+
+No duplicate implementation.
+
+Reuse the existing Lead Details component.
+
+---
+
+# 2. Perform Complete Navigation Audit
+
+Review every screen in the application and verify that every clickable element actually performs its expected action.
+
+Examples include:
+
+- Lead Name
+- Company Name
+- Service
+- Notifications
+- Dashboard Cards
+- Analytics
+- Kanban Cards
+- Follow-Up Rows
+- Timeline Entries
+- Documents
+- Followers
+- Companies
+- Services
+- Pipeline
+- Team Members
+- Audit Logs
+- Profile
+- Search Results
+
+Nothing should appear interactive unless it actually performs an action.
+
+---
+
+# 3. Full UI / UX Audit
+
+Review the complete application screen-by-screen.
+
+Look for:
+
+- Misaligned components
+- Inconsistent spacing
+- Uneven padding
+- Broken responsive layouts
+- Wrong font weights
+- Inconsistent icon sizes
+- Improper hover states
+- Wrong cursor behaviour
+- Broken borders
+- Overflow issues
+- Incorrect z-index
+- Dark mode inconsistencies
+- Light mode inconsistencies
+- Modal sizing
+- Drawer sizing
+- Mobile spacing
+- Tablet layouts
+- Scrollbars
+- Floating Action Button positioning
+- Sticky headers
+- Empty states
+- Loading states
+- Skeleton loaders
+- Error states
+- Success states
+
+The UI should feel like one consistent design system.
+
+---
+
+# 4. Complete Backend Functional Audit
+
+Review all business logic.
+
+Verify:
+
+- CRUD operations
+- Lead creation
+- Lead editing
+- Lead deletion
+- Company CRUD
+- Service CRUD
+- Team CRUD
+- Permissions
+- Followers
+- Notifications
+- Emails
+- Session handling
+- Authentication
+- Authorization
+- Activity logging
+- Audit logging
+- Filters
+- Sorting
+- Pagination
+- Search
+- Attachments
+- Timeline
+- Notes
+- Documents
+
+Ensure every API behaves correctly.
+
+No silent failures.
+
+No HTTP 500 errors.
+
+No unhandled exceptions.
+
+---
+
+# 5. Regression Testing
+
+Perform a complete regression test after implementing the fixes.
+
+Verify every module:
+
+## Dashboard
+
+- Cards
+- Charts
+- Notifications
+- Quick Actions
+
+---
+
+## Leads
+
+- List
+- Drawer
+- Creation
+- Editing
+- Assignment
+- Status Changes
+- Notes
+- Timeline
+- Documents
+- Followers
+
+---
+
+## Kanban
+
+- Drag & Drop
+- Card Rendering
+- Stage Movement
+- Detail Drawer
+
+---
+
+## Follow-Ups
+
+- Opening Lead
+- Filters
+- Search
+- Pagination
+- Due Dates
+- Notifications
+
+---
+
+## Companies
+
+- CRUD
+- Linking Services
+- Search
+- Responsive Layout
+
+---
+
+## Services
+
+- CRUD
+- Company Mapping
+- Responsive Layout
+
+---
+
+## Analytics
+
+Verify every graph:
+
+- Tooltip
+- Hover
+- Legends
+- Mobile
+- Tablet
+- Desktop
+
+---
+
+## Team Management
+
+- Invite User
+- Delete User
+- Role Change
+- Permission Change
+- Password Reset
+- Email Flow
+
+---
+
+## Notifications
+
+Verify:
+
+- Panel
+- Mobile Sheet
+- Read State
+- Links
+- Navigation
+- Theme
+- Responsiveness
+
+---
+
+## Followers
+
+Verify:
+
+- Follow
+- Unfollow
+- View All
+- Search
+- Notifications
+- Emails
+
+---
+
+# 6. Responsive Testing
+
+Test every screen on:
+
+### Mobile
+
+- 320px
+- 360px
+- 375px
+- 390px
+- 414px
+- 430px
+
+### Tablet
+
+- 768px
+- 820px
+- 1024px
+
+### Desktop
+
+- 1280px
+- 1366px
+- 1440px
+- 1600px
+- 1920px
+- Ultrawide
+
+Nothing should overflow.
+
+Nothing should overlap.
+
+Nothing should become inaccessible.
+
+Every action must remain usable.
+
+---
+
+# 7. Cross Theme Testing
+
+Test every page in:
+
+- Light Theme
+- Dark Theme
+
+Verify:
+
+- Charts
+- Tooltips
+- Popovers
+- Dropdowns
+- Dialogs
+- Notifications
+- Drawers
+- Tables
+- Forms
+- Inputs
+- Hover Effects
+- Empty States
+
+No component should use the wrong theme.
+
+---
+
+# 8. Performance Review
+
+Review the application for:
+
+- Unnecessary re-renders
+- Memory leaks
+- Duplicate API calls
+- Slow queries
+- Blocking renders
+- Animation jank
+- Layout shifts
+- Flickering
+- Excessive DOM updates
+
+Optimize wherever required.
+
+---
+
+# 9. Polish & Micro-Interactions
+
+Refine the overall experience by ensuring:
+
+- Smooth page transitions
+- Smooth drawer animations
+- Smooth modal animations
+- Smooth scrolling
+- Responsive touch interactions
+- Consistent hover animations
+- Proper button feedback
+- Uniform loading indicators
+- Professional empty states
+- Clean success/error feedback
+
+The application should feel premium and highly responsive, even on lower refresh-rate displays.
+
+---
+
+# Final Deliverable
+
+The objective is to deliver a **production-ready CRM** that is polished, consistent, and reliable.
+
+Before marking this task complete, verify that:
+
+- ✅ Every module has been reviewed.
+- ✅ Every clickable element works correctly.
+- ✅ No UI inconsistencies remain.
+- ✅ No logical gaps remain.
+- ✅ No backend exceptions remain.
+- ✅ Responsive behaviour is consistent across all supported devices.
+- ✅ Light and Dark themes are visually consistent.
+- ✅ Existing functionality has not regressed.
+- ✅ The Follow-Up page allows users to open Lead Details exactly as in the Lead Listing and Kanban modules.
+- ✅ The application feels smooth, refined, and enterprise-grade from both a visual and functional perspective.
+
+**Do not consider this task complete until the entire application has been thoroughly audited, all identified issues have been resolved, and a full regression test has been successfully completed.**
+```

@@ -1,0 +1,231 @@
+# Additional Enhancement – Make Timeline Documents Directly Accessible
+
+## Objective
+
+The Lead Timeline should not only display document-related activities but should also provide **direct access to the associated document**.
+
+Users should be able to open or download a document directly from the timeline without having to switch to the **Documents** tab. This will significantly improve usability and reduce unnecessary navigation.
+
+---
+
+# Current Issue
+
+The Lead Timeline only displays the activity (if implemented), but users cannot interact with the document itself.
+
+Current workflow:
+
+Timeline → Open Documents Tab → Find Document → Open Document
+
+This creates unnecessary clicks and reduces productivity.
+
+---
+
+# Expected Behaviour
+
+Every document-related timeline activity should include direct access to the associated document.
+
+Supported timeline events include:
+
+- Document Uploaded
+- Document Updated
+- Document Replaced
+- Document Deleted (history only)
+- Any future document activity
+
+---
+
+# Timeline UI Enhancement
+
+For every document upload/update event, display:
+
+📄 **Proposal_V2.pdf**
+
+Uploaded by **John Smith**
+
+3 Jul 2026 • 11:57 AM
+
+Buttons:
+
+- 👁 View
+- ⬇ Download
+
+or
+
+Make the document name itself clickable.
+
+Example:
+
+> 📄 **Proposal_V2.pdf**
+>
+> Uploaded under **Qualification & Analysis**
+>
+> by **John Smith**
+>
+> **View** | **Download**
+
+---
+
+# View Behaviour
+
+When the user clicks **View**:
+
+- Open the document immediately.
+- PDFs should open in an in-app preview or a new browser tab.
+- Images should open in an image viewer.
+- Office documents should open using the existing preview mechanism (if available) or download if preview is not supported.
+
+---
+
+# Download Behaviour
+
+When the user clicks **Download**:
+
+- Download the exact document associated with that timeline event.
+- Preserve the original file name.
+- Respect all existing access permissions.
+
+---
+
+# Deleted Documents
+
+If the document has been deleted:
+
+The timeline entry should remain for audit purposes.
+
+Example:
+
+> 📄 Proposal_V2.pdf *(Deleted)*
+
+In this case:
+
+- Disable the View button.
+- Disable the Download button.
+- Display a tooltip:
+
+> This document has been deleted.
+
+Do not remove historical timeline records.
+
+---
+
+# Replaced Documents
+
+If a document has been replaced:
+
+Timeline should preserve the original event.
+
+Example:
+
+> Proposal_V1.pdf replaced with Proposal_V2.pdf
+
+Both document names should be visible.
+
+If version history exists:
+
+- Allow opening older versions where permitted.
+
+Otherwise:
+
+- Open the latest available document.
+
+---
+
+# Security & Permissions
+
+Document access from the timeline must follow the exact same permission rules as the Documents module.
+
+Only authorized users should be able to:
+
+- View
+- Download
+- Preview
+
+Unauthorized users should not see actionable controls.
+
+---
+
+# Mobile Responsiveness
+
+Verify that:
+
+- Document links are touch-friendly.
+- Buttons wrap correctly on small screens.
+- Long file names truncate gracefully with ellipsis.
+- Users can still tap to view or download without layout issues.
+
+---
+
+# Theme Compatibility
+
+Ensure the document timeline actions are fully compatible with:
+
+- Light Mode
+- Dark Mode
+
+Icons, links, hover states, buttons, and text should automatically adapt to the selected theme.
+
+---
+
+# Regression Testing
+
+Thoroughly test:
+
+### Upload
+- Upload a document.
+- Verify the timeline entry is created.
+- Verify View works.
+- Verify Download works.
+
+---
+
+### Replace
+- Replace a document.
+- Verify the timeline reflects the replacement.
+- Verify the correct document opens.
+
+---
+
+### Delete
+- Delete the document.
+- Verify the timeline entry remains.
+- Verify View/Download are disabled.
+- Verify appropriate messaging is displayed.
+
+---
+
+### Permissions
+Test using different user roles to ensure only authorized users can access documents directly from the timeline.
+
+---
+
+### Mobile Testing
+Verify functionality across:
+- Android
+- iPhone
+- Tablet
+
+---
+
+### Desktop Testing
+Verify functionality across:
+- Chrome
+- Edge
+- Firefox
+- Safari (if supported)
+
+---
+
+# Final Validation Checklist
+
+Before closing this task, verify that:
+
+- ✅ Every document activity appears in the Lead Timeline.
+- ✅ Document names are clickable or provide View/Download actions.
+- ✅ Documents open directly from the timeline.
+- ✅ Downloads work correctly.
+- ✅ Deleted documents retain audit history while preventing access.
+- ✅ Replaced documents display correctly.
+- ✅ Permissions are fully respected.
+- ✅ Mobile and desktop experiences are fully responsive.
+- ✅ Light and Dark themes are visually consistent.
+- ✅ No regressions or new issues have been introduced anywhere in the system.

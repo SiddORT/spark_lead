@@ -15,7 +15,7 @@ import { formatFullDate } from "@/lib/utils";
 import {
   Check, Send, Clock, Trash2, X, ChevronDown,
   FileText, MessageSquare, History, Copy, CalendarClock, Search, AlertTriangle,
-  TrendingUp, Folder, Users, UserPlus, UserMinus, Eye,
+  TrendingUp, Folder, Users, UserPlus, UserMinus, Eye, Download, ExternalLink,
 } from "lucide-react";
 import { DocumentsTab } from "./documents-tab";
 import { useLocation } from "wouter";
@@ -365,6 +365,95 @@ function NotesSection({ leadId }: { leadId: string }) {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Document activity payload helpers ────────────────
+type DocActivityPayload = {
+  docId?: string;
+  fileName?: string;
+  fileUrl?: string;
+  stage?: string | null;
+};
+
+function parseDocPayload(raw: string | null | undefined): DocActivityPayload | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Document timeline entry (view/download actions) ──
+function DocTimelineEntry({
+  actorName,
+  verb,
+  payload,
+  isDocDeleted,
+}: {
+  actorName: string | null | undefined;
+  verb: "uploaded" | "deleted";
+  payload: DocActivityPayload;
+  isDocDeleted: boolean;
+}) {
+  const isDeleted = verb === "deleted" || isDocDeleted;
+  const url = !isDocDeleted && payload.fileUrl ? payload.fileUrl : null;
+  return (
+    <>
+      <strong>{actorName}</strong> {verb === "uploaded" ? "uploaded" : "deleted"} a document
+      <div className={`doc-timeline-card ${isDeleted ? "is-deleted" : ""}`.trim()}>
+        <FileText size={14} className="doc-timeline-icon" />
+        <div className="doc-timeline-meta">
+          <span className="doc-timeline-name" title={payload.fileName || "Document"}>
+            {payload.fileName || "Document"}
+            {verb === "uploaded" && isDocDeleted && (
+              <span className="doc-timeline-deleted-tag">Deleted</span>
+            )}
+          </span>
+          {payload.stage && (
+            <span className="doc-timeline-stage">📍 {payload.stage}</span>
+          )}
+        </div>
+        {verb === "uploaded" && (
+          <div className="doc-timeline-actions">
+            {url ? (
+              <>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="doc-timeline-btn"
+                  title="View document"
+                >
+                  <ExternalLink size={12} />
+                  <span className="doc-timeline-btn-label">View</span>
+                </a>
+                <a
+                  href={url}
+                  download={payload.fileName || true}
+                  className="doc-timeline-btn"
+                  title="Download document"
+                >
+                  <Download size={12} />
+                  <span className="doc-timeline-btn-label">Download</span>
+                </a>
+              </>
+            ) : (
+              <span
+                className="doc-timeline-btn is-disabled"
+                title="This document has been deleted."
+                aria-disabled="true"
+              >
+                <ExternalLink size={12} />
+                <span className="doc-timeline-btn-label">View</span>
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -1127,6 +1216,14 @@ function TimelineTab({ leadId }: { leadId: string }) {
   const resolve = (field: string, raw: string | null | undefined) =>
     resolveValue(field, raw, resolveName, services, companies, allStatuses, stages);
 
+  // Docs that have a later "document_deleted" activity — used to disable View/Download
+  const deletedDocIds = new Set(
+    (activities ?? [])
+      .filter((a: any) => a.action === "document_deleted")
+      .map((a: any) => parseDocPayload(a.newValue)?.docId)
+      .filter(Boolean),
+  );
+
   // Deduplicate by id, then sort newest first
   const uniqueActivities = activities
     ? Array.from(new Map(activities.filter((a) => a.id).map((a) => [a.id, a])).values())
@@ -1179,6 +1276,20 @@ function TimelineTab({ leadId }: { leadId: string }) {
                   <strong>{a.actorName}</strong>
                   <span style={{ color: "var(--text-secondary)" }}> unfollowed this lead</span>
                 </>
+              ) : a.action === "document_uploaded" || a.action === "document_deleted" ? (
+                (() => {
+                  const payload = parseDocPayload(a.newValue) || { fileName: a.newValue };
+                  const verb = a.action === "document_uploaded" ? "uploaded" as const : "deleted" as const;
+                  const isDocDeleted = !payload.docId || deletedDocIds.has(payload.docId);
+                  return (
+                    <DocTimelineEntry
+                      actorName={a.actorName}
+                      verb={verb}
+                      payload={payload}
+                      isDocDeleted={isDocDeleted}
+                    />
+                  );
+                })()
               ) : a.fieldName ? (
                 <>
                   <strong>{a.actorName}</strong> updated{" "}

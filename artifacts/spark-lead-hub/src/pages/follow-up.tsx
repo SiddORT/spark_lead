@@ -742,7 +742,8 @@ export function FollowUp() {
       {/* ── Lead Detail Sheet ────────────────────────── */}
       <LeadDetailSheet
         leadId={selectedLeadId}
-        onClose={() => setSelectedLeadId(null)}
+        open={!!selectedLeadId}
+        onOpenChange={open => !open && setSelectedLeadId(null)}
       />
     </div>
   );
