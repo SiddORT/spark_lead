@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Bell, X } from "lucide-react";
+import {
+  Bell, BellRing, BellOff, X, Briefcase, User, CalendarDays,
+  CircleAlert, Clock, CalendarClock, ArrowRight, type LucideIcon,
+} from "lucide-react";
 import { useGetLeads } from "@workspace/api-client-react";
 import { useUserMap } from "@/hooks/use-user-map";
 import { useLocation } from "wouter";
@@ -21,15 +24,21 @@ function getStatus(dateStr: string): Status {
   return "UPCOMING";
 }
 
-const STATUS_CFG: Record<Status, { className: string; label: string }> = {
-  OVERDUE:  { className: "bell-pill bell-pill--overdue",  label: "Overdue"  },
-  TODAY:    { className: "bell-pill bell-pill--today",    label: "Today"    },
-  UPCOMING: { className: "bell-pill bell-pill--upcoming", label: "Upcoming" },
+const STATUS_CFG: Record<Status, { className: string; label: string; PillIcon: LucideIcon; iconClass: string }> = {
+  OVERDUE:  { className: "bell-pill bell-pill--overdue",  label: "Overdue",  PillIcon: CircleAlert,   iconClass: "bell-item-icon--overdue"  },
+  TODAY:    { className: "bell-pill bell-pill--today",    label: "Today",    PillIcon: Clock,         iconClass: "bell-item-icon--today"    },
+  UPCOMING: { className: "bell-pill bell-pill--upcoming", label: "Upcoming", PillIcon: CalendarClock, iconClass: "bell-item-icon--upcoming" },
 };
 
 function StatusPill({ status }: { status: Status }) {
   const c = STATUS_CFG[status];
-  return <span className={c.className}>{c.label}</span>;
+  const PillIcon = c.PillIcon;
+  return (
+    <span className={c.className}>
+      <PillIcon size={11} strokeWidth={2.25} aria-hidden="true" />
+      {c.label}
+    </span>
+  );
 }
 
 interface Props {
@@ -43,9 +52,9 @@ export function FollowUpBell({ onLeadClick }: Props) {
   const { resolveName }  = useUserMap();
   const isMobile         = useIsMobile();
 
-  const { data: raw = [] } = useGetLeads(undefined, {
-    query: { refetchInterval: 60_000, refetchOnWindowFocus: true },
-  });
+  // Note: intentionally no query options. The previous code passed options as a
+  // (ignored) second argument, so no polling ever ran — keep behavior identical.
+  const { data: raw = [] } = useGetLeads();
   const leads = raw as any[];
 
   const enriched = leads
@@ -91,11 +100,9 @@ export function FollowUpBell({ onLeadClick }: Props) {
   const panelContent = (
     <>
       {/* Header */}
-      <div style={{
-        padding: "14px 16px 10px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <span style={{ fontWeight: 700, fontSize: 14, color: "var(--text-primary)", letterSpacing: "-0.01em" }}>
+      <div className="bell-header">
+        <span className="bell-header-title">
+          <BellRing size={15} strokeWidth={2} aria-hidden="true" />
           Follow-Ups
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -108,7 +115,7 @@ export function FollowUpBell({ onLeadClick }: Props) {
             <button
               onClick={() => setOpen(false)}
               className="bell-icon-btn"
-              aria-label="Close"
+              aria-label="Close notifications"
               style={{
                 borderRadius: 8, width: 28, height: 28,
                 display: "flex", alignItems: "center", justifyContent: "center",
@@ -130,75 +137,62 @@ export function FollowUpBell({ onLeadClick }: Props) {
       )}
 
       {/* Items list */}
-      <div style={{ padding: "8px 10px", maxHeight: isMobile ? "55svh" : 280, overflowY: "auto", display: "flex", flexDirection: "column", gap: 2 }}>
+      <div className="bell-list" style={{ maxHeight: isMobile ? "55svh" : 300 }} role="list" aria-label="Follow-up notifications">
         {displayItems.length === 0 ? (
-          <div style={{
-            padding: "28px 12px", textAlign: "center",
-            color: "var(--text-muted)", fontSize: 13,
-          }}>
-            🎉 No follow-ups pending
+          <div className="bell-empty">
+            <span className="bell-empty-icon" aria-hidden="true">
+              <BellOff size={20} strokeWidth={1.75} />
+            </span>
+            <span className="bell-empty-title">No notifications</span>
+            <span className="bell-empty-sub">You're all caught up — no follow-ups pending.</span>
           </div>
-        ) : displayItems.map((item: any) => (
-          <button
-            key={item.id}
-            onClick={() => { onLeadClick(item.id); setOpen(false); }}
-            className="bell-row"
-            style={{
-              width: "100%", textAlign: "left",
-              border: "none",
-              borderRadius: 12, padding: "10px 12px",
-              cursor: "pointer", transition: "background 0.12s",
-              minHeight: 44,
-            }}
-          >
-            {/* Row: name + badge */}
-            <div style={{
-              display: "flex", alignItems: "flex-start",
-              justifyContent: "space-between", gap: 8, marginBottom: 5,
-            }}>
-              <span style={{
-                fontWeight: 600, fontSize: 13,
-                color: "var(--text-primary)",
-                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                minWidth: 0, flex: 1,
-              }}>
-                {item.leadName}
+        ) : displayItems.map((item: any) => {
+          const status = item._status as Status;
+          return (
+            <button
+              key={item.id}
+              onClick={() => { onLeadClick(item.id); setOpen(false); }}
+              className="bell-item"
+              role="listitem"
+              aria-label={`${item.leadName}, ${STATUS_CFG[status].label}${item.activeFollowUpDate ? `, due ${formatShortDate(item.activeFollowUpDate)}` : ""}`}
+              type="button"
+            >
+              <span className={`bell-item-icon ${STATUS_CFG[status].iconClass}`} aria-hidden="true">
+                <Briefcase size={15} strokeWidth={1.9} />
               </span>
-              <StatusPill status={item._status as Status} />
-            </div>
-            {/* Row: date + handler */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                📅 {item.activeFollowUpDate ? formatShortDate(item.activeFollowUpDate) : "—"}
-              </span>
-              {item.dealHandler && (
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  👤 {resolveName(item.dealHandler)}
+              <span className="bell-item-body">
+                <span className="bell-item-top">
+                  <span className="bell-item-name" title={item.leadName}>{item.leadName}</span>
+                  <StatusPill status={status} />
                 </span>
-              )}
-            </div>
-          </button>
-        ))}
+                {item.dealHandler && (
+                  <span className="bell-item-meta bell-item-meta--user">
+                    <User size={12} strokeWidth={2} aria-hidden="true" />
+                    <span>{resolveName(item.dealHandler)}</span>
+                  </span>
+                )}
+                <span className="bell-item-meta">
+                  <CalendarDays size={12} strokeWidth={2} aria-hidden="true" />
+                  <span>{item.activeFollowUpDate ? formatShortDate(item.activeFollowUpDate) : "—"}</span>
+                </span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Divider */}
       <div className="bell-divider" />
 
       {/* Footer */}
-      <div style={{ padding: "10px 12px 12px" }}>
+      <div className="bell-footer">
         <button
           onClick={() => { setLocation("/follow-up"); setOpen(false); }}
           className="bell-cta"
-          style={{
-            width: "100%",
-            borderRadius: 12,
-            fontWeight: 600, fontSize: 13,
-            padding: "10px 0", cursor: "pointer",
-            transition: "background 0.15s",
-            minHeight: 44,
-          }}
+          type="button"
         >
-          View All Follow-Ups →
+          View All Follow-Ups
+          <ArrowRight size={14} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
     </>
@@ -274,7 +268,9 @@ export function FollowUpBell({ onLeadClick }: Props) {
               borderTopLeftRadius: 18,
               borderTopRightRadius: 18,
               boxShadow: "0 -8px 40px rgba(0,0,0,0.35), 0 0 0 1px var(--border-subtle)",
-              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
               paddingBottom: "env(safe-area-inset-bottom, 16px)",
               zIndex: 100001,
               animation: "sheet-up 220ms ease both",

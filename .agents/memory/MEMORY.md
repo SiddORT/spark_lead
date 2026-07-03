@@ -1,1 +1,2 @@
 - [Lead timeline rendering traps](lead-timeline-rendering.md) — timeline branches go in TimelineTab (ActivityLog is dead code); doc deleted-state must derive from the activities feed, not a separate query.
+- [Generated API hook signatures](generated-api-hooks.md) — orval hooks take one options arg; extra args silently ignored, so 'fixing' calls can activate dead polling behavior.

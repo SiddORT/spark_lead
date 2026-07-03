@@ -1,0 +1,350 @@
+````markdown id="notification-panel-ui-refinement"
+# UI/UX Enhancement – Refine Notification Panel Layout, Readability & Visual Design
+
+## Objective
+
+The Notification Panel is currently suffering from multiple UI and UX issues that make it look unfinished and inconsistent with the premium quality of the SparkLead application.
+
+As visible in the attached screenshot:
+
+- Text is overlapping and unreadable.
+- User information is colliding with lead titles and dates.
+- Icons are outdated and visually inconsistent.
+- Spacing and alignment are poor.
+- The overall notification panel does not match the design language of the rest of the application.
+
+This entire component needs to be redesigned and refined while preserving all existing functionality.
+
+**Important:** This is a UI/UX refinement only. Do not modify the notification logic, APIs, database, permissions, or business workflows.
+
+---
+
+# Current Issues
+
+The notification panel currently has the following problems:
+
+- Lead titles overlap with other text.
+- User names are rendered on top of dates.
+- Long lead names break the layout.
+- Text hierarchy is unclear.
+- Notification cards have inconsistent spacing.
+- Icons look outdated and do not match the rest of the application.
+- Poor alignment between text, badges, and action areas.
+- Overall appearance feels cluttered and difficult to scan.
+
+---
+
+# Required UI Improvements
+
+Redesign each notification item using a clean card/list layout.
+
+Each notification should clearly display:
+
+- Lead Name
+- Notification Type
+- Assigned User / Triggered By
+- Due Date or Activity Date
+- Status Badge (Overdue, Today, Upcoming, Completed, etc.)
+- Optional Lead Stage Badge (if applicable)
+
+Each piece of information should occupy its own dedicated line or section to prevent any overlap.
+
+Example layout:
+
+```
+📌 Maharashtra Solar Project
+
+👤 Smit Lalai
+
+📅 Wed, 10 Jun 2026
+
+⚠️ Overdue
+```
+
+Everything should remain perfectly aligned regardless of content length.
+
+---
+
+# Typography Improvements
+
+Improve text hierarchy by using:
+
+### Lead Name
+
+- Bold
+- Largest text
+- Single or maximum two lines
+- Apply ellipsis (...) if extremely long
+
+---
+
+### User Name
+
+- Medium weight
+- Secondary text color
+
+---
+
+### Date
+
+- Small text
+- Muted color
+
+---
+
+### Status Badge
+
+- Compact pill badge
+- Theme-aware colors
+- Proper spacing from surrounding content
+
+---
+
+# Prevent Text Overlapping
+
+Ensure:
+
+- No text overlaps another element.
+- Long lead names wrap gracefully.
+- Long usernames truncate correctly.
+- Dates never collide with names.
+- Status badges never overlap text.
+- All rows maintain equal height where possible.
+
+---
+
+# Replace Notification Icons
+
+Replace the existing naive icons with modern icons from the application's standard icon library (Lucide/Heroicons or the project's existing icon set).
+
+Examples:
+
+### Notification
+
+- Bell
+- BellRing
+
+---
+
+### Lead
+
+- Briefcase
+- Target
+- Flag
+
+---
+
+### User
+
+- User
+- UserCircle
+
+---
+
+### Calendar
+
+- CalendarDays
+- CalendarClock
+
+---
+
+### Reminder
+
+- Clock
+- AlarmClock
+
+---
+
+### Overdue
+
+- AlertTriangle
+- CircleAlert
+
+---
+
+### Completed
+
+- CircleCheck
+
+---
+
+### Following
+
+- Eye
+- Users
+- Bookmark
+
+Icons should feel modern, lightweight, and visually consistent across the application.
+
+---
+
+# Notification Card Styling
+
+Each notification card should have:
+
+- Proper padding
+- Equal spacing
+- Rounded corners
+- Soft hover effect
+- Clear visual separation
+- Smooth transitions
+- Subtle hover background
+- Proper cursor behaviour
+
+The panel should feel premium and polished.
+
+---
+
+# Notification Panel Layout
+
+Improve overall layout:
+
+- Fixed header
+- Scrollable notification list
+- Sticky footer with "View All Follow-Ups"
+- Proper internal padding
+- Consistent spacing between notifications
+
+No visual jumping while scrolling.
+
+---
+
+# Empty State
+
+When there are no notifications:
+
+Display a clean empty state with:
+
+- Modern illustration/icon
+- "No notifications"
+- Helpful supporting text
+
+---
+
+# Theme Compatibility
+
+Verify complete support for:
+
+### Light Mode
+
+- Correct icon colors
+- Proper contrast
+- Clean shadows
+- Consistent background colors
+
+### Dark Mode
+
+- Matching dark palette
+- No washed-out icons
+- Proper hover states
+- Excellent readability
+
+Both themes should look like native implementations rather than simple color inversions.
+
+---
+
+# Responsive Behaviour
+
+Verify on:
+
+- Desktop
+- Laptop
+- Tablet
+- Mobile
+
+The notification panel should:
+
+- Scale properly.
+- Prevent text overlap.
+- Wrap long titles gracefully.
+- Keep touch targets large enough.
+- Maintain clean spacing on all screen sizes.
+
+---
+
+# Accessibility
+
+Ensure:
+
+- Keyboard navigation works.
+- Proper focus states.
+- Screen-reader friendly labels.
+- Icons have accessible labels/tooltips where applicable.
+- Sufficient color contrast.
+
+---
+
+# Performance
+
+These UI improvements must not introduce:
+
+- Layout shifts
+- Flickering
+- Slow rendering
+- Scroll lag
+- Extra API calls
+- Memory leaks
+- Performance regressions
+
+---
+
+# Full UI/UX Audit
+
+After implementing these changes, perform a comprehensive audit of the **entire application** to identify and fix similar issues.
+
+Specifically verify:
+
+- No overlapping text anywhere.
+- No truncated or unreadable labels.
+- Consistent spacing throughout.
+- Proper responsive layouts.
+- Consistent typography.
+- Modern icon usage across all modules.
+- Uniform padding and alignment.
+- Theme consistency in Light and Dark modes.
+- Smooth interactions and animations.
+
+If similar UI issues are found elsewhere, resolve them as part of this task to maintain a consistent user experience.
+
+---
+
+# Regression Testing
+
+Thoroughly test:
+
+- Notification generation
+- Notification rendering
+- Notification scrolling
+- Long lead names
+- Long user names
+- Different notification types
+- Light Mode
+- Dark Mode
+- Desktop
+- Tablet
+- Mobile
+- Touch interactions
+- Keyboard navigation
+
+Verify that all notification functionality continues to work exactly as before.
+
+---
+
+# Final Validation Checklist
+
+Before closing this task, verify that:
+
+- ✅ Text no longer overlaps anywhere in the notification panel.
+- ✅ Long lead names and usernames are handled gracefully.
+- ✅ Notification cards have a clean and consistent layout.
+- ✅ Modern, high-quality icons have replaced the existing ones.
+- ✅ Icons are visually consistent with the rest of the SparkLead application.
+- ✅ Typography and spacing are polished and readable.
+- ✅ The notification panel is fully responsive.
+- ✅ Light and Dark themes are fully supported.
+- ✅ Accessibility standards are maintained.
+- ✅ Performance remains smooth.
+- ✅ No existing functionality or business logic has been modified.
+- ✅ No new UI, UX, logical, backend, or responsive issues have been introduced.
+- ✅ The entire application has been reviewed for similar issues, and any discovered inconsistencies have been corrected to deliver a polished, production-ready experience.
+````
